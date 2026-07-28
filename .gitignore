@@ -3,3 +3,6 @@ dist
 coverage
 .DS_Store
 *.local
+
+# hyperclaude working artifacts (plans, reviews, research)
+.hyperclaude/
