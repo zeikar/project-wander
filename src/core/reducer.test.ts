@@ -468,6 +468,67 @@ describe("encounter choices", () => {
     expect(next.legIndex).toBe(2);
   });
 
+  it("an option requiring preparation in hand is closed one short of the threshold", () => {
+    const showYourKit = encounters
+      .find((encounter) => encounter.id === "pine-shadows")!
+      .options.find((option) => option.id === "show-your-kit")!;
+    const threshold = showYourKit.requiresPreparation!;
+    const base = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+    });
+
+    expect(
+      canChooseOption({ ...base, preparation: threshold - 1 }, showYourKit),
+    ).toBe(false);
+    expect(canChooseOption({ ...base, preparation: threshold }, showYourKit)).toBe(
+      true,
+    );
+  });
+
+  it("taking that option spends no preparation — it only asks what you carry", () => {
+    const showYourKit = encounters
+      .find((encounter) => encounter.id === "pine-shadows")!
+      .options.find((option) => option.id === "show-your-kit")!;
+    const carried = showYourKit.requiresPreparation!;
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: 10,
+      food: 1,
+      preparation: carried,
+      legIndex: 1,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "show-your-kit",
+    });
+
+    expect(next.preparation).toBe(carried);
+    expect(next.hp).toBe(10);
+    expect(next.phase).toBe("traveling");
+    expect(next.legIndex).toBe(2);
+  });
+
+  it("ignores an option whose preparation requirement is unmet, returning the same state reference", () => {
+    const showYourKit = encounters
+      .find((encounter) => encounter.id === "pine-shadows")!
+      .options.find((option) => option.id === "show-your-kit")!;
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      preparation: showYourKit.requiresPreparation! - 1,
+    });
+
+    expect(
+      reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: "show-your-kit",
+      }),
+    ).toBe(state);
+  });
+
   it("surviving the encounter but starving that evening still ends the journey", () => {
     const state = makeTravelingState({
       phase: "encounter",
