@@ -151,6 +151,9 @@ function JourneyCompleteScreen({
         <p className="result-line">{state.lastEncounterResult}</p>
       )}
       <p>{journey.arrival.description}</p>
+      {state.log.length > 0 && (
+        <p>The road behind you: {state.log.join("; ")}.</p>
+      )}
       <StatRow state={state} />
       <button
         onClick={() => dispatch({ type: "START_JOURNEY", seed: newSeed() })}

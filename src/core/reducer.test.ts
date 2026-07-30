@@ -21,6 +21,7 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     rngState: 1,
     activeEncounterId: null,
     lastEncounterResult: null,
+    log: [],
     ...overrides,
   };
 }
@@ -170,6 +171,9 @@ describe("reduce", () => {
       preparation: 0,
       legIndex: 2,
       lastEncounterResult: "a bad afternoon",
+      log: [
+        "Gray Shapes Between the Pines — Light one of your prepared pitch torches",
+      ],
     });
     const next = reduce(state, { type: "START_JOURNEY", seed: 9 });
 
@@ -180,6 +184,7 @@ describe("reduce", () => {
     expect(next.legIndex).toBe(0);
     expect(next.activeEncounterId).toBeNull();
     expect(next.lastEncounterResult).toBeNull();
+    expect(next.log).toEqual([]);
   });
 
   it("is deterministic and does not mutate its input", () => {
@@ -221,6 +226,19 @@ describe("travel encounters", () => {
     expect(next.phase).toBe("traveling");
     expect(next.activeEncounterId).toBeNull();
     expect(next.rngState).toBe(rollRandom(state.rngState).nextState);
+  });
+
+  it("leaves the log untouched on a quiet leg", () => {
+    const inputLog = ["a stretch already behind you"];
+    const state = makeTravelingState({
+      rngState: findRngState(false),
+      log: inputLog,
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.log).toEqual(inputLog);
+    expect(next.log).toBe(inputLog);
   });
 
   it("clears a stale encounter result when travel resumes", () => {
@@ -349,6 +367,30 @@ describe("encounter choices", () => {
     expect(next.legIndex).toBe(2);
     expect(next.activeEncounterId).toBeNull();
     expect(next.lastEncounterResult).toBe(reachIn?.resultText);
+  });
+
+  it("appends exactly one log entry for the chosen option, without mutating the input log", () => {
+    const inputLog = ["an earlier stretch of road"];
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "bee-hollow",
+      hp: 20,
+      food: 0,
+      preparation: 3,
+      legIndex: 1,
+      log: inputLog,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "reach-in",
+    });
+
+    expect(next.log).toEqual([
+      "an earlier stretch of road",
+      "A Humming Hollow — Reach in bare-handed for the comb",
+    ]);
+    expect(inputLog).toEqual(["an earlier stretch of road"]);
   });
 
   it("ignores an option the player cannot pay for, returning the same state reference", () => {

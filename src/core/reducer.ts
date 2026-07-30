@@ -68,6 +68,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         rngState: action.seed >>> 0,
         activeEncounterId: null,
         lastEncounterResult: null,
+        log: [],
       };
     }
 
@@ -115,7 +116,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
       const option = encounter?.options.find(
         (candidate) => candidate.id === action.optionId,
       );
-      if (!option || !canChooseOption(state, option)) {
+      if (!encounter || !option || !canChooseOption(state, option)) {
         return state;
       }
 
@@ -126,6 +127,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         preparation: state.preparation + option.preparationDelta,
         activeEncounterId: null,
         lastEncounterResult: option.resultText,
+        log: [...state.log, `${encounter.title} — ${option.label}`],
       };
 
       // Dying at the encounter site: the leg was never completed, so no toll is
