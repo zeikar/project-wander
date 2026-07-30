@@ -17,7 +17,9 @@ function newSeed(): number {
 
 // Only what an option spends, so the player can weigh the price. What it costs
 // in blood is left to be discovered.
-function costHint(option: EncounterOption): string {
+// Exported for its unit test: this file has no JSX-rendering harness, so the
+// pure string function is tested directly, the same way `leavesNoFood` is.
+export function costHint(option: EncounterOption): string {
   const costs: string[] = [];
   if (option.foodDelta < 0) {
     costs.push(`${-option.foodDelta} food`);
@@ -25,7 +27,15 @@ function costHint(option: EncounterOption): string {
   if (option.preparationDelta < 0) {
     costs.push(`${-option.preparationDelta} preparation`);
   }
-  return costs.length > 0 ? ` — costs ${costs.join(" and ")}` : "";
+  const spends = costs.length > 0 ? ` — costs ${costs.join(" and ")}` : "";
+  // A requirement is not a cost, and must not read like one: it asks what is
+  // still in the pack and takes none of it. Phrased separately so a player can
+  // tell "this is spent" from "this is what lets you do it at all" — and so a
+  // disabled option still explains why it is closed.
+  const requires = option.requiresPreparation
+    ? ` — needs ${option.requiresPreparation} preparation in hand`
+    : "";
+  return `${spends}${requires}`;
 }
 
 // Unlike an option's authored hp cost, the leg's toll is a hazard this
