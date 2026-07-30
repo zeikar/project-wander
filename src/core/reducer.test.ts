@@ -361,6 +361,8 @@ describe("full journeys", () => {
   // any change to the PRNG, ENCOUNTER_CHANCE, content deltas, or the number of
   // authored encounters (which shifts what the selection roll picks) — update
   // it only when such a change is deliberate.
+  // Re-recorded because journey.start.preparation dropped from 3 to 2, which
+  // shifts only the preparation column from this seed's earlier trace.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
@@ -368,7 +370,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 20,
         food: 2,
-        preparation: 3,
+        preparation: 2,
         legIndex: 0,
       },
       {
@@ -376,7 +378,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 20,
         food: 1,
-        preparation: 3,
+        preparation: 2,
         legIndex: 1,
       },
       {
@@ -384,7 +386,7 @@ describe("full journeys", () => {
         activeEncounterId: "pine-shadows",
         hp: 20,
         food: 0,
-        preparation: 3,
+        preparation: 2,
         legIndex: 1,
       },
       {
@@ -392,7 +394,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 20,
         food: 0,
-        preparation: 2,
+        preparation: 1,
         legIndex: 2,
       },
       {
@@ -400,7 +402,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 17,
         food: 0,
-        preparation: 2,
+        preparation: 1,
         legIndex: 3,
       },
       {
@@ -408,7 +410,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 14,
         food: 0,
-        preparation: 2,
+        preparation: 1,
         legIndex: 4,
       },
     ]);

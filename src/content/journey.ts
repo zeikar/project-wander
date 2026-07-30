@@ -13,7 +13,7 @@ export interface Journey {
 // hometown to a neighboring village, worth taking because the world is
 // larger than expected, not because of any grand quest.
 export const journey: Journey = {
-  start: { hp: 20, food: 2, preparation: 3 },
+  start: { hp: 20, food: 2, preparation: 2 },
   legs: [
     {
       name: "The Old Millpond Road",

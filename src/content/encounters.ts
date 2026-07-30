@@ -120,9 +120,9 @@ export const encounters: readonly Encounter[] = [
         label: "Leave the tree its honey",
         hpDelta: 0,
         foodDelta: 0,
-        preparationDelta: 0,
+        preparationDelta: 1,
         resultText:
-          "You mark the tree in your memory — worth knowing on the road home — and walk on.",
+          "You leave the bees their comb. The oak's dead side gives up an armful of dry punk-wood instead — slow tinder, easy to light. You mark the tree in your memory and walk on.",
       },
     ],
   },
