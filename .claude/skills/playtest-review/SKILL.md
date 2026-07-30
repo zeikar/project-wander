@@ -1,67 +1,107 @@
 ---
 name: playtest-review
-description: This skill should be used to judge whether Project Wander is actually FUN — when the user asks to "playtest", "is this fun yet", "review the game", "evaluate the gameplay", "critique the design", or after a milestone that changes rules, tuning, or content. Gathers hard evidence (a seeded simulation sweep over many seeds, plus real browser playthroughs) and hands it to the adversarial `game-critic` agent. This is DESIGN evaluation, not code review and not rendering review — use hyper-code-review for code and visual-review for how it looks.
+description: This skill should be used to find design defects in Project Wander — when the user asks to "playtest", "is this fun yet", "review the game", "evaluate the gameplay", "critique the design", or after a milestone that changes rules, tuning, or content. Gathers quantitative evidence (a seeded sweep over hundreds of seeds) and qualitative evidence (simulated-player personas that commit a prediction before each outcome), then hands both to the adversarial `game-critic` agent. This is DESIGN evaluation, not code review and not rendering review — use hyper-code-review for code and visual-review for how it looks.
 ---
 
 # Playtest review
 
-Tests prove the rules work. They say nothing about whether anyone wants a second journey — which is this project's actual success metric (VISION.md). This skill gathers evidence about the *experience* and hands it to a critic whose job is to argue the game is not fun yet.
+Tests prove the rules work. They say nothing about whether the choices are real. This skill gathers evidence about the *design* and hands it to a critic.
 
-**Nothing here is committed.** The sweep script is scratch, deleted before the skill ends. Output is a critique, not a test.
+**Read this before running it.** What this produces is **expert heuristic inspection with a simulated user** — the Cognitive Walkthrough tradition — **not playtesting**. It finds design defects. It does not measure enjoyment.
 
-## Why this game can be evaluated with numbers
+## What this must NOT claim to measure
 
-`src/core/reducer.ts` is pure and seeded: a whole journey is a function of `(seed, policy)`. So the critic gets quantitative evidence, not vibes — win rates, choice usage, encounter distribution, dominant-strategy detection. Use it. A critique that only says "it feels thin" is a weak critique here.
+State this in the final report. The tooling cannot reach:
 
-## Step 0 — read the rubric source
+- **Whether a human would start another journey.** That is VISION.md's success metric. This pass can only show whether its *preconditions* hold — runs diverge, choices are non-obvious, predictions hold up.
+- **Felt pacing or wall-clock drag.** No time passes for a model; reading 900 words is not playing 20 minutes.
+- **Felt difficulty.** A model computes expected value; it does not experience risk. The sweep owns actual difficulty.
+- **Novelty fatigue past ~3 runs.** With memory a model over-detects repetition; without it, under-detects. There is no habituation curve in between.
+- **Emotional payoff.** It can detect setup→payoff *structure*, never felt affect.
+- **Population preferences.** Persona variance is caricature, not sampling.
+- **Anything visual.** `visual-review` owns rendering.
+- **Prose quality in absolute terms** — only defects and relative-to-control comparisons are defensible, because a Claude judge over-rates Claude-written prose.
 
-Read `VISION.md` first. It is the standard the game is judged against — design pillars, the player fantasy, the anti-goals ("never repetitive monster farming"), and the success metric:
+Three human playtesters remain the only instrument for the success metric.
 
-> A successful prototype is one where players voluntarily start another journey immediately after finishing the previous one.
+## Step 0 — rubric and intent
 
-Also read `CLAUDE.md` for what is deliberately out of scope right now. This matters: a critique that says "add AI dialogue and a codex" when those are scheduled later is noise.
+Read `VISION.md` (the standard: pillars, anti-goals, success metric) and `CLAUDE.md` (what is deliberately deferred — a critique that says "add AI and the codex" is noise).
 
-## Step 1 — simulation sweep (the hard evidence)
+Then write down the **pre-declared intended-hidden-information list**. Today that is: option labels show food and preparation costs but deliberately hide HP costs (`costHint()` in `src/ui/App.tsx`). Without this list every persona reports the boar's 6 HP as a defect on turn one — a guaranteed false positive. First-exposure surprise at something on this list is design working; second-exposure surprise at the same thing is a teaching failure and is a real defect.
 
-Write a throwaway vitest file at `<repo>/playtest-sweep.test.ts` (repo root, so it is impossible to miss). Import `reduce`, `createInitialState`, the actions, and the content, then sweep seeds and print a summary with `console.log`. Measure at least:
+## Step 1 — quantitative sweep
 
-- **Outcome mix** per policy over ≥200 seeds — arrived / defeated, and final HP distribution.
-- **Dominant strategy** — is one policy strictly better on every seed? Is there any seed where a "greedy" choice beats the cautious one? A game with a strictly dominant policy has no decisions.
-- **Choice usage** — how often each option is picked and how often each is *unaffordable*. An option never chosen or never affordable is dead content.
-- **Encounter distribution** — how many journeys are fully quiet, how often the same encounter repeats within one journey, how many distinct encounters a typical run sees.
-- **Journey shape** — actions per run, and how much resources actually swing.
+Write a throwaway vitest file at `<repo>/playtest-sweep.test.ts` (repo root, impossible to miss). Import `reduce`, `createInitialState`, `canChooseOption`, and the content; sweep ≥200 seeds across several policies and `console.log` a summary of:
 
-Run it:
+- **Outcome mix** per policy — arrived / defeated, final HP distribution.
+- **Dominant strategy** — is one policy never beaten on any seed? That means there is no decision.
+- **Choice usage** — how often each option is picked and how often *unaffordable*. Never chosen or never affordable is dead content.
+- **Encounter distribution** — fully quiet runs, repeats within a run, distinct encounters a typical run sees.
+- **Journey shape** — actions per run, resource swing.
 
 ```bash
 npx vitest run playtest-sweep.test.ts --reporter=verbose 2>&1 | tail -60
+rm -f playtest-sweep.test.ts && git status --short   # must come back clean
 ```
 
-Then **delete it and prove the tree is clean**:
+Save the output to the session scratchpad.
+
+## Step 2 — persona runs (the qualitative evidence)
+
+### 2a. Build the replay harness
+
+`reduce` is pure and seeded, so a journey is `(seed, choices) -> screen`. Write a second throwaway vitest file, `<repo>/playtest-step.test.ts`, driven by env vars so it needs no new dependency:
 
 ```bash
-rm -f playtest-sweep.test.ts && git status --short
+PW_SEED=12345 PW_CHOICES=wade-past,light-torch npx vitest run playtest-step.test.ts 2>&1 | sed -n '/^--- SCREEN/,/^--- END/p'
 ```
 
-Save the captured output to the session scratchpad so the critic can read it.
+It replays `START_JOURNEY` plus the choice list and prints **only what a player sees**: phase, HP/food/preparation, leg counter, the current screen's title and description, the previous result line, and each option's label with its cost hint and an `[unavailable]` marker where `canChooseOption` is false. Nothing else — no ids beyond what the persona must echo back, no deltas, no seed internals.
 
-## Step 2 — real playthroughs (the felt evidence)
+This replaces browser-driven playthroughs for personas: the browser cannot pin a seed (the `?seed=` param was deliberately rejected), so browser runs cannot be paired with sweep seeds. Keep **one** manual browser pass at the end as a sanity check that it still renders; `visual-review` owns rendering properly.
 
-Numbers miss pacing and tone. Play it for real with the Playwright MCP browser (load the tools via ToolSearch; if unavailable, say so and continue with simulation evidence only — do not fake it).
+### 2b. Dispatch the personas
 
-Start the dev server (`npm run dev`, background) and play **2–3 complete journeys** with different intents — one cautious, one reckless, one deliberately trying to get bored. For each, record a transcript to the scratchpad: every screen, the resource values, the choice taken, and the result line. Note where you felt a decision mattered and where you clicked through without thinking. Stop the server and delete `.playwright-mcp/` afterwards.
+Dispatch the **`player-persona`** agent (`.claude/agents/player-persona.md`, `run_in_background: false`) **once per persona**, each playing **the same 3 seeds** in one invocation so it carries memory across runs (the second-exposure rule depends on that memory). Paired seeds mean persona differences are not confounded with content.
 
-## Step 3 — dispatch the critic
+Four personas, differentiated by utility function — not by biography (demographic personas produce caricature and stereotype):
 
-Dispatch the **`game-critic`** agent (`.claude/agents/game-critic.md`, `run_in_background: false`). Give it: the sweep output path, the playthrough transcript path, what changed in the last milestone, and the current out-of-scope list from CLAUDE.md. It does not run the sim or drive the browser — it reads the evidence and attacks.
+| Persona | Maximizes | What it tests |
+|---|---|---|
+| **Careful Arriver** | probability of arriving | Does the player notice they are on rails? |
+| **Curious Naturalist** | learning about the animals, at any cost | Is curiosity rewarded or just taxed in HP? |
+| **Skinflint** | ending with resources unspent | Surfaces preparation-as-maintenance |
+| **Skimmer** | minimum reading; takes the first option | If the Skimmer arrives as reliably as the Careful Arriver, the choices do not matter. Highest signal per token. |
 
-Do not pre-soften the evidence or argue with it in the dispatch prompt. Hand over the numbers as they are.
+Give each: its utility function as a hard constraint that overrides good play, its seeds, the harness command, and a numeric turn cap. Do **not** give it `VISION.md`, the sweep results, the source, or any hint that this is your game.
 
-## Step 4 — report
+### 2c. Tally — the skill does this, not a model
 
-Relay the critic's ranked findings, separating:
+Derive from the persona output:
 
-- **Actionable now** — fixable within the current scope (tuning, content, choice design, ordering).
-- **Blocked on a future milestone** — genuinely needs AI narration, the codex, companions, or camping. Name the milestone; do not treat it as a defect of today's build.
+- `option_id | exposures | chosen | blocked | first_exposure_violations | second_exposure_violations | sign_errors`
+- `decision_tag` counts across all choice points (`deliberated` / `obvious` / `no_real_choice` / `forced_by_blocked_options` / `skipped_reading`)
+- Per-seed divergence: on the same seed, did the four personas produce different text and different outcomes?
+- **Confabulation check** — grep every persona quote against the harness transcript for that `(seed, choices)` path. A quote that is not there was invented; drop the finding and report the count as a reliability figure.
 
-Then recommend the single highest-leverage change. Never end with "it's fine" — if the critic found nothing, state exactly what was measured and played.
+## Step 3 — optional blind A/B, with controls
+
+Only when comparing two builds or judging variety. One-shot dispatch, no VISION.md, no persona identity, no seed labels. Forced choice, then **re-run with A and B swapped** — if the answer flips, record `no_signal` and do not average.
+
+Always include both controls, and report their outcomes to the critic (they matter more than the verdicts):
+
+- **Degraded-prose control** — real content vs. a flattened rewrite ("The boar attacks you. You lose 6 HP."). If the judge cannot pick the real one in both orders, **strike every voice verdict from this pass**.
+- **Yes-man control** — the same transcript twice, asked which is more varied. Any answer other than "identical" means it is pattern-matching the question shape; strike its variety verdict too.
+
+## Step 4 — dispatch the critic
+
+Dispatch **`game-critic`** (`run_in_background: false`) with: the sweep output, the derived tallies (not raw persona prose), verified quotes, the confabulation count, the A/B and control outcomes, the pre-declared hidden-information list, and the current out-of-scope list. Hand the evidence over as it is — do not pre-soften it or argue with it in the prompt.
+
+## Step 5 — clean up and report
+
+Delete both scratch files and `.playwright-mcp/` if a browser pass ran; confirm `git status --short` is clean.
+
+Relay the critic's findings, separating **actionable now** from **blocked on a future milestone** (naming the milestone). Include the reliability notes — confabulation count, any flipped A/B, control results — and repeat the "must NOT claim to measure" boundary. Recommend the single highest-leverage change as a hypothesis for human playtest, never as a proven fix.
+
+Never end with "it's fine". If nothing was found, state exactly what was measured, played, and checked.
