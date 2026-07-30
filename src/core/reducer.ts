@@ -10,13 +10,17 @@ import type { EncounterOption } from "../content/encounters";
 // gated: taking a wound you cannot afford is a real way to lose the journey —
 // and neither is the leg's toll, so spending your last food here can still
 // starve you when the leg completes.
+// `requiresPreparation` is a different thing from a cost: it asks what the
+// traveler is still CARRYING and spends none of it, so an answer that depends on
+// looking equipped closes as soon as the kit is spent elsewhere.
 export function canChooseOption(
   state: GameState,
   option: EncounterOption,
 ): boolean {
   return (
     state.food + option.foodDelta >= 0 &&
-    state.preparation + option.preparationDelta >= 0
+    state.preparation + option.preparationDelta >= 0 &&
+    state.preparation >= (option.requiresPreparation ?? 0)
   );
 }
 

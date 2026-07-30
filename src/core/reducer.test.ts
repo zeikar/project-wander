@@ -6,6 +6,7 @@ import {
   createInitialState,
 } from "./game-state";
 import { canChooseOption, reduce } from "./reducer";
+import { arrivalEnding } from "./arrival";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
 import { encounters } from "../content/encounters";
@@ -67,6 +68,24 @@ const reckless: OptionPolicy = (state) =>
   affordableOptions(state).reduce((worst, option) =>
     option.hpDelta < worst.hpDelta ? option : worst,
   ).id;
+
+// Two more policies, needed only so the ending-reachability scan below can span
+// the arrival outcomes: `prudent` and `reckless` alone never arrive stripped of
+// everything while still on their feet.
+const hoarding: OptionPolicy = (state) => {
+  const options = affordableOptions(state);
+  return (options.find((option) => option.preparationDelta >= 0) ?? options[0]!)
+    .id;
+};
+
+const spendthrift: OptionPolicy = (state) => {
+  const options = affordableOptions(state);
+  return (
+    options.find((option) => option.preparationDelta < 0) ??
+    options.find((option) => option.foodDelta < 0) ??
+    options[0]!
+  ).id;
+};
 
 // Plays a whole journey from a seed and returns every state along the way. The
 // step bound doubles as a proof that no state can leave the player stuck.
@@ -468,6 +487,67 @@ describe("encounter choices", () => {
     expect(next.legIndex).toBe(2);
   });
 
+  it("an option requiring preparation in hand is closed one short of the threshold", () => {
+    const showYourKit = encounters
+      .find((encounter) => encounter.id === "pine-shadows")!
+      .options.find((option) => option.id === "show-your-kit")!;
+    const threshold = showYourKit.requiresPreparation!;
+    const base = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+    });
+
+    expect(
+      canChooseOption({ ...base, preparation: threshold - 1 }, showYourKit),
+    ).toBe(false);
+    expect(canChooseOption({ ...base, preparation: threshold }, showYourKit)).toBe(
+      true,
+    );
+  });
+
+  it("taking that option spends no preparation — it only asks what you carry", () => {
+    const showYourKit = encounters
+      .find((encounter) => encounter.id === "pine-shadows")!
+      .options.find((option) => option.id === "show-your-kit")!;
+    const carried = showYourKit.requiresPreparation!;
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: 10,
+      food: 1,
+      preparation: carried,
+      legIndex: 1,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "show-your-kit",
+    });
+
+    expect(next.preparation).toBe(carried);
+    expect(next.hp).toBe(10);
+    expect(next.phase).toBe("traveling");
+    expect(next.legIndex).toBe(2);
+  });
+
+  it("ignores an option whose preparation requirement is unmet, returning the same state reference", () => {
+    const showYourKit = encounters
+      .find((encounter) => encounter.id === "pine-shadows")!
+      .options.find((option) => option.id === "show-your-kit")!;
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      preparation: showYourKit.requiresPreparation! - 1,
+    });
+
+    expect(
+      reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: "show-your-kit",
+      }),
+    ).toBe(state);
+  });
+
   it("surviving the encounter but starving that evening still ends the journey", () => {
     const state = makeTravelingState({
       phase: "encounter",
@@ -516,6 +596,31 @@ describe("full journeys", () => {
     expect(playJourney(3, prudent)).toEqual(playJourney(3, prudent));
   });
 
+  // Every authored arrival ending has to be something a real journey can end in.
+  // arrival.test.ts proves the selector branches from fabricated states, which
+  // cannot show that the reducer ever produces them — an ending stranded by
+  // retuning would leave that suite green while the prose went dead. Defeat is
+  // not included here; the reckless-loss test above already covers it.
+  it("can end in every authored arrival ending", () => {
+    const reached = new Set<string>();
+
+    for (const seed of SCANNED_SEEDS) {
+      for (const policy of [prudent, reckless, hoarding, spendthrift]) {
+        const end = playJourney(seed, policy).at(-1)!;
+        if (end.phase === "arrived") {
+          reached.add(arrivalEnding(end));
+        }
+      }
+    }
+
+    expect([...reached].sort()).toEqual([
+      "arrived",
+      "limped",
+      "spent",
+      "travelOn",
+    ]);
+  });
+
   // Golden trace: recorded by running this journey. It intentionally breaks on
   // any change to the PRNG, ENCOUNTER_CHANCE, content deltas, or the number of
   // authored encounters (which shifts what the selection roll picks) — update
@@ -523,12 +628,17 @@ describe("full journeys", () => {
   // Re-recorded when the travel toll moved from the start of a leg to its
   // completion: the encounter row now carries the food that leg will spend
   // later, so only that row's food column changed.
+  // Re-recorded again for milestone 4, deliberately: `journey.start.hp` dropped
+  // from 20 to 14 so the arrival thresholds could bind, which shifts every hp
+  // column by six. The choices along this line did not change — `show-your-kit`
+  // is appended after `light-torch`, and prudent keeps the first of equal
+  // hpDeltas, so this trace still spends a torch at the pines.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 20,
+        hp: 14,
         food: 2,
         preparation: 2,
         legIndex: 0,
@@ -536,7 +646,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 20,
+        hp: 14,
         food: 1,
         preparation: 2,
         legIndex: 1,
@@ -544,7 +654,7 @@ describe("full journeys", () => {
       {
         phase: "encounter",
         activeEncounterId: "pine-shadows",
-        hp: 20,
+        hp: 14,
         food: 1,
         preparation: 2,
         legIndex: 1,
@@ -552,7 +662,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 20,
+        hp: 14,
         food: 0,
         preparation: 1,
         legIndex: 2,
@@ -560,7 +670,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 17,
+        hp: 11,
         food: 0,
         preparation: 1,
         legIndex: 3,
@@ -568,7 +678,7 @@ describe("full journeys", () => {
       {
         phase: "arrived",
         activeEncounterId: null,
-        hp: 14,
+        hp: 8,
         food: 0,
         preparation: 1,
         legIndex: 4,

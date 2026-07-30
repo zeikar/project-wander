@@ -3,18 +3,22 @@ export interface JourneyLeg {
   description: string;
 }
 
+// How the journey ended, ranked best to worst by the selector in core/arrival.ts.
+// These are outcomes, not flavour: the label is what the arrival screen calls the
+// run, so leftover supplies and surviving hp both buy something at the gate.
+export type ArrivalEndingId = "travelOn" | "limped" | "spent" | "arrived";
+
+export interface ArrivalEnding {
+  label: string;
+  text: string;
+}
+
 export interface Journey {
   start: { hp: number; food: number; preparation: number };
   legs: readonly JourneyLeg[];
   arrival: {
     name: string;
-    variants: {
-      unmarked: string;
-      limped: string;
-      provisioned: string;
-      wellStocked: string;
-      default: string;
-    };
+    endings: Record<ArrivalEndingId, ArrivalEnding>;
   };
 }
 
@@ -22,7 +26,9 @@ export interface Journey {
 // hometown to a neighboring village, worth taking because the world is
 // larger than expected, not because of any grand quest.
 export const journey: Journey = {
-  start: { hp: 20, food: 2, preparation: 2 },
+  // hp 14 rather than 20: at 20 a careful traveler was never near a threshold,
+  // so no arrival condition could tell good play from lucky play.
+  start: { hp: 14, food: 2, preparation: 2 },
   legs: [
     {
       name: "The Old Millpond Road",
@@ -47,17 +53,23 @@ export const journey: Journey = {
   ],
   arrival: {
     name: "Alderbrook",
-    variants: {
-      unmarked:
-        "Alderbrook's gate is only a gap in the hedge, and you're through it before you've had time to feel it. Someone's wash hangs drying on the shrine steps, and no one minds you stepping around it. You reach the inn with light still in the sky and order supper you didn't feel you'd earned.",
-      limped:
-        "Alderbrook comes into view a roof at a time, and you count every one of them between rests. By the shrine's chipped bell, you sit down harder than you meant to. A woman sorting onions brings you water without being asked.",
-      provisioned:
-        "The mill wheel is still grinding when you walk into Alderbrook, loud over the water. Your pack still swings heavy with food, however much of it the road took and gave back along the way. The miller's boy eyeballs it and asks if you got lost on the way.",
-      wellStocked:
-        "Alderbrook's rooftops catch the last of the day's light as you walk in, pack still swinging at your hip. Your preparation sits at the exact count you started with, whatever the road swapped in and out of it. You end up handing half of it to the shrine keeper, who looks like she's been waiting for exactly this.",
-      default:
-        "Alderbrook turns out to be smaller than the stories made it sound: a mill, a shrine with a chipped bell, and a few dozen roofs. A dog barks twice at you and loses interest.",
+    endings: {
+      travelOn: {
+        label: "You arrive with road still left in you",
+        text: "The mill wheel is still grinding when you walk into Alderbrook, loud over the water. There is weight in your pack yet, and your legs have not finished with you. Sitting down outside the inn, what you find yourself thinking about is not the bed — it is the road going on past the hedge, and where it goes.",
+      },
+      limped: {
+        label: "You arrive barely",
+        text: "Alderbrook comes into view a roof at a time, and you count every one of them between rests. By the shrine's chipped bell you sit down harder than you meant to. A woman sorting onions brings you water without being asked, and does not ask anything back.",
+      },
+      spent: {
+        label: "You arrive with nothing left",
+        text: "You walk in with a pack that swings light and says nothing when you set it down. The road took the last of the food and the last of the kit somewhere back among the pines. You made it, which turns out to be a different feeling than arriving.",
+      },
+      arrived: {
+        label: "You arrive",
+        text: "Alderbrook turns out to be smaller than the stories made it sound: a mill, a shrine with a chipped bell, and a few dozen roofs. A dog barks twice at you and loses interest.",
+      },
     },
   },
 };

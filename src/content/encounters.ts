@@ -7,6 +7,10 @@ export interface EncounterOption {
   hpDelta: number;
   foodDelta: number;
   preparationDelta: number;
+  // Gates availability on preparation the player is still CARRYING, and spends
+  // none of it. Absent means no requirement. This is what gives holding
+  // preparation a value of its own: spend it early and this door is shut later.
+  requiresPreparation?: number;
   resultText: string;
 }
 
@@ -88,6 +92,16 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: 0,
         resultText:
           "The sounds that follow you down the road are busy ones, not hungry ones.",
+      },
+      {
+        id: "show-your-kit",
+        label: "Stand your ground and let them see your kit",
+        hpDelta: 0,
+        foodDelta: 0,
+        preparationDelta: 0,
+        requiresPreparation: 2,
+        resultText:
+          "The nearer one reads the torches at your belt, the bait bundle, the way you do not run. It decides you are more trouble than the evening is worth. Both drift back into the pines without hurrying.",
       },
     ],
   },
