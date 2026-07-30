@@ -661,6 +661,25 @@ describe("the road reports its own toll separately from the animal", () => {
     expect(next.lastRoadToll).toBe(journey.road.hungry);
   });
 
+  // Load-bearing for the defeat screen, which renders these two lines and
+  // deliberately has NO fallback: a generic hunger line would mislabel an animal
+  // death as starvation, the exact attribution error this change removes. If a
+  // future path ever produces a defeat with neither line — or with both — the
+  // screen would go blank or double up, so pin it here rather than there.
+  it("every reachable defeat carries exactly one cause line", () => {
+    const defeats = SCANNED_SEEDS.flatMap((seed) =>
+      [prudent, reckless, hoarding, spendthrift]
+        .map((policy) => playJourney(seed, policy).at(-1)!)
+        .filter((end) => end.phase === "defeated"),
+    );
+
+    expect(defeats.length).toBeGreaterThan(0);
+    for (const end of defeats) {
+      const lines = [end.lastEncounterResult, end.lastRoadToll].filter(Boolean);
+      expect(lines).toHaveLength(1);
+    }
+  });
+
   it("clears the toll when a new journey starts", () => {
     const state = makeTravelingState({
       phase: "arrived",

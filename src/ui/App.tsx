@@ -220,17 +220,15 @@ function DefeatedScreen({
       <h1>The Road Ends Here</h1>
       {/* Whichever of the two actually finished you says so in its own words:
           an animal death carries the encounter's line, a starvation death
-          carries the road's. The fallback is defensive only. */}
+          carries the road's. Exactly one is always set — pinned by
+          reducer.test.ts — so there is deliberately no fallback here. A generic
+          hunger line would mislabel an animal death as starvation, which is the
+          attribution error this whole change exists to remove. */}
       {state.lastEncounterResult && (
         <p className="result-line">{state.lastEncounterResult}</p>
       )}
       {state.lastRoadToll && (
         <p className="result-line">{state.lastRoadToll}</p>
-      )}
-      {!state.lastEncounterResult && !state.lastRoadToll && (
-        <p className="result-line">
-          Hunger and the miles take the last of your strength.
-        </p>
       )}
       <p>
         You never see {journey.arrival.name}. It stays a name in other people's
