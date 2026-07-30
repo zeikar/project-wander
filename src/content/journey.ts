@@ -16,6 +16,10 @@ export interface ArrivalEnding {
 export interface Journey {
   start: { hp: number; food: number; preparation: number };
   legs: readonly JourneyLeg[];
+  // What finishing a leg costs, said out loud. These two lines are the only
+  // place the road's price is ever stated; keeping the wording fixed is what
+  // lets a player learn the rate by seeing it repeat.
+  road: { fed: string; hungry: string };
   arrival: {
     name: string;
     endings: Record<ArrivalEndingId, ArrivalEnding>;
@@ -51,6 +55,10 @@ export const journey: Journey = {
         "The path climbs through a thin pine wood where the wind sounds like distant conversation. Somewhere off in the trees, something large moves and then goes quiet.",
     },
   ],
+  road: {
+    fed: "A day's walking, and a meal gone from the pack.",
+    hungry: "Nothing left in the pack. The miles take it out of you instead.",
+  },
   arrival: {
     name: "Alderbrook",
     endings: {
