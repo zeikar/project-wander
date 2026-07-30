@@ -79,20 +79,53 @@ describe("leavesNoFood", () => {
 
 describe("costHint", () => {
   it("names what an option spends", () => {
-    expect(costHint(lightTorch)).toBe(" — costs 1 preparation");
-    expect(costHint(waitItOut)).toBe(" — costs 1 food");
+    const state = makeEncounterState({ preparation: 2, food: 2 });
+
+    expect(costHint(state, lightTorch)).toBe(
+      " — costs 1 preparation (leaves 1 in hand)",
+    );
+    expect(costHint(state, waitItOut)).toBe(" — costs 1 food");
+  });
+
+  // The measured failure this exists to fix: spending preparation can shut a
+  // door at a later encounter, and nothing said so at the moment of spending.
+  it("says what survives the spend, so the closing door is visible", () => {
+    const rich = makeEncounterState({ preparation: 2 });
+    const poor = makeEncounterState({ preparation: 1 });
+
+    expect(costHint(rich, lightTorch)).toContain("(leaves 1 in hand)");
+    expect(costHint(poor, lightTorch)).toContain("(leaves 0 in hand)");
+  });
+
+  // Regression: a cold reader saw "costs 1 preparation (-1 left in hand)" on an
+  // option they could not afford. Same class of bug as the disabled-option HP
+  // warning caught in an earlier milestone — a hint about a spend that cannot
+  // happen is worse than no hint.
+  it("shows no remainder on an option the player cannot afford", () => {
+    const state = makeEncounterState({
+      activeEncounterId: "pine-shadows",
+      preparation: 0,
+    });
+
+    expect(canChooseOption(state, lightTorch)).toBe(false);
+    expect(costHint(state, lightTorch)).toBe(" — costs 1 preparation");
+    expect(costHint(state, lightTorch)).not.toContain("-1");
   });
 
   it("says nothing for an option that spends nothing", () => {
-    expect(costHint(wadePast)).toBe("");
+    const state = makeEncounterState();
+
+    expect(costHint(state, wadePast)).toBe("");
   });
 
-  it("phrases a held-preparation requirement as a requirement, not a cost", () => {
-    const hint = costHint(showYourKit);
+  it("states outright that a held requirement spends nothing", () => {
+    const state = makeEncounterState({ preparation: 2 });
+    const hint = costHint(state, showYourKit);
 
-    // The distinction is the point: this option takes no preparation, so calling
-    // it a cost would be a lie about the resource the player is deciding over.
-    expect(hint).toBe(" — needs 2 preparation in hand");
+    // Playtest finding: the requirement/cost distinction was legible but not
+    // TRUSTED — a hoarder read it correctly and still took a wound rather than
+    // risk being billed. Saying "spends none" removes the inference.
+    expect(hint).toBe(" — needs 2 preparation in hand, spends none");
     expect(hint).not.toContain("costs");
   });
 
@@ -102,15 +135,17 @@ describe("costHint", () => {
       preparation: showYourKit.requiresPreparation! - 1,
     });
 
-    // The reducer will refuse this choice at that preparation level, and the
-    // hint is what tells the player why rather than leaving an inert button.
     expect(canChooseOption(state, showYourKit)).toBe(false);
-    expect(costHint(showYourKit)).toContain("needs 2 preparation in hand");
+    expect(costHint(state, showYourKit)).toContain(
+      "needs 2 preparation in hand",
+    );
   });
 
   it("keeps hp costs hidden, as intended", () => {
-    // wade-past is hpDelta -6 and spends nothing else.
-    expect(costHint(wadePast)).toBe("");
-    expect(costHint(reachIn)).toBe("");
+    const state = makeEncounterState();
+
+    // wade-past is hpDelta -6 and reach-in is -3; neither spends anything else.
+    expect(costHint(state, wadePast)).toBe("");
+    expect(costHint(state, reachIn)).toBe("");
   });
 });

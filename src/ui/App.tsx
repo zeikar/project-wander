@@ -19,7 +19,10 @@ function newSeed(): number {
 // in blood is left to be discovered.
 // Exported for its unit test: this file has no JSX-rendering harness, so the
 // pure string function is tested directly, the same way `leavesNoFood` is.
-export function costHint(option: EncounterOption): string {
+export function costHint(
+  state: GameState,
+  option: EncounterOption,
+): string {
   const costs: string[] = [];
   if (option.foodDelta < 0) {
     costs.push(`${-option.foodDelta} food`);
@@ -28,14 +31,37 @@ export function costHint(option: EncounterOption): string {
     costs.push(`${-option.preparationDelta} preparation`);
   }
   const spends = costs.length > 0 ? ` — costs ${costs.join(" and ")}` : "";
-  // A requirement is not a cost, and must not read like one: it asks what is
-  // still in the pack and takes none of it. Phrased separately so a player can
-  // tell "this is spent" from "this is what lets you do it at all" — and so a
-  // disabled option still explains why it is closed.
+
+  // Spending preparation is the one cost whose real consequence is invisible at
+  // the moment you pay it: it can shut a door at a LATER encounter that asks
+  // what you are still carrying. Playtest found nobody connected the two —
+  // "a single smoke-them at the bees would have silently deleted it. I never
+  // saw the game warn about that anywhere." Naming what SURVIVES the spend puts
+  // the opportunity cost on the screen where the choice is made. Only
+  // preparation gets this: food's own consequence is already covered by the
+  // leg-toll warning, so repeating it there would be noise.
+  // Guarded by canChooseOption for the same reason `leavesNoFood` is: on an
+  // option the player cannot afford, the arithmetic runs negative and a cold
+  // reader saw "costs 1 preparation (-1 left in hand)". A remainder is only
+  // meaningful for a spend that can actually happen.
+  // "leaves" rather than "left": at preparation 2 the phrase "1 left in hand"
+  // reads equally as "you hold 1" and "1 will remain", and the reader could not
+  // tell which until a different count disambiguated it.
+  const remaining =
+    option.preparationDelta < 0 && canChooseOption(state, option)
+      ? ` (leaves ${state.preparation + option.preparationDelta} in hand)`
+      : "";
+
+  // A requirement is not a cost and must not read like one. Playtest found the
+  // distinction was legible but not TRUSTED: a hoarder read it correctly and
+  // still took a 4 HP wound rather than risk being billed. So say outright that
+  // it spends nothing, rather than leaving the reader to infer it from the
+  // absence of the word "costs".
   const requires = option.requiresPreparation
-    ? ` — needs ${option.requiresPreparation} preparation in hand`
+    ? ` — needs ${option.requiresPreparation} preparation in hand, spends none`
     : "";
-  return `${spends}${requires}`;
+
+  return `${spends}${remaining}${requires}`;
 }
 
 // Unlike an option's authored hp cost, the leg's toll is a hazard this
@@ -161,7 +187,7 @@ function EncounterScreen({
             }
           >
             {option.label}
-            {costHint(option)}
+            {costHint(state, option)}
             {leavesNoFood(state, option) && (
               <span className="warning">
                 {" "}
