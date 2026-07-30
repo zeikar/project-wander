@@ -2,6 +2,7 @@ import { useReducer } from "react";
 import type { Dispatch } from "react";
 import { canChooseOption, reduce } from "../core/reducer";
 import { createInitialState } from "../core/game-state";
+import { arrivalText } from "../core/arrival";
 import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
@@ -25,6 +26,21 @@ function costHint(option: EncounterOption): string {
     costs.push(`${-option.preparationDelta} preparation`);
   }
   return costs.length > 0 ? ` — costs ${costs.join(" and ")}` : "";
+}
+
+// Unlike an option's authored hp cost, the leg's toll is a hazard this
+// milestone created by moving it to completion: choosing an option that
+// leaves no food behind means finishing this leg costs HP instead, decided at
+// the same click. Truthful warning about that, not about the hidden delta.
+// Guarded by canChooseOption so a disabled (unaffordable) option is never
+// described as costing HP it can't actually be chosen to spend.
+export function leavesNoFood(
+  state: GameState,
+  option: EncounterOption,
+): boolean {
+  return (
+    canChooseOption(state, option) && state.food + option.foodDelta === 0
+  );
 }
 
 // Deliberately kept as local components in this one file: at this size,
@@ -84,7 +100,9 @@ function TravelScreen({
         <p>The road ahead is unclear.</p>
       )}
       {state.food === 0 && (
-        <p className="warning">Traveling hungry will cost you HP.</p>
+        <p className="warning">
+          Finishing the leg without food will cost you HP.
+        </p>
       )}
       <button onClick={() => dispatch({ type: "TRAVEL" })}>Travel</button>
     </div>
@@ -128,6 +146,12 @@ function EncounterScreen({
           >
             {option.label}
             {costHint(option)}
+            {leavesNoFood(state, option) && (
+              <span className="warning">
+                {" "}
+                — finishing the leg will cost you HP
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -148,7 +172,10 @@ function JourneyCompleteScreen({
       {state.lastEncounterResult && (
         <p className="result-line">{state.lastEncounterResult}</p>
       )}
-      <p>{journey.arrival.description}</p>
+      <p>{arrivalText(state)}</p>
+      {state.log.length > 0 && (
+        <p>The road behind you: {state.log.join("; ")}.</p>
+      )}
       <StatRow state={state} />
       <button
         onClick={() => dispatch({ type: "START_JOURNEY", seed: newSeed() })}

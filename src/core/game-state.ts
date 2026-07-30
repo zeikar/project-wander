@@ -16,6 +16,7 @@ export interface GameState {
   rngState: number;
   activeEncounterId: string | null;
   lastEncounterResult: string | null;
+  log: readonly string[];
 }
 
 export const HUNGRY_TRAVEL_HP_LOSS = 3;
@@ -35,5 +36,6 @@ export function createInitialState(): GameState {
     rngState: 0,
     activeEncounterId: null,
     lastEncounterResult: null,
+    log: [],
   };
 }

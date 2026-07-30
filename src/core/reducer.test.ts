@@ -21,6 +21,7 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     rngState: 1,
     activeEncounterId: null,
     lastEncounterResult: null,
+    log: [],
     ...overrides,
   };
 }
@@ -104,7 +105,9 @@ function project(state: GameState) {
 const SCANNED_SEEDS = Array.from({ length: 200 }, (_, seed) => seed);
 
 describe("reduce", () => {
-  it("fed travel: consumes food, leaves hp unchanged, advances the leg", () => {
+  // The toll lands when the leg is finished, not when it is begun: a quiet leg
+  // completes inside TRAVEL, so the charge shows up in the same step.
+  it("completing a leg fed: consumes food, leaves hp unchanged, advances the leg", () => {
     const state = makeTravelingState({
       food: 2,
       hp: 20,
@@ -118,7 +121,7 @@ describe("reduce", () => {
     expect(next.legIndex).toBe(1);
   });
 
-  it("hungry travel: loses exactly HUNGRY_TRAVEL_HP_LOSS hp, food stays 0", () => {
+  it("completing a leg hungry: loses exactly HUNGRY_TRAVEL_HP_LOSS hp, food stays 0", () => {
     const state = makeTravelingState({
       food: 0,
       hp: 20,
@@ -129,6 +132,7 @@ describe("reduce", () => {
 
     expect(next.hp).toBe(20 - HUNGRY_TRAVEL_HP_LOSS);
     expect(next.food).toBe(0);
+    expect(next.legIndex).toBe(1);
   });
 
   it("ignores TRAVEL outside the traveling phase, returning the same state reference", () => {
@@ -167,6 +171,9 @@ describe("reduce", () => {
       preparation: 0,
       legIndex: 2,
       lastEncounterResult: "a bad afternoon",
+      log: [
+        "Gray Shapes Between the Pines — Light one of your prepared pitch torches",
+      ],
     });
     const next = reduce(state, { type: "START_JOURNEY", seed: 9 });
 
@@ -177,6 +184,7 @@ describe("reduce", () => {
     expect(next.legIndex).toBe(0);
     expect(next.activeEncounterId).toBeNull();
     expect(next.lastEncounterResult).toBeNull();
+    expect(next.log).toEqual([]);
   });
 
   it("is deterministic and does not mutate its input", () => {
@@ -205,7 +213,8 @@ describe("travel encounters", () => {
     expect(next.phase).toBe("encounter");
     expect(next.activeEncounterId).toBe(expected.id);
     expect(next.legIndex).toBe(state.legIndex);
-    expect(next.food).toBe(state.food - 1);
+    expect(next.food).toBe(state.food);
+    expect(next.hp).toBe(state.hp);
     expect(next.rngState).toBe(selection.nextState);
   });
 
@@ -219,6 +228,19 @@ describe("travel encounters", () => {
     expect(next.rngState).toBe(rollRandom(state.rngState).nextState);
   });
 
+  it("leaves the log untouched on a quiet leg", () => {
+    const inputLog = ["a stretch already behind you"];
+    const state = makeTravelingState({
+      rngState: findRngState(false),
+      log: inputLog,
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.log).toEqual(inputLog);
+    expect(next.log).toBe(inputLog);
+  });
+
   it("clears a stale encounter result when travel resumes", () => {
     const state = makeTravelingState({
       rngState: findRngState(false),
@@ -230,15 +252,82 @@ describe("travel encounters", () => {
     expect(next.lastEncounterResult).toBeNull();
   });
 
-  it("starving ends the journey without spending a roll", () => {
-    const state = makeTravelingState({ hp: 3, food: 0 });
+  it("starving at leg completion ends the journey after the roll", () => {
+    const state = makeTravelingState({
+      hp: HUNGRY_TRAVEL_HP_LOSS,
+      food: 0,
+      legIndex: 0,
+      rngState: findRngState(false),
+    });
 
     const next = reduce(state, { type: "TRAVEL" });
 
     expect(next.hp).toBe(0);
     expect(next.phase).toBe("defeated");
-    expect(next.rngState).toBe(state.rngState);
-    expect(next.legIndex).toBe(state.legIndex);
+    // The road is walked before it is paid for, so the trigger roll is spent.
+    expect(next.rngState).toBe(rollRandom(state.rngState).nextState);
+    expect(next.legIndex).toBe(1);
+    expect(next.lastEncounterResult).toBeNull();
+  });
+
+  it("a starving traveler still reaches the encounter waiting on that leg", () => {
+    const state = makeTravelingState({
+      hp: HUNGRY_TRAVEL_HP_LOSS,
+      food: 0,
+      rngState: findRngState(true),
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.phase).toBe("encounter");
+    expect(next.hp).toBe(3);
+    expect(next.food).toBe(0);
+  });
+
+  it("the final leg is charged like any other", () => {
+    const state = makeTravelingState({
+      legIndex: journey.legs.length - 1,
+      food: 2,
+      hp: 20,
+      rngState: findRngState(false),
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.phase).toBe("arrived");
+    expect(next.food).toBe(1);
+    expect(next.hp).toBe(20);
+    expect(next.legIndex).toBe(journey.legs.length);
+  });
+
+  it("starving on the last stretch dies within sight of the village", () => {
+    const state = makeTravelingState({
+      legIndex: journey.legs.length - 1,
+      food: 0,
+      hp: HUNGRY_TRAVEL_HP_LOSS,
+      rngState: findRngState(false),
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.phase).toBe("defeated");
+    expect(next.hp).toBe(0);
+    expect(next.legIndex).toBe(journey.legs.length);
+    expect(next.lastEncounterResult).toBeNull();
+  });
+
+  it("arrives hungry but alive when the last toll leaves hp to spare", () => {
+    const state = makeTravelingState({
+      legIndex: journey.legs.length - 1,
+      food: 0,
+      hp: HUNGRY_TRAVEL_HP_LOSS + 2,
+      rngState: findRngState(false),
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.phase).toBe("arrived");
+    expect(next.hp).toBe(HUNGRY_TRAVEL_HP_LOSS + 2 - HUNGRY_TRAVEL_HP_LOSS);
   });
 
   it("ignores TRAVEL during an encounter, returning the same state reference", () => {
@@ -271,12 +360,37 @@ describe("encounter choices", () => {
     });
 
     expect(next.hp).toBe(17);
-    expect(next.food).toBe(2);
+    // Two fists of comb, minus the leg's toll when the day finally ends.
+    expect(next.food).toBe(1);
     expect(next.preparation).toBe(3);
     expect(next.phase).toBe("traveling");
     expect(next.legIndex).toBe(2);
     expect(next.activeEncounterId).toBeNull();
     expect(next.lastEncounterResult).toBe(reachIn?.resultText);
+  });
+
+  it("appends exactly one log entry for the chosen option, without mutating the input log", () => {
+    const inputLog = ["an earlier stretch of road"];
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "bee-hollow",
+      hp: 20,
+      food: 0,
+      preparation: 3,
+      legIndex: 1,
+      log: inputLog,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "reach-in",
+    });
+
+    expect(next.log).toEqual([
+      "an earlier stretch of road",
+      "A Humming Hollow — Reach in bare-handed for the comb",
+    ]);
+    expect(inputLog).toEqual(["an earlier stretch of road"]);
   });
 
   it("ignores an option the player cannot pay for, returning the same state reference", () => {
@@ -329,6 +443,51 @@ describe("encounter choices", () => {
     expect(next.hp).toBe(0);
     expect(next.phase).toBe("defeated");
     expect(next.legIndex).toBe(1);
+    // The leg was never finished, so the road never collected its toll.
+    expect(next.food).toBe(state.food);
+  });
+
+  it("spending an option's last food is the same click that can starve you at leg completion", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: HUNGRY_TRAVEL_HP_LOSS,
+      food: 1,
+      preparation: 1,
+      legIndex: 1,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "share-food",
+    });
+
+    expect(next.food).toBe(0);
+    expect(next.hp).toBe(0);
+    expect(next.phase).toBe("defeated");
+    expect(next.legIndex).toBe(2);
+  });
+
+  it("surviving the encounter but starving that evening still ends the journey", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: HUNGRY_TRAVEL_HP_LOSS,
+      food: 0,
+      preparation: 1,
+      legIndex: 1,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "light-torch",
+    });
+
+    expect(next.hp).toBe(0);
+    expect(next.phase).toBe("defeated");
+    expect(next.legIndex).toBe(2);
+    expect(next.preparation).toBe(0);
+    expect(next.lastEncounterResult).toBeNull();
   });
 });
 
@@ -361,6 +520,9 @@ describe("full journeys", () => {
   // any change to the PRNG, ENCOUNTER_CHANCE, content deltas, or the number of
   // authored encounters (which shifts what the selection roll picks) — update
   // it only when such a change is deliberate.
+  // Re-recorded when the travel toll moved from the start of a leg to its
+  // completion: the encounter row now carries the food that leg will spend
+  // later, so only that row's food column changed.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
@@ -368,7 +530,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 20,
         food: 2,
-        preparation: 3,
+        preparation: 2,
         legIndex: 0,
       },
       {
@@ -376,15 +538,15 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 20,
         food: 1,
-        preparation: 3,
+        preparation: 2,
         legIndex: 1,
       },
       {
         phase: "encounter",
         activeEncounterId: "pine-shadows",
         hp: 20,
-        food: 0,
-        preparation: 3,
+        food: 1,
+        preparation: 2,
         legIndex: 1,
       },
       {
@@ -392,7 +554,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 20,
         food: 0,
-        preparation: 2,
+        preparation: 1,
         legIndex: 2,
       },
       {
@@ -400,7 +562,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 17,
         food: 0,
-        preparation: 2,
+        preparation: 1,
         legIndex: 3,
       },
       {
@@ -408,7 +570,7 @@ describe("full journeys", () => {
         activeEncounterId: null,
         hp: 14,
         food: 0,
-        preparation: 2,
+        preparation: 1,
         legIndex: 4,
       },
     ]);
