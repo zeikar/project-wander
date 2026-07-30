@@ -25,9 +25,31 @@ body {
   color: #e0a030;
 }
 
+.result-line {
+  color: #aaa;
+  font-style: italic;
+}
+
+.encounter-options {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Options read as one list of choices, so they share a width instead of
+   each hugging its own label. */
+.encounter-options button {
+  text-align: left;
+}
+
 button {
   font-size: 1rem;
   padding: 0.5rem 1rem;
   margin-top: 1rem;
   cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
