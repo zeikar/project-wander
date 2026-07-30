@@ -584,12 +584,17 @@ describe("full journeys", () => {
   // Re-recorded when the travel toll moved from the start of a leg to its
   // completion: the encounter row now carries the food that leg will spend
   // later, so only that row's food column changed.
+  // Re-recorded again for milestone 4, deliberately: `journey.start.hp` dropped
+  // from 20 to 14 so the arrival thresholds could bind, which shifts every hp
+  // column by six. The choices along this line did not change — `show-your-kit`
+  // is appended after `light-torch`, and prudent keeps the first of equal
+  // hpDeltas, so this trace still spends a torch at the pines.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 20,
+        hp: 14,
         food: 2,
         preparation: 2,
         legIndex: 0,
@@ -597,7 +602,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 20,
+        hp: 14,
         food: 1,
         preparation: 2,
         legIndex: 1,
@@ -605,7 +610,7 @@ describe("full journeys", () => {
       {
         phase: "encounter",
         activeEncounterId: "pine-shadows",
-        hp: 20,
+        hp: 14,
         food: 1,
         preparation: 2,
         legIndex: 1,
@@ -613,7 +618,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 20,
+        hp: 14,
         food: 0,
         preparation: 1,
         legIndex: 2,
@@ -621,7 +626,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 17,
+        hp: 11,
         food: 0,
         preparation: 1,
         legIndex: 3,
@@ -629,7 +634,7 @@ describe("full journeys", () => {
       {
         phase: "arrived",
         activeEncounterId: null,
-        hp: 14,
+        hp: 8,
         food: 0,
         preparation: 1,
         legIndex: 4,
