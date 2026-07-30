@@ -22,6 +22,7 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     rngState: 1,
     activeEncounterId: null,
     lastEncounterResult: null,
+    lastRoadToll: null,
     log: [],
     ...overrides,
   };
@@ -568,6 +569,107 @@ describe("encounter choices", () => {
     expect(next.legIndex).toBe(2);
     expect(next.preparation).toBe(0);
     expect(next.lastEncounterResult).toBeNull();
+  });
+});
+
+// Playtest finding: three of four simulated players reported the boar costing
+// 9 HP. It costs 6; the road's hunger toll supplied the other 3, applied by the
+// same click and narrated nowhere. Players were learning a false fact about the
+// animal, which defeats the deliberate choice to hide HP costs and let injury
+// teach. The road now says what it took, in its own line.
+describe("the road reports its own toll separately from the animal", () => {
+  it("names the meal it took when the traveler is fed", () => {
+    const state = makeTravelingState({
+      food: 2,
+      rngState: findRngState(false),
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.lastRoadToll).toBe(journey.road.fed);
+    expect(next.food).toBe(1);
+  });
+
+  it("names the miles instead when there is nothing left to eat", () => {
+    const state = makeTravelingState({
+      food: 0,
+      hp: 14,
+      rngState: findRngState(false),
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.lastRoadToll).toBe(journey.road.hungry);
+    expect(next.hp).toBe(14 - HUNGRY_TRAVEL_HP_LOSS);
+  });
+
+  // The whole point: after a wound AND a toll land on one click, the two causes
+  // are separately attributable rather than summed into one unexplained number.
+  it("reports the animal and the road as two distinct lines after one choice", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "ford-boar",
+      hp: 14,
+      food: 0,
+      legIndex: 1,
+    });
+    const wadePast = encounters
+      .find((encounter) => encounter.id === "ford-boar")!
+      .options.find((option) => option.id === "wade-past")!;
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "wade-past",
+    });
+
+    expect(next.lastEncounterResult).toBe(wadePast.resultText);
+    expect(next.lastRoadToll).toBe(journey.road.hungry);
+    // 6 from the boar, 3 from the road — and now each line owns its share.
+    expect(next.hp).toBe(14 + wadePast.hpDelta - HUNGRY_TRAVEL_HP_LOSS);
+  });
+
+  it("does not carry a stale toll onto a new encounter screen", () => {
+    const state = makeTravelingState({
+      rngState: findRngState(true),
+      lastRoadToll: journey.road.fed,
+    });
+
+    const next = reduce(state, { type: "TRAVEL" });
+
+    expect(next.phase).toBe("encounter");
+    // Entering an encounter completes no leg, so nothing has been charged yet.
+    expect(next.lastRoadToll).toBeNull();
+  });
+
+  it("keeps the road's line on a starvation defeat, and drops the animal's", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: HUNGRY_TRAVEL_HP_LOSS,
+      food: 0,
+      preparation: 1,
+      legIndex: 1,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "light-torch",
+    });
+
+    expect(next.phase).toBe("defeated");
+    expect(next.lastEncounterResult).toBeNull();
+    expect(next.lastRoadToll).toBe(journey.road.hungry);
+  });
+
+  it("clears the toll when a new journey starts", () => {
+    const state = makeTravelingState({
+      phase: "arrived",
+      lastRoadToll: journey.road.fed,
+    });
+
+    const next = reduce(state, { type: "START_JOURNEY", seed: 4 });
+
+    expect(next.lastRoadToll).toBeNull();
   });
 });
 

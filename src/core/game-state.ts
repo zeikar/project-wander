@@ -16,6 +16,11 @@ export interface GameState {
   rngState: number;
   activeEncounterId: string | null;
   lastEncounterResult: string | null;
+  // What the ROAD just charged, kept separate from what an animal just did.
+  // Both are applied by the same click, so merging them into one line made
+  // players attribute the road's hunger damage to the animal — they read the
+  // boar as costing 9 when it costs 6.
+  lastRoadToll: string | null;
   log: readonly string[];
 }
 
@@ -36,6 +41,7 @@ export function createInitialState(): GameState {
     rngState: 0,
     activeEncounterId: null,
     lastEncounterResult: null,
+    lastRoadToll: null,
     log: [],
   };
 }

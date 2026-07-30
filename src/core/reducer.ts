@@ -38,6 +38,10 @@ function completeLeg(state: GameState): GameState {
     food: fed ? state.food - 1 : state.food,
     hp: fed ? state.hp : Math.max(0, state.hp - HUNGRY_TRAVEL_HP_LOSS),
     legIndex: nextLegIndex,
+    // Always reported, and always as the road's own line. An encounter and the
+    // toll are applied by the same click, so leaving this silent made the
+    // animal look responsible for damage the miles did.
+    lastRoadToll: fed ? journey.road.fed : journey.road.hungry,
   };
 
   // Checked before the arrival transition, so arriving and starving are
@@ -72,6 +76,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         rngState: action.seed >>> 0,
         activeEncounterId: null,
         lastEncounterResult: null,
+        lastRoadToll: null,
         log: [],
       };
     }
@@ -103,6 +108,11 @@ export function reduce(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         lastEncounterResult: null,
+        // This path does NOT complete a leg, so nothing has been tolled yet.
+        // Without clearing, the previous leg's toll would still be on screen
+        // while the player reads a new encounter — attributing an old charge to
+        // an animal they have not answered.
+        lastRoadToll: null,
         rngState: selection.nextState,
         phase: "encounter",
         activeEncounterId: encounter.id,

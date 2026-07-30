@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 import type { Dispatch } from "react";
 import { canChooseOption, reduce } from "../core/reducer";
-import { createInitialState } from "../core/game-state";
+import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
 import { arrivalEnding } from "../core/arrival";
 import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
@@ -98,6 +98,11 @@ function TravelScreen({
       {state.lastEncounterResult && (
         <p className="result-line">{state.lastEncounterResult}</p>
       )}
+      {/* The road's charge gets its own line, directly under the animal's, so
+          the player can tell which of the two took what. */}
+      {state.lastRoadToll && (
+        <p className="result-line">{state.lastRoadToll}</p>
+      )}
       <p className="leg-progress">
         Leg {state.legIndex + 1} of {journey.legs.length}
       </p>
@@ -111,7 +116,8 @@ function TravelScreen({
       )}
       {state.food === 0 && (
         <p className="warning">
-          Finishing the leg without food will cost you HP.
+          Finishing the leg without food will cost you {HUNGRY_TRAVEL_HP_LOSS}{" "}
+          HP.
         </p>
       )}
       <button onClick={() => dispatch({ type: "TRAVEL" })}>Travel</button>
@@ -159,7 +165,7 @@ function EncounterScreen({
             {leavesNoFood(state, option) && (
               <span className="warning">
                 {" "}
-                — finishing the leg will cost you HP
+                — finishing the leg will cost you {HUNGRY_TRAVEL_HP_LOSS} HP
               </span>
             )}
           </button>
@@ -183,6 +189,9 @@ function JourneyCompleteScreen({
       <h1>{journey.arrival.name}</h1>
       {state.lastEncounterResult && (
         <p className="result-line">{state.lastEncounterResult}</p>
+      )}
+      {state.lastRoadToll && (
+        <p className="result-line">{state.lastRoadToll}</p>
       )}
       <h2>{ending.label}</h2>
       <p>{ending.text}</p>
@@ -209,10 +218,20 @@ function DefeatedScreen({
   return (
     <div className="screen">
       <h1>The Road Ends Here</h1>
-      <p className="result-line">
-        {state.lastEncounterResult ??
-          "Hunger and the miles take the last of your strength."}
-      </p>
+      {/* Whichever of the two actually finished you says so in its own words:
+          an animal death carries the encounter's line, a starvation death
+          carries the road's. The fallback is defensive only. */}
+      {state.lastEncounterResult && (
+        <p className="result-line">{state.lastEncounterResult}</p>
+      )}
+      {state.lastRoadToll && (
+        <p className="result-line">{state.lastRoadToll}</p>
+      )}
+      {!state.lastEncounterResult && !state.lastRoadToll && (
+        <p className="result-line">
+          Hunger and the miles take the last of your strength.
+        </p>
+      )}
       <p>
         You never see {journey.arrival.name}. It stays a name in other people's
         stories.
