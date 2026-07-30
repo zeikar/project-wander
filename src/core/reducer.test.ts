@@ -6,6 +6,7 @@ import {
   createInitialState,
 } from "./game-state";
 import { canChooseOption, reduce } from "./reducer";
+import { arrivalEnding } from "./arrival";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
 import { encounters } from "../content/encounters";
@@ -67,6 +68,24 @@ const reckless: OptionPolicy = (state) =>
   affordableOptions(state).reduce((worst, option) =>
     option.hpDelta < worst.hpDelta ? option : worst,
   ).id;
+
+// Two more policies, needed only so the ending-reachability scan below can span
+// the arrival outcomes: `prudent` and `reckless` alone never arrive stripped of
+// everything while still on their feet.
+const hoarding: OptionPolicy = (state) => {
+  const options = affordableOptions(state);
+  return (options.find((option) => option.preparationDelta >= 0) ?? options[0]!)
+    .id;
+};
+
+const spendthrift: OptionPolicy = (state) => {
+  const options = affordableOptions(state);
+  return (
+    options.find((option) => option.preparationDelta < 0) ??
+    options.find((option) => option.foodDelta < 0) ??
+    options[0]!
+  ).id;
+};
 
 // Plays a whole journey from a seed and returns every state along the way. The
 // step bound doubles as a proof that no state can leave the player stuck.
@@ -575,6 +594,31 @@ describe("full journeys", () => {
 
   it("replays identically from the same seed", () => {
     expect(playJourney(3, prudent)).toEqual(playJourney(3, prudent));
+  });
+
+  // Every authored arrival ending has to be something a real journey can end in.
+  // arrival.test.ts proves the selector branches from fabricated states, which
+  // cannot show that the reducer ever produces them — an ending stranded by
+  // retuning would leave that suite green while the prose went dead. Defeat is
+  // not included here; the reckless-loss test above already covers it.
+  it("can end in every authored arrival ending", () => {
+    const reached = new Set<string>();
+
+    for (const seed of SCANNED_SEEDS) {
+      for (const policy of [prudent, reckless, hoarding, spendthrift]) {
+        const end = playJourney(seed, policy).at(-1)!;
+        if (end.phase === "arrived") {
+          reached.add(arrivalEnding(end));
+        }
+      }
+    }
+
+    expect([...reached].sort()).toEqual([
+      "arrived",
+      "limped",
+      "spent",
+      "travelOn",
+    ]);
   });
 
   // Golden trace: recorded by running this journey. It intentionally breaks on
