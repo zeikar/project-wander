@@ -84,7 +84,9 @@ function TravelScreen({
         <p>The road ahead is unclear.</p>
       )}
       {state.food === 0 && (
-        <p className="warning">Traveling hungry will cost you HP.</p>
+        <p className="warning">
+          Finishing the leg without food will cost you HP.
+        </p>
       )}
       <button onClick={() => dispatch({ type: "TRAVEL" })}>Travel</button>
     </div>
