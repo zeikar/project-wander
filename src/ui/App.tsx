@@ -2,6 +2,7 @@ import { useReducer } from "react";
 import type { Dispatch } from "react";
 import { canChooseOption, reduce } from "../core/reducer";
 import { createInitialState } from "../core/game-state";
+import { arrivalText } from "../core/arrival";
 import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
@@ -150,7 +151,7 @@ function JourneyCompleteScreen({
       {state.lastEncounterResult && (
         <p className="result-line">{state.lastEncounterResult}</p>
       )}
-      <p>{journey.arrival.description}</p>
+      <p>{arrivalText(state)}</p>
       {state.log.length > 0 && (
         <p>The road behind you: {state.log.join("; ")}.</p>
       )}

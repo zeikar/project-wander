@@ -6,7 +6,16 @@ export interface JourneyLeg {
 export interface Journey {
   start: { hp: number; food: number; preparation: number };
   legs: readonly JourneyLeg[];
-  arrival: { name: string; description: string };
+  arrival: {
+    name: string;
+    variants: {
+      unmarked: string;
+      limped: string;
+      provisioned: string;
+      wellStocked: string;
+      default: string;
+    };
+  };
 }
 
 // The one journey for the prototype vertical slice: a short walk from a
@@ -38,7 +47,17 @@ export const journey: Journey = {
   ],
   arrival: {
     name: "Alderbrook",
-    description:
-      "Alderbrook turns out to be smaller than the stories made it sound: a mill, a shrine with a chipped bell, and a few dozen roofs. A dog barks twice at you and loses interest.",
+    variants: {
+      unmarked:
+        "Alderbrook's gate is only a gap in the hedge, and you're through it before you've had time to feel it. Someone's wash hangs drying on the shrine steps, and no one minds you stepping around it. You reach the inn with light still in the sky and order supper you didn't feel you'd earned.",
+      limped:
+        "Alderbrook comes into view a roof at a time, and you count every one of them between rests. By the shrine's chipped bell, you sit down harder than you meant to. A woman sorting onions brings you water without being asked.",
+      provisioned:
+        "The mill wheel is still grinding when you walk into Alderbrook, loud over the water. Your pack still swings heavy with food you never had to touch. The miller's boy eyeballs it and asks if you got lost on the way.",
+      wellStocked:
+        "You still have everything you packed when you walk into Alderbrook: the bait, the tinder, the torches, ready as ever. Your preparation is exactly what it was the day you left, however the road tried it. You end up handing half of it to the shrine keeper, who looks like she's been waiting for exactly this.",
+      default:
+        "Alderbrook turns out to be smaller than the stories made it sound: a mill, a shrine with a chipped bell, and a few dozen roofs. A dog barks twice at you and loses interest.",
+    },
   },
 };
