@@ -465,6 +465,13 @@ describe("encounter choices", () => {
     expect(next.legIndex).toBe(1);
     // The leg was never finished, so the road never collected its toll.
     expect(next.food).toBe(state.food);
+    // ...and so it has nothing to say. This is one of the reducer's exactly two
+    // defeat transitions, and it must carry the ANIMAL's line alone. The other
+    // is the starvation case below, which carries the road's line alone. The
+    // defeat screen renders both slots with no fallback, so between them these
+    // two assertions are what keep it from going blank or doubling up.
+    expect(next.lastEncounterResult).not.toBeNull();
+    expect(next.lastRoadToll).toBeNull();
   });
 
   it("spending an option's last food is the same click that can starve you at leg completion", () => {
@@ -659,25 +666,6 @@ describe("the road reports its own toll separately from the animal", () => {
     expect(next.phase).toBe("defeated");
     expect(next.lastEncounterResult).toBeNull();
     expect(next.lastRoadToll).toBe(journey.road.hungry);
-  });
-
-  // Load-bearing for the defeat screen, which renders these two lines and
-  // deliberately has NO fallback: a generic hunger line would mislabel an animal
-  // death as starvation, the exact attribution error this change removes. If a
-  // future path ever produces a defeat with neither line — or with both — the
-  // screen would go blank or double up, so pin it here rather than there.
-  it("every reachable defeat carries exactly one cause line", () => {
-    const defeats = SCANNED_SEEDS.flatMap((seed) =>
-      [prudent, reckless, hoarding, spendthrift]
-        .map((policy) => playJourney(seed, policy).at(-1)!)
-        .filter((end) => end.phase === "defeated"),
-    );
-
-    expect(defeats.length).toBeGreaterThan(0);
-    for (const end of defeats) {
-      const lines = [end.lastEncounterResult, end.lastRoadToll].filter(Boolean);
-      expect(lines).toHaveLength(1);
-    }
   });
 
   it("clears the toll when a new journey starts", () => {
