@@ -53,9 +53,9 @@ export const journey: Journey = {
       limped:
         "Alderbrook comes into view a roof at a time, and you count every one of them between rests. By the shrine's chipped bell, you sit down harder than you meant to. A woman sorting onions brings you water without being asked.",
       provisioned:
-        "The mill wheel is still grinding when you walk into Alderbrook, loud over the water. Your pack still swings heavy with food you never had to touch. The miller's boy eyeballs it and asks if you got lost on the way.",
+        "The mill wheel is still grinding when you walk into Alderbrook, loud over the water. Your pack still swings heavy with food, however much of it the road took and gave back along the way. The miller's boy eyeballs it and asks if you got lost on the way.",
       wellStocked:
-        "You still have everything you packed when you walk into Alderbrook: the bait, the tinder, the torches, ready as ever. Your preparation is exactly what it was the day you left, however the road tried it. You end up handing half of it to the shrine keeper, who looks like she's been waiting for exactly this.",
+        "Alderbrook's rooftops catch the last of the day's light as you walk in, pack still swinging at your hip. Your preparation sits at the exact count you started with, whatever the road swapped in and out of it. You end up handing half of it to the shrine keeper, who looks like she's been waiting for exactly this.",
       default:
         "Alderbrook turns out to be smaller than the stories made it sound: a mill, a shrine with a chipped bell, and a few dozen roofs. A dog barks twice at you and loses interest.",
     },

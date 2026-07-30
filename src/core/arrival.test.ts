@@ -47,6 +47,22 @@ describe("arrivalText", () => {
     expect(arrivalText(state)).toBe(journey.arrival.variants.wellStocked);
   });
 
+  it("selects wellStocked when preparation was spent and later restored to the starting count", () => {
+    // scatter-bait spends 1, leave-it regains 1: the count matches, even
+    // though preparation was genuinely touched along the way.
+    const state = makeArrivedState({
+      hp: 14,
+      food: 0,
+      preparation: journey.start.preparation,
+      log: [
+        "A Boar in the Ford — Scatter some of your prepared bait downstream",
+        "A Humming Hollow — Leave the tree its honey",
+      ],
+    });
+
+    expect(arrivalText(state)).toBe(journey.arrival.variants.wellStocked);
+  });
+
   it("selects default when none of the other facts hold", () => {
     const state = makeArrivedState({
       hp: 14,

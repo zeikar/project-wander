@@ -447,6 +447,27 @@ describe("encounter choices", () => {
     expect(next.food).toBe(state.food);
   });
 
+  it("spending an option's last food is the same click that can starve you at leg completion", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: HUNGRY_TRAVEL_HP_LOSS,
+      food: 1,
+      preparation: 1,
+      legIndex: 1,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "share-food",
+    });
+
+    expect(next.food).toBe(0);
+    expect(next.hp).toBe(0);
+    expect(next.phase).toBe("defeated");
+    expect(next.legIndex).toBe(2);
+  });
+
   it("surviving the encounter but starving that evening still ends the journey", () => {
     const state = makeTravelingState({
       phase: "encounter",

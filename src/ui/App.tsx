@@ -28,6 +28,21 @@ function costHint(option: EncounterOption): string {
   return costs.length > 0 ? ` — costs ${costs.join(" and ")}` : "";
 }
 
+// Unlike an option's authored hp cost, the leg's toll is a hazard this
+// milestone created by moving it to completion: choosing an option that
+// leaves no food behind means finishing this leg costs HP instead, decided at
+// the same click. Truthful warning about that, not about the hidden delta.
+// Guarded by canChooseOption so a disabled (unaffordable) option is never
+// described as costing HP it can't actually be chosen to spend.
+export function leavesNoFood(
+  state: GameState,
+  option: EncounterOption,
+): boolean {
+  return (
+    canChooseOption(state, option) && state.food + option.foodDelta === 0
+  );
+}
+
 // Deliberately kept as local components in this one file: at this size,
 // separate screen files would be fragmentation, not organization.
 
@@ -131,6 +146,12 @@ function EncounterScreen({
           >
             {option.label}
             {costHint(option)}
+            {leavesNoFood(state, option) && (
+              <span className="warning">
+                {" "}
+                — finishing the leg will cost you HP
+              </span>
+            )}
           </button>
         ))}
       </div>
