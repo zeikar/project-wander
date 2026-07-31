@@ -15,8 +15,7 @@ function newSeed(): number {
   return (Math.random() * 0x100000000) >>> 0;
 }
 
-// Only what an option spends, so the player can weigh the price. What it costs
-// in blood is left to be discovered.
+// Shows food and preparation costs and gains; hides every HP delta.
 // Exported for its unit test: this file has no JSX-rendering harness, so the
 // pure string function is tested directly, the same way `leavesNoFood` is.
 export function costHint(
@@ -30,7 +29,19 @@ export function costHint(
   if (option.preparationDelta < 0) {
     costs.push(`${-option.preparationDelta} preparation`);
   }
-  const spends = costs.length > 0 ? ` — costs ${costs.join(" and ")}` : "";
+
+  // Gains were unlabelled while costs were spelled out, and nobody had decided
+  // that — hiding HP is deliberate design, hiding a payout was just an omission.
+  // A planning reader under-predicted the hollow's return twice in a row:
+  // "Costs are stated on the label; gains are not stated anywhere." HP stays out
+  // in BOTH directions, so the one deliberate secret is still kept.
+  const gains: string[] = [];
+  if (option.foodDelta > 0) {
+    gains.push(`${option.foodDelta} food`);
+  }
+  if (option.preparationDelta > 0) {
+    gains.push(`${option.preparationDelta} preparation`);
+  }
 
   // Spending preparation is the one cost whose real consequence is invisible at
   // the moment you pay it: it can shut a door at a LATER encounter that asks
@@ -52,6 +63,15 @@ export function costHint(
       ? ` (leaves ${state.preparation + option.preparationDelta} in hand)`
       : "";
 
+  // Costs and gains are the same ledger, so they share one clause; the
+  // requirement is a different kind of statement and keeps its own.
+  const ledger = [
+    costs.length > 0 ? `costs ${costs.join(" and ")}${remaining}` : "",
+    gains.length > 0 ? `gains ${gains.join(" and ")}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   // A requirement is not a cost and must not read like one. Playtest found the
   // distinction was legible but not TRUSTED: a hoarder read it correctly and
   // still took a 4 HP wound rather than risk being billed. So say outright that
@@ -61,7 +81,7 @@ export function costHint(
     ? ` — needs ${option.requiresPreparation} preparation in hand, spends none`
     : "";
 
-  return `${spends}${remaining}${requires}`;
+  return `${ledger ? ` — ${ledger}` : ""}${requires}`;
 }
 
 // Unlike an option's authored hp cost, the leg's toll is a hazard this
