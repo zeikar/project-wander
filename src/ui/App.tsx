@@ -15,15 +15,7 @@ function newSeed(): number {
   return (Math.random() * 0x100000000) >>> 0;
 }
 
-// The contract, in one line: food and preparation are stated in BOTH
-// directions; HP is stated in NEITHER.
-//
-// What an option does to the pack is arithmetic the player is entitled to do
-// before choosing — so costs, gains, and what a spend leaves behind all show.
-// What an animal does to your body is the one thing left to be discovered by
-// doing it, which is why no `hpDelta` ever reaches this string in either
-// direction: printing a gain but hiding a loss would be a tell.
-//
+// Shows food and preparation costs and gains; hides every HP delta.
 // Exported for its unit test: this file has no JSX-rendering harness, so the
 // pure string function is tested directly, the same way `leavesNoFood` is.
 export function costHint(
