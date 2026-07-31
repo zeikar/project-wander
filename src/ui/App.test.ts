@@ -35,7 +35,13 @@ const wadePast = fordBoar.options.find(
 )!; // foodDelta 0
 const reachIn = beeHollow.options.find(
   (option) => option.id === "reach-in",
-)!; // foodDelta +2
+)!; // hpDelta -3, foodDelta +2
+const smokeThem = beeHollow.options.find(
+  (option) => option.id === "smoke-them",
+)!; // preparationDelta -1, foodDelta +2
+const leaveIt = beeHollow.options.find(
+  (option) => option.id === "leave-it",
+)!; // preparationDelta +1
 const pineShadows = encounters.find(
   (encounter) => encounter.id === "pine-shadows",
 )!;
@@ -141,11 +147,29 @@ describe("costHint", () => {
     );
   });
 
-  it("keeps hp costs hidden, as intended", () => {
+  // The one deliberate secret, and the line it is drawn on: HP is hidden in BOTH
+  // directions, while food and preparation are stated in both. Discovery of what
+  // an animal does to you is the design; hiding a payout was never decided.
+  it("keeps hp hidden while stating food and preparation", () => {
     const state = makeEncounterState();
 
-    // wade-past is hpDelta -6 and reach-in is -3; neither spends anything else.
+    // wade-past is hpDelta -6 and spends nothing else, so it says nothing.
     expect(costHint(state, wadePast)).toBe("");
-    expect(costHint(state, reachIn)).toBe("");
+    // reach-in is hpDelta -3 AND foodDelta +2: the food shows, the blood does not.
+    expect(costHint(state, reachIn)).toBe(" — gains 2 food");
+    expect(costHint(state, reachIn)).not.toContain("3");
+  });
+
+  // Regression: a planning reader under-predicted the hollow twice in a row
+  // because gains were unlabelled — "Costs are stated on the label; gains are
+  // not stated anywhere."
+  it("names what an option gives back", () => {
+    const state = makeEncounterState({ preparation: 2 });
+
+    expect(costHint(state, leaveIt)).toBe(" — gains 1 preparation");
+    // smoke-them both spends and gives, so it carries one ledger clause.
+    expect(costHint(state, smokeThem)).toBe(
+      " — costs 1 preparation (leaves 1 in hand), gains 2 food",
+    );
   });
 });
