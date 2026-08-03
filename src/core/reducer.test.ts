@@ -730,6 +730,55 @@ describe("full journeys", () => {
     ]);
   });
 
+  // The balance property `journey.start.food` was raised to fix, guarded directly
+  // rather than by proxy. Reaching an ending at all says nothing about whether the
+  // BEST one was ever on offer: at start.food 2 the road charged two hungry legs
+  // to any run that met no bee hollow, capping hp at 8 against a TRAVEL_ON_HP_MIN
+  // of 9, so travelOn was unreachable by every line of play on most seeds — and
+  // no screen distinguished a run you lost from one you were never allowed to
+  // win. `some` short-circuits on the first line that gets there, so this walks
+  // the full option tree only for the seeds that are genuinely locked out.
+  it("leaves the best ending reachable on most seeds", () => {
+    function canReachTravelOn(state: GameState): boolean {
+      switch (state.phase) {
+        case "defeated":
+          return false;
+        case "arrived":
+          return arrivalEnding(state) === "travelOn";
+        case "traveling":
+          return canReachTravelOn(reduce(state, { type: "TRAVEL" }));
+        default: {
+          const encounter = encounters.find(
+            (candidate) => candidate.id === state.activeEncounterId,
+          )!;
+          return encounter.options.some(
+            (option) =>
+              canChooseOption(state, option) &&
+              canReachTravelOn(
+                reduce(state, {
+                  type: "CHOOSE_ENCOUNTER_OPTION",
+                  optionId: option.id,
+                }),
+              ),
+          );
+        }
+      }
+    }
+
+    const lockedOut = SCANNED_SEEDS.filter(
+      (seed) =>
+        !canReachTravelOn(
+          reduce(createInitialState(), { type: "START_JOURNEY", seed }),
+        ),
+    );
+
+    // 65 of these 200 seeds (32.5%) when this was written, against 124 (62.0%)
+    // on the same cohort at start.food 2. The cap leaves ordinary retuning room
+    // to move while still failing on a regression back toward "which ending you
+    // get is mostly a dice roll about which animals you met".
+    expect(lockedOut.length / SCANNED_SEEDS.length).toBeLessThanOrEqual(0.4);
+  });
+
   // Golden trace: recorded by running this journey. It intentionally breaks on
   // any change to the PRNG, ENCOUNTER_CHANCE, content deltas, or the number of
   // authored encounters (which shifts what the selection roll picks) — update
@@ -742,13 +791,17 @@ describe("full journeys", () => {
   // column by six. The choices along this line did not change — `show-your-kit`
   // is appended after `light-torch`, and prudent keeps the first of equal
   // hpDeltas, so this trace still spends a torch at the pines.
+  // Re-recorded once more, deliberately: `journey.start.food` rose from 2 to 3,
+  // so this line eats through three legs instead of two and walks only the last
+  // one hungry. The single 3 hp toll at the end is the whole difference; the
+  // choices are again unchanged.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
         phase: "traveling",
         activeEncounterId: null,
         hp: 14,
-        food: 2,
+        food: 3,
         preparation: 2,
         legIndex: 0,
       },
@@ -756,7 +809,7 @@ describe("full journeys", () => {
         phase: "traveling",
         activeEncounterId: null,
         hp: 14,
-        food: 1,
+        food: 2,
         preparation: 2,
         legIndex: 1,
       },
@@ -764,7 +817,7 @@ describe("full journeys", () => {
         phase: "encounter",
         activeEncounterId: "pine-shadows",
         hp: 14,
-        food: 1,
+        food: 2,
         preparation: 2,
         legIndex: 1,
       },
@@ -772,14 +825,14 @@ describe("full journeys", () => {
         phase: "traveling",
         activeEncounterId: null,
         hp: 14,
-        food: 0,
+        food: 1,
         preparation: 1,
         legIndex: 2,
       },
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 11,
+        hp: 14,
         food: 0,
         preparation: 1,
         legIndex: 3,
@@ -787,7 +840,7 @@ describe("full journeys", () => {
       {
         phase: "arrived",
         activeEncounterId: null,
-        hp: 8,
+        hp: 11,
         food: 0,
         preparation: 1,
         legIndex: 4,
