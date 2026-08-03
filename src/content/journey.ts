@@ -32,7 +32,15 @@ export interface Journey {
 export const journey: Journey = {
   // hp 14 rather than 20: at 20 a careful traveler was never near a threshold,
   // so no arrival condition could tell good play from lucky play.
-  start: { hp: 14, food: 2, preparation: 2 },
+  // food 3 rather than 2, for a four-leg walk: at 2, two legs were always walked
+  // hungry, which capped a run that found no honey at hp 8 — one short of
+  // TRAVEL_ON_HP_MIN. That made the best ending unreachable by ANY line of play
+  // on 58.7% of seeds (measured over 300), and nothing on screen distinguished
+  // a seed you lost from a seed you were never allowed to win. Three days of
+  // food for a four-day road still runs out; it just stops deciding the run
+  // before the player does. Measured: lockout 58.7% -> 29.7%, and the best
+  // fixed priority table still tops out at 59.3% of seeds (gate: 70%).
+  start: { hp: 14, food: 3, preparation: 2 },
   legs: [
     {
       name: "The Old Millpond Road",
