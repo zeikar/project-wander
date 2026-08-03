@@ -15,14 +15,23 @@ function newSeed(): number {
   return (Math.random() * 0x100000000) >>> 0;
 }
 
-// Shows food and preparation costs and gains; hides every HP delta.
-// Exported for its unit test: this file has no JSX-rendering harness, so the
-// pure string function is tested directly, the same way `leavesNoFood` is.
+// Shows food and preparation exactly; says only THAT an option costs hp, never
+// how much. Exported for its unit test: this file has no JSX-rendering harness,
+// so the pure string function is tested directly, the same way `leavesNoFood` is.
 export function costHint(
   state: GameState,
   option: EncounterOption,
 ): string {
   const costs: string[] = [];
+  // The sign of an hp cost, never its size. While only food and preparation were
+  // labelled, all five options carrying a `costs` clause were hp-neutral and three
+  // of the five carrying none drew blood, so a missing COST read as "harmless".
+  // At the hollow that inverted the real ordering: `reach-in — gains 2 food` looked
+  // strictly better than `smoke-them`, which pays preparation for the same food,
+  // while quietly costing 3 hp. How big the wound is, is still found by taking it.
+  if (option.hpDelta < 0) {
+    costs.push("blood");
+  }
   if (option.foodDelta < 0) {
     costs.push(`${-option.foodDelta} food`);
   }
@@ -33,8 +42,7 @@ export function costHint(
   // Gains were unlabelled while costs were spelled out, and nobody had decided
   // that — hiding HP is deliberate design, hiding a payout was just an omission.
   // A planning reader under-predicted the hollow's return twice in a row:
-  // "Costs are stated on the label; gains are not stated anywhere." HP stays out
-  // in BOTH directions, so the one deliberate secret is still kept.
+  // "Costs are stated on the label; gains are not stated anywhere."
   const gains: string[] = [];
   if (option.foodDelta > 0) {
     gains.push(`${option.foodDelta} food`);

@@ -118,10 +118,12 @@ describe("costHint", () => {
     expect(costHint(state, lightTorch)).not.toContain("-1");
   });
 
-  it("says nothing for an option that spends nothing", () => {
-    const state = makeEncounterState();
+  it("says nothing for an option that costs nothing at all", () => {
+    const state = makeEncounterState({ preparation: 2 });
 
-    expect(costHint(state, wadePast)).toBe("");
+    // show-your-kit is the only option in the game with no delta of any kind;
+    // its clause is the requirement, not a cost.
+    expect(costHint(state, showYourKit)).not.toContain("costs");
   });
 
   it("states outright that a held requirement spends nothing", () => {
@@ -147,17 +149,37 @@ describe("costHint", () => {
     );
   });
 
-  // The one deliberate secret, and the line it is drawn on: HP is hidden in BOTH
-  // directions, while food and preparation are stated in both. Discovery of what
-  // an animal does to you is the design; hiding a payout was never decided.
-  it("keeps hp hidden while stating food and preparation", () => {
+  // The line the one deliberate secret is drawn on: an hp cost is NAMED but never
+  // PRICED, while food and preparation are stated exactly, in both directions.
+  // Discovering how badly an animal hurts you is the design; letting the label
+  // imply it does not hurt you at all was a bug.
+  it("names an hp cost without pricing it", () => {
     const state = makeEncounterState();
 
-    // wade-past is hpDelta -6 and spends nothing else, so it says nothing.
-    expect(costHint(state, wadePast)).toBe("");
-    // reach-in is hpDelta -3 AND foodDelta +2: the food shows, the blood does not.
-    expect(costHint(state, reachIn)).toBe(" — gains 2 food");
+    // wade-past is hpDelta -6 and spends nothing else.
+    expect(costHint(state, wadePast)).toBe(" — costs blood");
+    expect(costHint(state, wadePast)).not.toContain("6");
+    // reach-in is hpDelta -3 AND foodDelta +2: both sides show, neither number
+    // for the wound.
+    expect(costHint(state, reachIn)).toBe(" — costs blood, gains 2 food");
     expect(costHint(state, reachIn)).not.toContain("3");
+  });
+
+  // Regression, and the reason the clause above exists at all: labelling only
+  // food and preparation made a missing clause read as "this one is safe". At
+  // the hollow that inverted the actual ordering — reach-in appeared to give the
+  // same 2 food as smoke-them for free. Whatever else changes, an option that
+  // draws blood must never look cheaper than one that does not.
+  it("never lets a wounding option read as cheaper than a bloodless one", () => {
+    const state = makeEncounterState({ preparation: 2, food: 2 });
+
+    for (const encounter of encounters) {
+      for (const option of encounter.options) {
+        expect(costHint(state, option).includes("blood")).toBe(
+          option.hpDelta < 0,
+        );
+      }
+    }
   });
 
   // Regression: a planning reader under-predicted the hollow twice in a row
