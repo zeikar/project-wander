@@ -30,6 +30,13 @@ body {
   font-style: italic;
 }
 
+/* What the journey has learned: the same quiet register as a result line, in a
+   colour that separates a standing fact from what just happened. */
+.field-note {
+  color: #8faf95;
+  font-style: italic;
+}
+
 .encounter-options {
   display: flex;
   flex-direction: column;

@@ -24,6 +24,7 @@ function arrived(overrides: Partial<GameState> = {}): GameState {
     activeEncounterId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    known: [],
     log: [],
     ...overrides,
   };

@@ -18,6 +18,7 @@ function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
     activeEncounterId: "ford-boar",
     lastEncounterResult: null,
     lastRoadToll: null,
+    known: [],
     log: [],
     ...overrides,
   };
@@ -51,6 +52,18 @@ const showYourKit = pineShadows.options.find(
 const lightTorch = pineShadows.options.find(
   (option) => option.id === "light-torch",
 )!; // preparationDelta -1
+const baitATrace = fordBoar.options.find(
+  (option) => option.id === "bait-a-trace",
+)!; // requiresPreparation 1, spends nothing
+const readThePack = pineShadows.options.find(
+  (option) => option.id === "read-the-pack",
+)!; // hpDelta -2, foodDelta -1
+const watchTheFlightLine = beeHollow.options.find(
+  (option) => option.id === "watch-the-flight-line",
+)!; // no delta of any kind
+const workTheDeepSeam = beeHollow.options.find(
+  (option) => option.id === "work-the-deep-seam",
+)!; // foodDelta +2, unlocked by knowing the hollow
 
 describe("leavesNoFood", () => {
   it("warns when an affordable option would spend the last food", () => {
@@ -121,8 +134,7 @@ describe("costHint", () => {
   it("says nothing for an option that costs nothing at all", () => {
     const state = makeEncounterState({ preparation: 2 });
 
-    // show-your-kit is the only option in the game with no delta of any kind;
-    // its clause is the requirement, not a cost.
+    // show-your-kit costs nothing; its clause is the requirement, not a cost.
     expect(costHint(state, showYourKit)).not.toContain("costs");
   });
 
@@ -141,6 +153,10 @@ describe("costHint", () => {
     const state = makeEncounterState({
       activeEncounterId: "pine-shadows",
       preparation: showYourKit.requiresPreparation! - 1,
+      // `show-your-kit` now also needs the wolves to be known. Without this the
+      // option would be refused for being UNKNOWN and the test would pass while
+      // saying nothing about a short kit.
+      known: ["pine-shadows"],
     });
 
     expect(canChooseOption(state, showYourKit)).toBe(false);
@@ -193,5 +209,50 @@ describe("costHint", () => {
     expect(costHint(state, smokeThem)).toBe(
       " — costs 1 preparation (leaves 1 in hand), gains 2 food",
     );
+  });
+
+  // The codex options go through the existing rules unchanged: nothing here has
+  // a positive hpDelta, so no new clause was needed. These pin what the four
+  // shapes actually read as, including the two that say nothing about a wound's
+  // size and the one that truthfully says nothing at all.
+  it("describes what knowledge costs and what it buys", () => {
+    // Each option is evaluated against ITS OWN encounter: canChooseOption resolves
+    // the codex gate through state.activeEncounterId, so pairing an option with a
+    // different active encounter would model a state the game cannot reach.
+    const atBees = makeEncounterState({
+      preparation: 2,
+      food: 2,
+      activeEncounterId: "bee-hollow",
+      known: ["bee-hollow"],
+    });
+    const atBoar = makeEncounterState({
+      preparation: 2,
+      food: 2,
+      activeEncounterId: "ford-boar",
+      known: ["ford-boar"],
+    });
+    const atWolves = makeEncounterState({
+      preparation: 2,
+      food: 2,
+      activeEncounterId: "pine-shadows",
+    });
+
+    expect(costHint(atBees, workTheDeepSeam)).toBe(" — gains 2 food");
+    expect(costHint(atBoar, baitATrace)).toBe(
+      " — needs 1 preparation in hand, spends none",
+    );
+    expect(costHint(atWolves, readThePack)).toBe(" — costs blood and 1 food");
+  });
+
+  it("gives an observation that spends nothing an empty clause, not a missing one", () => {
+    const state = makeEncounterState({
+      preparation: 2,
+      food: 2,
+      activeEncounterId: "bee-hollow",
+    });
+
+    // watch-the-flight-line gives up the afternoon and nothing else. An empty
+    // clause is the truthful label, not a missing one.
+    expect(costHint(state, watchTheFlightLine)).toBe("");
   });
 });

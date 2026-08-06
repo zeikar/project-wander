@@ -21,6 +21,15 @@ export interface GameState {
   // players attribute the road's hunger damage to the animal — they read the
   // boar as costing 9 when it costs 6.
   lastRoadToll: string | null;
+  // Encounter ids the traveler has studied on THIS journey, in the order they
+  // were learned. Deliberately within-run only: with just three facts in the
+  // game, carrying knowledge between journeys collapses every later run to one
+  // fixed 100%-matching table of answers. Of the ten answers that predate the
+  // codex, nine fall to zero optimal picks once knowledge persists —
+  // `show-your-kit` is the sole exception, because it is now the wolves'
+  // knowledge-gated answer. Starting over ignorant is what keeps a first
+  // meeting worth anything.
+  known: readonly string[];
   log: readonly string[];
 }
 
@@ -42,6 +51,7 @@ export function createInitialState(): GameState {
     activeEncounterId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    known: [],
     log: [],
   };
 }
