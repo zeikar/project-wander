@@ -68,23 +68,12 @@ export const journey: Journey = {
   // on 58.7% of seeds (measured over 300), and nothing on screen distinguished
   // a seed you lost from a seed you were never allowed to win. Three days of
   // food for a four-day road still runs out; it just stops deciding the run
-  // before the player does. Measured AT THE TIME: lockout 58.7% -> 29.7%, and
-  // the best fixed priority table topping out at 59.3% of seeds (gate: 70%).
-  // Both figures are historical — they predate the codex and the route branch,
-  // each of which moved them. Currently measured over 300 seeds, exhaustively:
-  // lockout 29.7%.
-  // The 70% no-dominance gate is NOT re-established here, and should not be
-  // read as met. Searching for the best fixed policy over the branched game was
-  // done by hill climbing, which found 33.7% (against 45.7% for the same search
-  // on the unbranched road). A search that can only exhibit policies bounds the
-  // true best from BELOW, so a result under 70% proves nothing about the gate —
-  // only a result over it would have. Both figures are lower bounds and only
-  // comparable to each other insofar as both searches converged, which is
-  // itself unproven; each was stable across 500 restarts and a route rule
-  // widened to 2^24.
-  // What IS exhaustively established about dominance is narrower, and sits
-  // beside the route constants above: on the optimal-line travel nodes, neither
-  // road is ever the safe default.
+  // before the player does. Lockout, measured exhaustively over 300 seeds, has
+  // gone 58.7% -> 29.7% (this change) -> 44.7% (the codex) -> 29.7% (routes).
+  // The old 70% no-dominance gate is NOT re-established for the branched game:
+  // its best fixed policy was only SEARCHED for, by hill climbing, which bounds
+  // the true best from below (33.7%), so a result under 70% proves nothing.
+  // What is exhaustive about dominance sits beside the route constants above.
   start: { hp: 14, food: 3, preparation: 2 },
   legs: [
     {
