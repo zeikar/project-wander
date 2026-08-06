@@ -4,7 +4,25 @@ import { ENCOUNTER_CHANCE, HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
 import { encounters } from "../content/encounters";
-import type { EncounterOption } from "../content/encounters";
+import type { Encounter, EncounterOption } from "../content/encounters";
+
+// Which options this encounter puts on the table right now. A "teaches" option
+// is the observation itself and vanishes once the species is known; a "requires"
+// option is what that knowledge buys and only appears once it is. They share a
+// menu slot, so learning swaps an answer in rather than lengthening the list.
+// This filters VISIBILITY, not affordability — canChooseOption still decides
+// whether a shown option can be paid for.
+export function offeredOptions(
+  state: GameState,
+  encounter: Encounter,
+): readonly EncounterOption[] {
+  const known = state.known.includes(encounter.id);
+  return encounter.options.filter(
+    (option) =>
+      (option.codex !== "teaches" || !known) &&
+      (option.codex !== "requires" || known),
+  );
+}
 
 // An option is only offered when the player can actually pay for it. HP is not
 // gated: taking a wound you cannot afford is a real way to lose the journey —
@@ -13,14 +31,28 @@ import type { EncounterOption } from "../content/encounters";
 // `requiresPreparation` is a different thing from a cost: it asks what the
 // traveler is still CARRYING and spends none of it, so an answer that depends on
 // looking equipped closes as soon as the kit is spent elsewhere.
+// The codex gates are repeated from `offeredOptions` rather than reused for one
+// reason only: this function takes no `Encounter`, so it has to resolve the
+// species through `state.activeEncounterId`.
+// PRECONDITION: `option` belongs to the encounter named by
+// `state.activeEncounterId`. Every caller satisfies it by construction — both
+// the reducer and the encounter screen look the option up out of that same
+// encounter — but the gate fails OPEN if it is ever violated, so a future caller
+// that pairs an option with a different active encounter would silently allow a
+// `teaches` option the player has already learned.
 export function canChooseOption(
   state: GameState,
   option: EncounterOption,
 ): boolean {
+  const known =
+    state.activeEncounterId !== null &&
+    state.known.includes(state.activeEncounterId);
   return (
     state.food + option.foodDelta >= 0 &&
     state.preparation + option.preparationDelta >= 0 &&
-    state.preparation >= (option.requiresPreparation ?? 0)
+    state.preparation >= (option.requiresPreparation ?? 0) &&
+    (option.codex !== "teaches" || !known) &&
+    (option.codex !== "requires" || known)
   );
 }
 
@@ -77,6 +109,9 @@ export function reduce(state: GameState, action: GameAction): GameState {
         activeEncounterId: null,
         lastEncounterResult: null,
         lastRoadToll: null,
+        // Every journey starts ignorant. See game-state.ts for why knowledge
+        // deliberately does not survive a run.
+        known: [],
         log: [],
       };
     }
@@ -141,6 +176,13 @@ export function reduce(state: GameState, action: GameAction): GameState {
         preparation: state.preparation + option.preparationDelta,
         activeEncounterId: null,
         lastEncounterResult: option.resultText,
+        // Watching the animal is what teaches you about it. No dedupe is needed:
+        // a "teaches" option stops being choosable the moment its encounter is
+        // known, so this can never append the same id twice.
+        known:
+          option.codex === "teaches"
+            ? [...state.known, encounter.id]
+            : state.known,
         log: [...state.log, `${encounter.title} — ${option.label}`],
       };
 

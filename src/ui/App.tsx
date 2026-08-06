@@ -1,6 +1,6 @@
 import { useReducer } from "react";
 import type { Dispatch } from "react";
-import { canChooseOption, reduce } from "../core/reducer";
+import { canChooseOption, offeredOptions, reduce } from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
 import { arrivalEnding } from "../core/arrival";
 import type { GameState } from "../core/game-state";
@@ -120,6 +120,31 @@ function StatRow({ state }: { state: GameState }) {
   );
 }
 
+// What this journey has learned, in the order it was learned. Three screens show
+// it, so the lookup and the markup live in one place. The ids in `known` are put
+// there by the reducer from this same list, so a miss is a broken invariant
+// rather than a state the player can reach.
+function FieldNotes({ state }: { state: GameState }) {
+  if (state.known.length === 0) {
+    return null;
+  }
+
+  return (
+    <div>
+      {state.known.map((id) => {
+        const encounter = encounters.find(
+          (candidate) => candidate.id === id,
+        )!;
+        return (
+          <p key={id} className="field-note">
+            {encounter.title}: {encounter.fieldNote}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function TitleScreen({ dispatch }: { dispatch: Dispatch<GameAction> }) {
   return (
     <div className="screen">
@@ -174,6 +199,7 @@ function TravelScreen({
           HP.
         </p>
       )}
+      <FieldNotes state={state} />
       <button onClick={() => dispatch({ type: "TRAVEL" })}>Travel</button>
     </div>
   );
@@ -202,8 +228,13 @@ function EncounterScreen({
       </p>
       <h2>{encounter.title}</h2>
       <p>{encounter.description}</p>
+      {/* The single entry for the animal in front of you, not the whole
+          notebook: what you know is only actionable here. */}
+      {state.known.includes(encounter.id) && (
+        <p className="field-note">What you know: {encounter.fieldNote}</p>
+      )}
       <div className="encounter-options">
-        {encounter.options.map((option) => (
+        {offeredOptions(state, encounter).map((option) => (
           <button
             key={option.id}
             disabled={!canChooseOption(state, option)}
@@ -252,6 +283,7 @@ function JourneyCompleteScreen({
       {state.log.length > 0 && (
         <p>The road behind you: {state.log.join("; ")}.</p>
       )}
+      <FieldNotes state={state} />
       <StatRow state={state} />
       <button
         onClick={() => dispatch({ type: "START_JOURNEY", seed: newSeed() })}
@@ -288,6 +320,10 @@ function DefeatedScreen({
         You never see {journey.arrival.name}. It stays a name in other people's
         stories.
       </p>
+      {/* Shown here too, and not as an afterthought: a toll-caused defeat clears
+          `lastEncounterResult`, so without this a lesson learned on the last leg
+          would vanish on the one screen that ends the run. */}
+      <FieldNotes state={state} />
       <StatRow state={state} />
       <button
         onClick={() => dispatch({ type: "START_JOURNEY", seed: newSeed() })}

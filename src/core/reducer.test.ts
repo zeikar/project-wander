@@ -5,7 +5,7 @@ import {
   HUNGRY_TRAVEL_HP_LOSS,
   createInitialState,
 } from "./game-state";
-import { canChooseOption, reduce } from "./reducer";
+import { canChooseOption, offeredOptions, reduce } from "./reducer";
 import { arrivalEnding } from "./arrival";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
@@ -23,6 +23,7 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     activeEncounterId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    known: [],
     log: [],
     ...overrides,
   };
@@ -503,6 +504,9 @@ describe("encounter choices", () => {
     const base = makeTravelingState({
       phase: "encounter",
       activeEncounterId: "pine-shadows",
+      // Milestone 5 put this option behind the codex too. Knowing the wolves
+      // already keeps this test on the preparation gate it was written for.
+      known: ["pine-shadows"],
     });
 
     expect(
@@ -525,6 +529,8 @@ describe("encounter choices", () => {
       food: 1,
       preparation: carried,
       legIndex: 1,
+      // As above: isolates the requirement from the codex gate.
+      known: ["pine-shadows"],
     });
 
     const next = reduce(state, {
@@ -546,6 +552,9 @@ describe("encounter choices", () => {
       phase: "encounter",
       activeEncounterId: "pine-shadows",
       preparation: showYourKit.requiresPreparation! - 1,
+      // As above: without this the option would be refused for being unknown,
+      // and this test would stop saying anything about preparation.
+      known: ["pine-shadows"],
     });
 
     expect(
@@ -576,6 +585,148 @@ describe("encounter choices", () => {
     expect(next.legIndex).toBe(2);
     expect(next.preparation).toBe(0);
     expect(next.lastEncounterResult).toBeNull();
+  });
+});
+
+describe("codex knowledge", () => {
+  function optionOf(encounterId: string, optionId: string): EncounterOption {
+    return encounters
+      .find((encounter) => encounter.id === encounterId)!
+      .options.find((option) => option.id === optionId)!;
+  }
+
+  // The load-bearing change of this milestone. `show-your-kit` used to answer the
+  // wolves for free on almost every offer; now the first meeting has to be paid
+  // for one way or another, and only a traveler who has watched them gets the
+  // free answer. If this ever passes at `known: []`, the codex has stopped
+  // mattering to the encounter it was built for.
+  it("closes the free answer at the pines until the wolves have been watched", () => {
+    const showYourKit = optionOf("pine-shadows", "show-your-kit");
+    const base = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      preparation: showYourKit.requiresPreparation!,
+    });
+
+    expect(canChooseOption(base, showYourKit)).toBe(false);
+    expect(
+      canChooseOption({ ...base, known: ["pine-shadows"] }, showYourKit),
+    ).toBe(true);
+  });
+
+  it("closes the observation once there is nothing left to learn", () => {
+    const readThePack = optionOf("pine-shadows", "read-the-pack");
+    const base = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+    });
+
+    expect(canChooseOption(base, readThePack)).toBe(true);
+    expect(
+      canChooseOption({ ...base, known: ["pine-shadows"] }, readThePack),
+    ).toBe(false);
+  });
+
+  it("watching an animal costs the afternoon and teaches exactly one species", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: 10,
+      food: 2,
+      legIndex: 1,
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "read-the-pack",
+    });
+
+    expect(next.known).toEqual(["pine-shadows"]);
+    expect(next.hp).toBe(10 - 2);
+    // One food to the wolves, and one more to the road when the leg completes.
+    expect(next.food).toBe(2 - 1 - 1);
+  });
+
+  it("ignores an answer the traveler has not learned yet, returning the same state reference", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "ford-boar",
+      preparation: 2,
+    });
+
+    expect(
+      reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: "bait-a-trace",
+      }),
+    ).toBe(state);
+  });
+
+  it("swaps the observation for what it unlocks, in both directions", () => {
+    for (const encounter of encounters) {
+      const teaches = encounter.options.find(
+        (option) => option.codex === "teaches",
+      )!;
+      const requires = encounter.options.find(
+        (option) => option.codex === "requires",
+      )!;
+      const base = makeTravelingState({
+        phase: "encounter",
+        activeEncounterId: encounter.id,
+      });
+
+      const unknown = offeredOptions(base, encounter).map(
+        (option) => option.id,
+      );
+      const known = offeredOptions(
+        { ...base, known: [encounter.id] },
+        encounter,
+      ).map((option) => option.id);
+
+      expect(unknown).toContain(teaches.id);
+      expect(unknown).not.toContain(requires.id);
+      expect(known).toContain(requires.id);
+      expect(known).not.toContain(teaches.id);
+      // One for one: learning swaps an answer in, it does not lengthen the menu.
+      expect(known.length).toBe(unknown.length);
+    }
+  });
+
+  it("a new journey starts ignorant", () => {
+    const state = makeTravelingState({
+      phase: "arrived",
+      known: ["pine-shadows", "bee-hollow"],
+    });
+
+    expect(reduce(state, { type: "START_JOURNEY", seed: 5 }).known).toEqual([]);
+  });
+
+  // Knowledge opens a door; it does not pay for what is behind it. Both unlocked
+  // answers that ask for preparation ask only what is still CARRIED.
+  it("an unlocked answer spends no preparation", () => {
+    for (const [encounterId, optionId] of [
+      ["ford-boar", "bait-a-trace"],
+      ["pine-shadows", "show-your-kit"],
+    ] as const) {
+      const carried = optionOf(encounterId, optionId).requiresPreparation!;
+      const state = makeTravelingState({
+        phase: "encounter",
+        activeEncounterId: encounterId,
+        hp: 10,
+        food: 2,
+        preparation: carried,
+        known: [encounterId],
+        legIndex: 1,
+      });
+
+      const next = reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId,
+      });
+
+      expect(next.preparation).toBe(carried);
+      expect(next.hp).toBe(10);
+    }
   });
 });
 
@@ -772,11 +923,19 @@ describe("full journeys", () => {
         ),
     );
 
-    // 65 of these 200 seeds (32.5%) when this was written, against 124 (62.0%)
-    // on the same cohort at start.food 2. The cap leaves ordinary retuning room
-    // to move while still failing on a regression back toward "which ending you
-    // get is mostly a dice roll about which animals you met".
-    expect(lockedOut.length / SCANNED_SEEDS.length).toBeLessThanOrEqual(0.4);
+    // Re-baselined 0.4 -> 0.5 for the codex, by decision rather than to hide a
+    // failure. Two comparisons, both measured:
+    // (i) against the shipped game this is a REGRESSION — 65/200 (32.5%) locked
+    //     out on this cohort became 94/200 (47.0%), and 89/300 became 134/300
+    //     over the wider scan. That is the intended price: `show-your-kit` used
+    //     to answer the wolves for free on sight, and putting it behind
+    //     knowledge means a first meeting with wolves now costs something.
+    // (ii) against this content's own control — the same encounters with
+    //     observation made impossible — the codex RECOVERS 29 seeds: 163/300
+    //     (54.3%) locked out without it, 134/300 with it. On the 166 seeds where
+    //     travelOn is reachable at all, a line that observes reaches it on 161.
+    // The user was shown both numbers and approved (i).
+    expect(lockedOut.length / SCANNED_SEEDS.length).toBeLessThanOrEqual(0.5);
   });
 
   // Golden trace: recorded by running this journey. It intentionally breaks on
@@ -795,6 +954,13 @@ describe("full journeys", () => {
   // so this line eats through three legs instead of two and walks only the last
   // one hungry. The single 3 hp toll at the end is the whole difference; the
   // choices are again unchanged.
+  // NOT re-recorded for milestone 5's codex, and that is the point: this line
+  // meets `pine-shadows` knowing nothing, so its menu is
+  // walk-on / light-torch / share-food / read-the-pack — `show-your-kit` is now
+  // hidden and `read-the-pack` (-2 hp) takes its slot. `prudent` still keeps the
+  // first of equal maximal hpDeltas, which is still `light-torch` at 0. Adding
+  // content that swaps a menu slot must not move a journey that never learns
+  // anything, and this trace is what proves it.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
