@@ -402,21 +402,26 @@ function findSplittingRngState(): number {
 }
 
 describe("route branches", () => {
-  // `routeFor` resolves a way by its odds and is used from leg 0 to describe
-  // every leg, so the legs really do have to agree.
-  it("offers two distinctly-named ways with the same pair of odds on every leg", () => {
+  // Two things depend on this shape. `routeFor` resolves a way by its odds and
+  // is used from leg 0 to describe every leg, so the legs have to agree; and
+  // `trafficHint` is total only because the two odds always differ, which is
+  // what lets it drop its equal-odds branch.
+  it("offers exactly two ways per leg, distinctly named, with the same distinct pair of odds", () => {
     const pairs = new Set<string>();
 
-    for (const leg of journey.legs) {
+    journey.legs.forEach((leg, legIndex) => {
       expect(leg.routes).toHaveLength(2);
       expect(new Set(leg.routes.map((route) => route.id)).size).toBe(2);
+      expect(routeFor(legIndex, "quiet").encounterChance).toBeLessThan(
+        routeFor(legIndex, "busy").encounterChance,
+      );
       pairs.add(
         leg.routes
           .map((route) => route.encounterChance)
           .sort()
           .join("/"),
       );
-    }
+    });
 
     expect(pairs.size).toBe(1);
   });

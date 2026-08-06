@@ -112,24 +112,19 @@ export function leavesNoFood(
 // keeps for hp, and for the same reason: the player should be able to make the
 // bet, not compute it. Derived from the leg's own numbers rather than authored
 // beside them, so a label can never drift out of step with the chance it
-// describes. Returns "" when the routes carry equal odds, which no shipped leg
-// does; a middle route in a future three-way leg gets "" for the same reason,
-// since "neither the quietest nor the busiest" is not worth a clause.
+// describes.
+// Total because the content is: every leg carries exactly two routes with
+// distinct odds, asserted in reducer.test.ts. There is deliberately no branch
+// for equal odds or for a middle route in some future three-way leg — that
+// would be flexibility for content this game does not have.
 export function trafficHint(leg: JourneyLeg, route: LegRoute): string {
-  const chances = leg.routes.map((candidate) => candidate.encounterChance);
-  const quietest = Math.min(...chances);
-  const busiest = Math.max(...chances);
+  const busiest = Math.max(
+    ...leg.routes.map((candidate) => candidate.encounterChance),
+  );
 
-  if (quietest === busiest) {
-    return "";
-  }
-  if (route.encounterChance === quietest) {
-    return " — less likely to turn something up";
-  }
-  if (route.encounterChance === busiest) {
-    return " — more likely to turn something up";
-  }
-  return "";
+  return route.encounterChance === busiest
+    ? " — more likely to turn something up"
+    : " — less likely to turn something up";
 }
 
 // Deliberately kept as local components in this one file: at this size,

@@ -4,7 +4,6 @@ import { encounters } from "../content/encounters";
 import { canChooseOption } from "../core/reducer";
 import { costHint, leavesNoFood, trafficHint } from "./App";
 import { journey } from "../content/journey";
-import type { JourneyLeg } from "../content/journey";
 
 // No component test harness exists in this repo (App.tsx has no JSX-rendering
 // tests), so this pins the predicate itself: a plain function of state and an
@@ -284,19 +283,5 @@ describe("trafficHint", () => {
         expect(trafficHint(leg, route)).not.toMatch(/\d/);
       }
     }
-  });
-
-  it("says nothing when both ways carry the same odds", () => {
-    const flat: JourneyLeg = {
-      name: "A Leg With No Choice In It",
-      description: "Two ways that are the same way.",
-      routes: [
-        { id: "a", label: "A", description: "a", encounterChance: 0.6 },
-        { id: "b", label: "B", description: "b", encounterChance: 0.6 },
-      ],
-    };
-
-    expect(trafficHint(flat, flat.routes[0]!)).toBe("");
-    expect(trafficHint(flat, flat.routes[1]!)).toBe("");
   });
 });

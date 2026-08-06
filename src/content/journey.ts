@@ -64,8 +64,11 @@ export const journey: Journey = {
   // on 58.7% of seeds (measured over 300), and nothing on screen distinguished
   // a seed you lost from a seed you were never allowed to win. Three days of
   // food for a four-day road still runs out; it just stops deciding the run
-  // before the player does. Measured: lockout 58.7% -> 29.7%, and the best
-  // fixed priority table still tops out at 59.3% of seeds (gate: 70%).
+  // before the player does. Measured AT THE TIME: lockout 58.7% -> 29.7%, and
+  // the best fixed priority table topping out at 59.3% of seeds (gate: 70%).
+  // Both figures are historical — they predate the codex and the route branch,
+  // each of which moved them. Currently measured over 300 seeds: lockout 29.7%,
+  // best fixed policy 33.7%. Re-measure before tuning against either.
   start: { hp: 14, food: 3, preparation: 2 },
   legs: [
     {
@@ -83,8 +86,12 @@ export const journey: Journey = {
         {
           id: "reed-beds",
           label: "Cut through the reed beds",
+          // No route prose may promise time, distance or supplies: the roads
+          // are priced identically on purpose, so a label that hints otherwise
+          // is a lie about the only decision on this screen. This one used to
+          // open with "Shorter,".
           description:
-            "Shorter, and loud with things you cannot see. The heron came here for a reason.",
+            "Green and close, and loud with things you cannot see. The heron came here for a reason.",
           encounterChance: BUSY_ROUTE_CHANCE,
         },
       ],
@@ -117,7 +124,7 @@ export const journey: Journey = {
       routes: [
         {
           id: "ferry",
-          label: "Wait for the boat",
+          label: "Take the ferry across",
           description:
             "Open water and a bored old man. There is nothing to meet out there but the wind.",
           encounterChance: QUIET_ROUTE_CHANCE,
@@ -125,8 +132,11 @@ export const journey: Journey = {
         {
           id: "shallows",
           label: "Walk the bank down to the shallows",
+          // Said outright because this leg's own description mentions a toll,
+          // and walking the bank would otherwise read as a way to dodge it.
+          // Nothing is dodged; the two ways cost the same.
           description:
-            "Willow scrub the whole way, close enough to touch on both sides. The scrub is not empty.",
+            "Willow scrub the whole way, close enough to touch on both sides. It comes out at the same bank by the same evening, and the scrub is not empty.",
           encounterChance: BUSY_ROUTE_CHANCE,
         },
       ],
@@ -140,7 +150,7 @@ export const journey: Journey = {
           id: "bare-ridge",
           label: "Climb the bare ridge",
           description:
-            "Out of the trees entirely. Nothing up there has anywhere to stand out of sight.",
+            "Out of the trees entirely, and no steeper for it. Nothing up there has anywhere to stand out of sight.",
           encounterChance: QUIET_ROUTE_CHANCE,
         },
         {
