@@ -412,6 +412,9 @@ describe("route branches", () => {
     journey.legs.forEach((leg, legIndex) => {
       expect(leg.routes).toHaveLength(2);
       expect(new Set(leg.routes.map((route) => route.id)).size).toBe(2);
+      // Labels too, not just ids: two ways sharing a label would leave the
+      // player picking between identical buttons.
+      expect(new Set(leg.routes.map((route) => route.label)).size).toBe(2);
       expect(routeFor(legIndex, "quiet").encounterChance).toBeLessThan(
         routeFor(legIndex, "busy").encounterChance,
       );

@@ -67,8 +67,12 @@ export const journey: Journey = {
   // before the player does. Measured AT THE TIME: lockout 58.7% -> 29.7%, and
   // the best fixed priority table topping out at 59.3% of seeds (gate: 70%).
   // Both figures are historical — they predate the codex and the route branch,
-  // each of which moved them. Currently measured over 300 seeds: lockout 29.7%,
-  // best fixed policy 33.7%. Re-measure before tuning against either.
+  // each of which moved them. Currently measured over 300 seeds: lockout 29.7%
+  // (exhaustive), and 33.7% for the best fixed policy FOUND BY HILL CLIMBING
+  // over a stated class of priority tables and route rules. That last one is a
+  // lower bound, not an optimum: it can only understate the true best policy,
+  // so it disproves the 70% gate but cannot prove it. Re-measure before tuning
+  // against either.
   start: { hp: 14, food: 3, preparation: 2 },
   legs: [
     {
@@ -119,22 +123,26 @@ export const journey: Journey = {
     },
     {
       name: "The Ferry Crossing",
+      // The ferryman used to grumble "about the toll before he even sees your
+      // coin". That was written before the leg had two ways out of it, and it
+      // made the bank walk read as a way to dodge a fare — a saving the rules
+      // do not offer. There is no coin in this game.
       description:
-        "An old ferryman rings a small bell to call the boat back from the far bank, grumbling about the toll before he even sees your coin.",
+        "An old ferryman rings a small bell to call the boat back from the far bank. Below the crossing the river spreads out wide and shallow, and a footpath runs down to meet it.",
       routes: [
         {
           id: "ferry",
           label: "Take the ferry across",
+          // Not "there is nothing to meet out there" — this way still turns
+          // something up half the time. A route may describe its COVER; it may
+          // never promise an empty road.
           description:
-            "Open water and a bored old man. There is nothing to meet out there but the wind.",
+            "Open water and a bored old man. Out there you are in plain sight, and so is everything else.",
           encounterChance: QUIET_ROUTE_CHANCE,
         },
         {
           id: "shallows",
           label: "Walk the bank down to the shallows",
-          // Said outright because this leg's own description mentions a toll,
-          // and walking the bank would otherwise read as a way to dodge it.
-          // Nothing is dodged; the two ways cost the same.
           description:
             "Willow scrub the whole way, close enough to touch on both sides. It comes out at the same bank by the same evening, and the scrub is not empty.",
           encounterChance: BUSY_ROUTE_CHANCE,
