@@ -64,6 +64,30 @@ describe("encounters content", () => {
           .length,
       ).toBe(1);
 
+      // docs/CONTENT.md: an observe option must be strictly worse in deltas
+      // than the encounter's best comparable answer, or the knowledge it
+      // grants is free. A comparable answer is one offered in both menus (no
+      // codex field), so this does not hardcode which answer each
+      // observation is priced against.
+      const teaches = encounter.options.find(
+        (option) => option.codex === "teaches",
+      )!;
+      const alwaysOffered = encounter.options.filter(
+        (option) => option.codex === undefined,
+      );
+
+      expect(
+        alwaysOffered.some(
+          (option) =>
+            option.hpDelta >= teaches.hpDelta &&
+            option.foodDelta >= teaches.foodDelta &&
+            option.preparationDelta >= teaches.preparationDelta &&
+            (option.hpDelta > teaches.hpDelta ||
+              option.foodDelta > teaches.foodDelta ||
+              option.preparationDelta > teaches.preparationDelta),
+        ),
+      ).toBe(true);
+
       // The unlocked answer is worth nothing if the knowledge behind it is blank.
       expect(encounter.fieldNote.length).toBeGreaterThan(0);
 

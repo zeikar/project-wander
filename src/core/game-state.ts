@@ -24,9 +24,11 @@ export interface GameState {
   // Encounter ids the traveler has studied on THIS journey, in the order they
   // were learned. Deliberately within-run only: with just three facts in the
   // game, carrying knowledge between journeys collapses every later run to one
-  // fixed 100%-matching table of answers, with nine of fourteen options never
-  // worth taking. Starting
-  // over ignorant is what keeps a first meeting worth anything.
+  // fixed 100%-matching table of answers. Of the ten answers that predate the
+  // codex, nine fall to zero optimal picks once knowledge persists —
+  // `show-your-kit` is the sole exception, because it is now the wolves'
+  // knowledge-gated answer. Starting over ignorant is what keeps a first
+  // meeting worth anything.
   known: readonly string[];
   log: readonly string[];
 }
