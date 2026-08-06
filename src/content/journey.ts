@@ -1,7 +1,37 @@
+// Two ways to walk one leg. They meet the SAME animals in the same proportion
+// and pay the SAME toll; the only thing a route changes is how likely the leg
+// turns something up. That restraint is measured, not modesty: every version
+// that also priced the roads differently collapsed into one correct road, taken
+// on 74-93% of the nodes where the two disagreed. Charging nothing is what keeps
+// both of them worth taking.
+// The prose has to keep the same promise the rules do. A route may describe its
+// COVER — open, overgrown, in plain sight — but must never imply that it is
+// shorter, cheaper, safer to the point of being empty, or a way around a cost.
+// There is no such saving, and the odds are the only thing being chosen between.
+export interface LegRoute {
+  id: string;
+  label: string;
+  description: string;
+  encounterChance: number;
+}
+
 export interface JourneyLeg {
   name: string;
   description: string;
+  routes: readonly LegRoute[];
 }
+
+// The in-world rule behind both numbers, kept identical on every leg so it is
+// learnable: open ground turns up less than thick cover.
+// Measured over 300 seeds against the unbranched 0.6 road. At 0.5/0.75 neither
+// way dominates — the quiet one is uniquely optimal on 13.6% of optimal-line
+// travel nodes, the busy one on 10.5%, and the two disagree on 24.2%. Widening
+// the gap makes the choice sharper and the journey easier at the same time
+// (0.3/0.75 reaches 47.2% decisive but drops the best ending's lockout to
+// 17.7%, and starves the wolves' `read-the-pack` down to 6.9%); narrowing it to
+// 0.55/0.65 leaves the roads agreeing on 90.1% of nodes.
+const QUIET_ROUTE_CHANCE = 0.5;
+const BUSY_ROUTE_CHANCE = 0.75;
 
 // How the journey ended, ranked best to worst by the selector in core/arrival.ts.
 // These are outcomes, not flavour: the label is what the arrival screen calls the
@@ -38,29 +68,97 @@ export const journey: Journey = {
   // on 58.7% of seeds (measured over 300), and nothing on screen distinguished
   // a seed you lost from a seed you were never allowed to win. Three days of
   // food for a four-day road still runs out; it just stops deciding the run
-  // before the player does. Measured: lockout 58.7% -> 29.7%, and the best
-  // fixed priority table still tops out at 59.3% of seeds (gate: 70%).
+  // before the player does. Lockout, measured exhaustively over 300 seeds, has
+  // gone 58.7% -> 29.7% (this change) -> 44.7% (the codex) -> 29.7% (routes).
+  // The old 70% no-dominance gate is NOT re-established for the branched game:
+  // its best fixed policy was only SEARCHED for, by hill climbing, which bounds
+  // the true best from below (33.7%), so a result under 70% proves nothing.
+  // What is exhaustive about dominance sits beside the route constants above.
   start: { hp: 14, food: 3, preparation: 2 },
   legs: [
     {
       name: "The Old Millpond Road",
       description:
         "The road out of town runs past a millpond gone still and green. A heron watches you pass without bothering to fly.",
+      routes: [
+        {
+          id: "towpath",
+          label: "Stay on the towpath",
+          description:
+            "Flat and open, walked bare by the mill's own carts. You would see anything coming a long way off.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "reed-beds",
+          label: "Cut through the reed beds",
+          description:
+            "Green and close, and loud with things you cannot see. The heron came here for a reason.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
     {
       name: "Crossroads Waymarker",
       description:
         "A wooden waymarker leans hard to one side, its painted letters faded to guesses. Someone has tied a strip of cloth to it, for luck or for grief.",
+      routes: [
+        {
+          id: "cart-road",
+          label: "Take the wide cart road",
+          description:
+            "Rutted and open to the sky. Whatever else it is, it is used.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "drovers-track",
+          label: "Follow the old drovers' track",
+          description:
+            "Half grown over. Nobody has driven cattle up it in years, which does not mean nothing uses it.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
     {
       name: "The Ferry Crossing",
       description:
-        "An old ferryman rings a small bell to call the boat back from the far bank, grumbling about the toll before he even sees your coin.",
+        "An old ferryman rings a small bell to call the boat back from the far bank. Below the crossing the river spreads out wide and shallow, and a footpath runs down to meet it.",
+      routes: [
+        {
+          id: "ferry",
+          label: "Take the ferry across",
+          description:
+            "Open water and a bored old man. Out there you are in plain sight, and so is everything else.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "shallows",
+          label: "Walk the bank down to the shallows",
+          description:
+            "Willow scrub the whole way, close enough to touch on both sides. It comes out at the same bank by the same evening, and the scrub is not empty.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
     {
       name: "Pinewood Rise",
       description:
         "The path climbs through a thin pine wood where the wind sounds like distant conversation. Somewhere off in the trees, something large moves and then goes quiet.",
+      routes: [
+        {
+          id: "bare-ridge",
+          label: "Climb the bare ridge",
+          description:
+            "Out of the trees entirely, and no steeper for it. Nothing up there has anywhere to stand out of sight.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "pines",
+          label: "Keep to the pines",
+          description:
+            "Sheltered and close, and quiet the way a room is quiet when someone else is in it.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
   ],
   road: {

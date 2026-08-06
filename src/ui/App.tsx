@@ -6,6 +6,7 @@ import { arrivalEnding } from "../core/arrival";
 import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
+import type { JourneyLeg, LegRoute } from "../content/journey";
 import { encounters } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 
@@ -107,6 +108,25 @@ export function leavesNoFood(
   );
 }
 
+// Says which way a route leans and never its odds — the same contract costHint
+// keeps for hp, and for the same reason: the player should be able to make the
+// bet, not compute it. Derived from the leg's own numbers rather than authored
+// beside them, so a label can never drift out of step with the chance it
+// describes.
+// Total because the content is: every leg carries exactly two routes with
+// distinct odds, asserted in reducer.test.ts. There is deliberately no branch
+// for equal odds or for a middle route in some future three-way leg — that
+// would be flexibility for content this game does not have.
+export function trafficHint(leg: JourneyLeg, route: LegRoute): string {
+  const busiest = Math.max(
+    ...leg.routes.map((candidate) => candidate.encounterChance),
+  );
+
+  return route.encounterChance === busiest
+    ? " — more likely to turn something up"
+    : " — less likely to turn something up";
+}
+
 // Deliberately kept as local components in this one file: at this size,
 // separate screen files would be fragmentation, not organization.
 
@@ -169,7 +189,13 @@ function TravelScreen({
   state: GameState;
   dispatch: Dispatch<GameAction>;
 }) {
-  const leg = journey.legs[state.legIndex];
+  // The traveling phase is only ever entered with a legIndex inside the list —
+  // `completeLeg` switches to `arrived` the moment it runs off the end — so a
+  // miss here is a broken invariant, not a state the player can reach. Asserted
+  // rather than given a fallback, on the same grounds as EncounterScreen: the
+  // routes are the only way forward, so a screen rendered without them would
+  // soft-lock the journey.
+  const leg = journey.legs[state.legIndex]!;
 
   return (
     <div className="screen">
@@ -185,14 +211,8 @@ function TravelScreen({
       <p className="leg-progress">
         Leg {state.legIndex + 1} of {journey.legs.length}
       </p>
-      {leg ? (
-        <>
-          <h2>{leg.name}</h2>
-          <p>{leg.description}</p>
-        </>
-      ) : (
-        <p>The road ahead is unclear.</p>
-      )}
+      <h2>{leg.name}</h2>
+      <p>{leg.description}</p>
       {state.food === 0 && (
         <p className="warning">
           Finishing the leg without food will cost you {HUNGRY_TRAVEL_HP_LOSS}{" "}
@@ -200,7 +220,20 @@ function TravelScreen({
         </p>
       )}
       <FieldNotes state={state} />
-      <button onClick={() => dispatch({ type: "TRAVEL" })}>Travel</button>
+      <div className="route-options">
+        {leg.routes.map((route) => (
+          <button
+            key={route.id}
+            onClick={() => dispatch({ type: "TRAVEL", routeId: route.id })}
+          >
+            <span className="route-label">
+              {route.label}
+              {trafficHint(leg, route)}
+            </span>
+            <span className="route-description">{route.description}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { GameState } from "./game-state";
 import type { GameAction } from "./actions";
-import { ENCOUNTER_CHANCE, HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
+import { HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
 import { encounters } from "../content/encounters";
@@ -121,10 +121,21 @@ export function reduce(state: GameState, action: GameAction): GameState {
         return state;
       }
 
+      // The route decides one thing only: how likely this leg turns something
+      // up. It is deliberately NOT remembered — because both ways charge the
+      // same toll, nothing downstream needs to know which was walked, so the
+      // branch costs the game state nothing.
+      const route = journey.legs[state.legIndex]?.routes.find(
+        (candidate) => candidate.id === action.routeId,
+      );
+      if (!route) {
+        return state;
+      }
+
       // Setting out costs nothing: the leg is only paid for once it is
       // finished, whether that happens here or after an encounter.
       const trigger = rollRandom(state.rngState);
-      if (trigger.value >= ENCOUNTER_CHANCE) {
+      if (trigger.value >= route.encounterChance) {
         return completeLeg({
           ...state,
           lastEncounterResult: null,
