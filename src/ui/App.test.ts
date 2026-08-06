@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { GameState } from "../core/game-state";
 import { encounters } from "../content/encounters";
 import { canChooseOption } from "../core/reducer";
-import { costHint, leavesNoFood } from "./App";
+import { costHint, leavesNoFood, trafficHint } from "./App";
+import { journey } from "../content/journey";
+import type { JourneyLeg } from "../content/journey";
 
 // No component test harness exists in this repo (App.tsx has no JSX-rendering
 // tests), so this pins the predicate itself: a plain function of state and an
@@ -254,5 +256,47 @@ describe("costHint", () => {
     // watch-the-flight-line gives up the afternoon and nothing else. An empty
     // clause is the truthful label, not a missing one.
     expect(costHint(state, watchTheFlightLine)).toBe("");
+  });
+});
+
+describe("trafficHint", () => {
+  it("names the quieter and the busier way on every leg", () => {
+    for (const leg of journey.legs) {
+      const byOdds = [...leg.routes].sort(
+        (a, b) => a.encounterChance - b.encounterChance,
+      );
+
+      expect(trafficHint(leg, byOdds[0]!)).toBe(
+        " — less likely to turn something up",
+      );
+      expect(trafficHint(leg, byOdds.at(-1)!)).toBe(
+        " — more likely to turn something up",
+      );
+    }
+  });
+
+  // The same contract costHint keeps for hp: say which way the bet leans, never
+  // what the odds are. A player should be able to make the choice without being
+  // handed the arithmetic.
+  it("never states a number", () => {
+    for (const leg of journey.legs) {
+      for (const route of leg.routes) {
+        expect(trafficHint(leg, route)).not.toMatch(/\d/);
+      }
+    }
+  });
+
+  it("says nothing when both ways carry the same odds", () => {
+    const flat: JourneyLeg = {
+      name: "A Leg With No Choice In It",
+      description: "Two ways that are the same way.",
+      routes: [
+        { id: "a", label: "A", description: "a", encounterChance: 0.6 },
+        { id: "b", label: "B", description: "b", encounterChance: 0.6 },
+      ],
+    };
+
+    expect(trafficHint(flat, flat.routes[0]!)).toBe("");
+    expect(trafficHint(flat, flat.routes[1]!)).toBe("");
   });
 });

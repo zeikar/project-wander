@@ -1,7 +1,33 @@
+// Two ways to walk one leg. They meet the SAME animals in the same proportion
+// and pay the SAME toll; the only thing a route changes is how likely the leg
+// turns something up. That restraint is measured, not modesty: every version
+// that also priced the roads differently collapsed into one correct road, taken
+// on 74-93% of the nodes where the two disagreed. Charging nothing is what keeps
+// both of them worth taking.
+export interface LegRoute {
+  id: string;
+  label: string;
+  description: string;
+  encounterChance: number;
+}
+
 export interface JourneyLeg {
   name: string;
   description: string;
+  routes: readonly LegRoute[];
 }
+
+// The in-world rule behind both numbers, kept identical on every leg so it is
+// learnable: open ground turns up less than thick cover.
+// Measured over 300 seeds against the unbranched 0.6 road. At 0.5/0.75 neither
+// way dominates — the quiet one is uniquely optimal on 13.6% of optimal-line
+// travel nodes, the busy one on 10.5%, and the two disagree on 24.2%. Widening
+// the gap makes the choice sharper and the journey easier at the same time
+// (0.3/0.75 reaches 47.2% decisive but drops the best ending's lockout to
+// 17.7%, and starves the wolves' `read-the-pack` down to 6.9%); narrowing it to
+// 0.55/0.65 leaves the roads agreeing on 90.1% of nodes.
+const QUIET_ROUTE_CHANCE = 0.5;
+const BUSY_ROUTE_CHANCE = 0.75;
 
 // How the journey ended, ranked best to worst by the selector in core/arrival.ts.
 // These are outcomes, not flavour: the label is what the arrival screen calls the
@@ -46,21 +72,85 @@ export const journey: Journey = {
       name: "The Old Millpond Road",
       description:
         "The road out of town runs past a millpond gone still and green. A heron watches you pass without bothering to fly.",
+      routes: [
+        {
+          id: "towpath",
+          label: "Stay on the towpath",
+          description:
+            "Flat and open, walked bare by the mill's own carts. You would see anything coming a long way off.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "reed-beds",
+          label: "Cut through the reed beds",
+          description:
+            "Shorter, and loud with things you cannot see. The heron came here for a reason.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
     {
       name: "Crossroads Waymarker",
       description:
         "A wooden waymarker leans hard to one side, its painted letters faded to guesses. Someone has tied a strip of cloth to it, for luck or for grief.",
+      routes: [
+        {
+          id: "cart-road",
+          label: "Take the wide cart road",
+          description:
+            "Rutted and open to the sky. Whatever else it is, it is used.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "drovers-track",
+          label: "Follow the old drovers' track",
+          description:
+            "Half grown over. Nobody has driven cattle up it in years, which does not mean nothing uses it.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
     {
       name: "The Ferry Crossing",
       description:
         "An old ferryman rings a small bell to call the boat back from the far bank, grumbling about the toll before he even sees your coin.",
+      routes: [
+        {
+          id: "ferry",
+          label: "Wait for the boat",
+          description:
+            "Open water and a bored old man. There is nothing to meet out there but the wind.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "shallows",
+          label: "Walk the bank down to the shallows",
+          description:
+            "Willow scrub the whole way, close enough to touch on both sides. The scrub is not empty.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
     {
       name: "Pinewood Rise",
       description:
         "The path climbs through a thin pine wood where the wind sounds like distant conversation. Somewhere off in the trees, something large moves and then goes quiet.",
+      routes: [
+        {
+          id: "bare-ridge",
+          label: "Climb the bare ridge",
+          description:
+            "Out of the trees entirely. Nothing up there has anywhere to stand out of sight.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "pines",
+          label: "Keep to the pines",
+          description:
+            "Sheltered and close, and quiet the way a room is quiet when someone else is in it.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
     },
   ],
   road: {

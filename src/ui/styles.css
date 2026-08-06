@@ -49,6 +49,33 @@ body {
   text-align: left;
 }
 
+/* The two ways out of a leg are the same kind of thing as encounter options —
+   a short list of choices, read top to bottom — so they get the same shape. */
+.route-options {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.route-options button {
+  display: block;
+  text-align: left;
+}
+
+/* The promise ("less likely to turn something up") rides with the label, and
+   the road's own description sits under it: the wager first, the scenery
+   second. */
+.route-label {
+  display: block;
+}
+
+.route-description {
+  display: block;
+  margin-top: 0.25rem;
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
 button {
   font-size: 1rem;
   padding: 0.5rem 1rem;

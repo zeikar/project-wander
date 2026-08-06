@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "./game-state";
-import {
-  ENCOUNTER_CHANCE,
-  HUNGRY_TRAVEL_HP_LOSS,
-  createInitialState,
-} from "./game-state";
+import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "./game-state";
 import { canChooseOption, offeredOptions, reduce } from "./reducer";
+import type { GameAction } from "./actions";
 import { arrivalEnding } from "./arrival";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
@@ -29,12 +26,37 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
   };
 }
 
-// Finds an rng state whose next roll does (or does not) trigger an encounter.
-// Derived rather than hardcoded, so retuning ENCOUNTER_CHANCE does not silently
-// invalidate every test that needs a quiet or a busy leg.
-function findRngState(triggersEncounter: boolean): number {
+// Which of a leg's two ways is which. Every leg carries the same pair of odds
+// (asserted below), so one lookup describes them all — but the ROUTE IDS differ
+// per leg, so the id still has to be resolved against the leg being walked.
+type Which = "quiet" | "busy";
+
+function routeFor(legIndex: number, which: Which) {
+  const routes = journey.legs[legIndex]!.routes;
+  return routes.reduce((chosen, route) =>
+    which === "quiet"
+      ? route.encounterChance < chosen.encounterChance
+        ? route
+        : chosen
+      : route.encounterChance > chosen.encounterChance
+        ? route
+        : chosen,
+  );
+}
+
+// Tests that are not about the branch walk the quiet way; the branch's own
+// tests name both.
+function travel(state: GameState, which: Which = "quiet"): GameAction {
+  return { type: "TRAVEL", routeId: routeFor(state.legIndex, which).id };
+}
+
+// Finds an rng state whose next roll does (or does not) trigger an encounter on
+// the given way. Derived rather than hardcoded, so retuning a route's odds does
+// not silently invalidate every test that needs a quiet or a busy leg.
+function findRngState(triggersEncounter: boolean, which: Which = "quiet"): number {
+  const chance = routeFor(0, which).encounterChance;
   for (let state = 1; state <= 1000; state++) {
-    if ((rollRandom(state).value < ENCOUNTER_CHANCE) === triggersEncounter) {
+    if ((rollRandom(state).value < chance) === triggersEncounter) {
       return state;
     }
   }
@@ -91,7 +113,11 @@ const spendthrift: OptionPolicy = (state) => {
 
 // Plays a whole journey from a seed and returns every state along the way. The
 // step bound doubles as a proof that no state can leave the player stuck.
-function playJourney(seed: number, pickOptionId: OptionPolicy): GameState[] {
+function playJourney(
+  seed: number,
+  pickOptionId: OptionPolicy,
+  which: Which = "quiet",
+): GameState[] {
   let state = reduce(createInitialState(), { type: "START_JOURNEY", seed });
   const trace: GameState[] = [state];
 
@@ -101,7 +127,7 @@ function playJourney(seed: number, pickOptionId: OptionPolicy): GameState[] {
     }
     state =
       state.phase === "traveling"
-        ? reduce(state, { type: "TRAVEL" })
+        ? reduce(state, travel(state, which))
         : reduce(state, {
             type: "CHOOSE_ENCOUNTER_OPTION",
             optionId: pickOptionId(state),
@@ -135,7 +161,7 @@ describe("reduce", () => {
       legIndex: 0,
       rngState: findRngState(false),
     });
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.food).toBe(1);
     expect(next.hp).toBe(20);
@@ -149,7 +175,7 @@ describe("reduce", () => {
       legIndex: 0,
       rngState: findRngState(false),
     });
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.hp).toBe(20 - HUNGRY_TRAVEL_HP_LOSS);
     expect(next.food).toBe(0);
@@ -158,7 +184,7 @@ describe("reduce", () => {
 
   it("ignores TRAVEL outside the traveling phase, returning the same state reference", () => {
     const state = createInitialState();
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next).toBe(state);
   });
@@ -212,8 +238,8 @@ describe("reduce", () => {
     const state = makeTravelingState({ food: 1, hp: 15, legIndex: 2 });
     const snapshot = { ...state };
 
-    const first = reduce(state, { type: "TRAVEL" });
-    const second = reduce(state, { type: "TRAVEL" });
+    const first = reduce(state, travel(state));
+    const second = reduce(state, travel(state));
 
     expect(first).toEqual(second);
     expect(state).toEqual(snapshot);
@@ -229,7 +255,7 @@ describe("travel encounters", () => {
     const expected =
       encounters[Math.floor(selection.value * encounters.length)]!;
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.phase).toBe("encounter");
     expect(next.activeEncounterId).toBe(expected.id);
@@ -242,7 +268,7 @@ describe("travel encounters", () => {
   it("spends exactly one roll on a quiet leg", () => {
     const state = makeTravelingState({ rngState: findRngState(false) });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.phase).toBe("traveling");
     expect(next.activeEncounterId).toBeNull();
@@ -256,7 +282,7 @@ describe("travel encounters", () => {
       log: inputLog,
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.log).toEqual(inputLog);
     expect(next.log).toBe(inputLog);
@@ -268,7 +294,7 @@ describe("travel encounters", () => {
       lastEncounterResult: "the sounds that follow you are busy ones",
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.lastEncounterResult).toBeNull();
   });
@@ -281,7 +307,7 @@ describe("travel encounters", () => {
       rngState: findRngState(false),
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.hp).toBe(0);
     expect(next.phase).toBe("defeated");
@@ -298,7 +324,7 @@ describe("travel encounters", () => {
       rngState: findRngState(true),
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.phase).toBe("encounter");
     expect(next.hp).toBe(3);
@@ -313,7 +339,7 @@ describe("travel encounters", () => {
       rngState: findRngState(false),
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.phase).toBe("arrived");
     expect(next.food).toBe(1);
@@ -329,7 +355,7 @@ describe("travel encounters", () => {
       rngState: findRngState(false),
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.phase).toBe("defeated");
     expect(next.hp).toBe(0);
@@ -345,7 +371,7 @@ describe("travel encounters", () => {
       rngState: findRngState(false),
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.phase).toBe("arrived");
     expect(next.hp).toBe(HUNGRY_TRAVEL_HP_LOSS + 2 - HUNGRY_TRAVEL_HP_LOSS);
@@ -357,7 +383,91 @@ describe("travel encounters", () => {
       activeEncounterId: "ford-boar",
     });
 
-    expect(reduce(state, { type: "TRAVEL" })).toBe(state);
+    expect(reduce(state, travel(state))).toBe(state);
+  });
+});
+
+// An rng state whose next roll lands BETWEEN the two ways' odds: the busy way
+// turns something up on it, the quiet way walks straight through.
+function findSplittingRngState(): number {
+  const quiet = routeFor(0, "quiet").encounterChance;
+  const busy = routeFor(0, "busy").encounterChance;
+  for (let state = 1; state <= 10000; state++) {
+    const value = rollRandom(state).value;
+    if (value >= quiet && value < busy) {
+      return state;
+    }
+  }
+  throw new Error("no rng state in 1..10000 falls between the two ways");
+}
+
+describe("route branches", () => {
+  // `routeFor` resolves a way by its odds and is used from leg 0 to describe
+  // every leg, so the legs really do have to agree.
+  it("offers two distinctly-named ways with the same pair of odds on every leg", () => {
+    const pairs = new Set<string>();
+
+    for (const leg of journey.legs) {
+      expect(leg.routes).toHaveLength(2);
+      expect(new Set(leg.routes.map((route) => route.id)).size).toBe(2);
+      pairs.add(
+        leg.routes
+          .map((route) => route.encounterChance)
+          .sort()
+          .join("/"),
+      );
+    }
+
+    expect(pairs.size).toBe(1);
+  });
+
+  it("turns something up on a roll the quiet way walks straight through", () => {
+    const state = makeTravelingState({ rngState: findSplittingRngState() });
+
+    expect(reduce(state, travel(state, "busy")).phase).toBe("encounter");
+    expect(reduce(state, travel(state, "quiet")).phase).toBe("traveling");
+  });
+
+  it("ignores a routeId this leg does not offer, returning the same state reference", () => {
+    const state = makeTravelingState();
+
+    expect(reduce(state, { type: "TRAVEL", routeId: "no-such-way" })).toBe(
+      state,
+    );
+  });
+
+  // The load-bearing content invariant of this milestone. Every version that
+  // ALSO priced the roads differently collapsed into one correct road, taken on
+  // 74-93% of the nodes where the two disagreed; charging nothing is what keeps
+  // both worth taking. Because they charge the same, the reducer also never has
+  // to remember which was walked.
+  it("charges the same toll whichever way is walked", () => {
+    // A roll high enough that neither way turns anything up, so what is left in
+    // the difference is only the road's own charge.
+    const state = makeTravelingState({
+      rngState: findRngState(false, "busy"),
+      food: 2,
+      hp: 12,
+    });
+
+    const viaQuiet = reduce(state, travel(state, "quiet"));
+    const viaBusy = reduce(state, travel(state, "busy"));
+
+    expect(viaQuiet.phase).toBe("traveling");
+    expect(viaBusy).toEqual(viaQuiet);
+  });
+
+  it("reaches a different outcome down the two ways on most seeds", () => {
+    const differed = SCANNED_SEEDS.filter(
+      (seed) =>
+        JSON.stringify(project(playJourney(seed, prudent).at(-1)!)) !==
+        JSON.stringify(project(playJourney(seed, prudent, "busy").at(-1)!)),
+    );
+
+    // 205/300 over the wider scan when this was written. The floor sits well
+    // below that: what it guards is that the branch is not decoration, which is
+    // how the species-split version of this milestone failed.
+    expect(differed.length / SCANNED_SEEDS.length).toBeGreaterThan(0.4);
   });
 });
 
@@ -742,7 +852,7 @@ describe("the road reports its own toll separately from the animal", () => {
       rngState: findRngState(false),
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.lastRoadToll).toBe(journey.road.fed);
     expect(next.food).toBe(1);
@@ -755,7 +865,7 @@ describe("the road reports its own toll separately from the animal", () => {
       rngState: findRngState(false),
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.lastRoadToll).toBe(journey.road.hungry);
     expect(next.hp).toBe(14 - HUNGRY_TRAVEL_HP_LOSS);
@@ -792,7 +902,7 @@ describe("the road reports its own toll separately from the animal", () => {
       lastRoadToll: journey.road.fed,
     });
 
-    const next = reduce(state, { type: "TRAVEL" });
+    const next = reduce(state, travel(state));
 
     expect(next.phase).toBe("encounter");
     // Entering an encounter completes no leg, so nothing has been charged yet.
@@ -866,9 +976,11 @@ describe("full journeys", () => {
 
     for (const seed of SCANNED_SEEDS) {
       for (const policy of [prudent, reckless, hoarding, spendthrift]) {
-        const end = playJourney(seed, policy).at(-1)!;
-        if (end.phase === "arrived") {
-          reached.add(arrivalEnding(end));
+        for (const which of ["quiet", "busy"] as const) {
+          const end = playJourney(seed, policy, which).at(-1)!;
+          if (end.phase === "arrived") {
+            reached.add(arrivalEnding(end));
+          }
         }
       }
     }
@@ -897,7 +1009,13 @@ describe("full journeys", () => {
         case "arrived":
           return arrivalEnding(state) === "travelOn";
         case "traveling":
-          return canReachTravelOn(reduce(state, { type: "TRAVEL" }));
+          // Every line of play now includes which way was walked, so both have
+          // to be tried before a seed can be called locked out.
+          return journey.legs[state.legIndex]!.routes.some((route) =>
+            canReachTravelOn(
+              reduce(state, { type: "TRAVEL", routeId: route.id }),
+            ),
+          );
         default: {
           const encounter = encounters.find(
             (candidate) => candidate.id === state.activeEncounterId,
@@ -923,25 +1041,29 @@ describe("full journeys", () => {
         ),
     );
 
-    // Re-baselined 0.4 -> 0.5 for the codex, by decision rather than to hide a
-    // failure. Two comparisons, both measured:
-    // (i) against the shipped game this is a REGRESSION — 65/200 (32.5%) locked
-    //     out on this cohort became 94/200 (47.0%), and 89/300 became 134/300
-    //     over the wider scan. That is the intended price: `show-your-kit` used
-    //     to answer the wolves for free on sight, and putting it behind
-    //     knowledge means a first meeting with wolves now costs something.
-    // (ii) against this content's own control — the same encounters with
-    //     observation made impossible — the codex RECOVERS 29 seeds: 163/300
-    //     (54.3%) locked out without it, 134/300 with it. On the 166 seeds where
-    //     travelOn is reachable at all, a line that observes reaches it on 161.
-    // The user was shown both numbers and approved (i).
-    expect(lockedOut.length / SCANNED_SEEDS.length).toBeLessThanOrEqual(0.5);
+    // Re-baselined 0.5 -> 0.4 for route branches, and this time it TIGHTENS.
+    // Choosing which way to walk can only add lines of play, so lockout could
+    // only fall: 94/200 (47.0%) became 59/200 (29.5%) on this cohort, and
+    // 134/300 became 89/300 (29.7%) over the wider scan. That happens to undo
+    // the codex's difficulty spike almost exactly — 29.7% is where the game sat
+    // before `show-your-kit` went behind knowledge — so the two changes read as
+    // one trade rather than two: a first meeting with wolves still costs
+    // something, and the road now offers a way to be somewhere else.
+    // The cap keeps roughly the same headroom over the measured figure as the
+    // 0.4/32.5% pairing it replaces.
+    expect(lockedOut.length / SCANNED_SEEDS.length).toBeLessThanOrEqual(0.4);
   });
 
-  // Golden trace: recorded by running this journey. It intentionally breaks on
-  // any change to the PRNG, ENCOUNTER_CHANCE, content deltas, or the number of
-  // authored encounters (which shifts what the selection roll picks) — update
-  // it only when such a change is deliberate.
+  // Golden trace: recorded by running this journey down the QUIET way, which is
+  // what `playJourney` walks by default. It intentionally breaks on any change
+  // to the PRNG, a route's odds, content deltas, or the number of authored
+  // encounters (which shifts what the selection roll picks) — update it only
+  // when such a change is deliberate.
+  // NOT re-recorded for route branches, and that is not an oversight: seed 1's
+  // four trigger rolls all happen to miss the band between the old flat 0.6 and
+  // the quiet way's 0.5, so this one line of play is genuinely unchanged. The
+  // branch is pinned by the tests above it instead — the two ways reach a
+  // different outcome on 205 of 300 seeds under a fixed option policy.
   // Re-recorded when the travel toll moved from the start of a leg to its
   // completion: the encounter row now carries the food that leg will spend
   // later, so only that row's food column changed.
@@ -1025,7 +1147,7 @@ describe("full journeys", () => {
       seed: findRngState(false),
     });
 
-    expect(reduce(busy, { type: "TRAVEL" }).phase).toBe("encounter");
-    expect(reduce(quiet, { type: "TRAVEL" }).phase).not.toBe("encounter");
+    expect(reduce(busy, travel(busy)).phase).toBe("encounter");
+    expect(reduce(quiet, travel(quiet)).phase).not.toBe("encounter");
   });
 });

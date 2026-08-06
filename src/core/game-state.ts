@@ -35,9 +35,6 @@ export interface GameState {
 
 export const HUNGRY_TRAVEL_HP_LOSS = 3;
 
-// Chance that a leg of travel turns up an encounter.
-export const ENCOUNTER_CHANCE = 0.6;
-
 // Real resources and the journey seed are set by START_JOURNEY; nothing here is
 // rendered on the title screen, so these placeholder values are never shown.
 export function createInitialState(): GameState {
