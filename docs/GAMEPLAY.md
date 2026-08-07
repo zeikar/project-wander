@@ -26,15 +26,17 @@ Three days of food used to cover a four-leg walk. Four days do not cover eight.
 
 Routes
 
-Every leg offers two ways to walk it.
+Most legs run on one way. About three legs in eight offer a fork.
 
-They meet the same animals in the same proportion, and charge the same toll.
+A fork shows what is on each way today — tracks, a stopped fire, nothing moving — read off the ground before you choose.
 
-One is more likely to turn something up than the other. That is the only difference.
+It says what KIND of thing is there. Never which animal.
+
+The two ways still meet the same animals in the same proportion, and charge the same toll. One is more likely to turn something up than the other, and that is the only standing difference between them.
 
 Open ground turns up less than thick cover. The rule never changes, so it can be learned.
 
-The screen says which way leans quiet and which leans busy. It never says the odds.
+When both ways read the same, the road says so once. That is not a choice, and it is not dressed as one.
 
 ---
 

@@ -103,3 +103,18 @@ Silence does not leave a player without a model. It leaves them with a wrong one
 Exactly how much a wound costs is still found by taking it.
 
 The road's own toll is the one HP number on screen, and it says so: it names the condition, and it says "as well", because a worded price next to a numbered one has to make clear which is which.
+
+
+---
+
+Forks
+
+About three legs in eight fork. The rest run on one way.
+
+Every leg forking was a rhythm, not an event, and a playtester stopped reading the road by their eighth turn because of it.
+
+Each leg carries three signs — what an animal ahead looks like there, what a stopped traveler looks like there, what empty looks like there — in that leg's own terrain.
+
+A sign names a KIND, never a species. Naming the creature would let a player dodge one, which is the mechanism that killed an earlier design's codex.
+
+A sign must be true. It is computed from the same band the road then walks, so it cannot promise something the leg does not deliver.

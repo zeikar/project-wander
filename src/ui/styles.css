@@ -69,6 +69,20 @@ body {
   display: block;
 }
 
+ /* What the ground says about this way today. Set apart from the road's own
+   description, which never changes, because only one of the two is a reason to
+   pick this way over the other. */
+.route-sign {
+  display: block;
+  margin-top: 0.35rem;
+  font-style: italic;
+}
+
+/* The same sign on both ways is a fact about the leg, not about either road. */
+.shared-sign {
+  margin-top: 0.5rem;
+}
+
 .route-description {
   display: block;
   margin-top: 0.25rem;

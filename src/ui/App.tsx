@@ -4,8 +4,11 @@ import {
   canChooseOption,
   findScene,
   offeredOptions,
+  offeredRoutes,
+  peekRoad,
   reduce,
 } from "../core/reducer";
+import type { RoadSign } from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
 import { arrivalEnding } from "../core/arrival";
 import type { GameState } from "../core/game-state";
@@ -152,15 +155,32 @@ export function leavesNoFood(
 // distinct odds, asserted in reducer.test.ts. There is deliberately no branch
 // for equal odds or for a middle route in some future three-way leg — that
 // would be flexibility for content this game does not have.
-export function trafficHint(leg: JourneyLeg, route: LegRoute): string {
+// Takes the ways ACTUALLY OFFERED rather than the leg's whole list: on a leg
+// that does not fork there is nothing to be likelier than, and a comparison
+// against a road the traveler cannot take is noise.
+export function trafficHint(
+  routes: readonly LegRoute[],
+  route: LegRoute,
+): string {
+  if (routes.length < 2) {
+    return "";
+  }
   const busiest = Math.max(
-    ...leg.routes.map((candidate) => candidate.encounterChance),
+    ...routes.map((candidate) => candidate.encounterChance),
   );
 
   return route.encounterChance === busiest
     ? " — more likely to turn something up"
     : " — less likely to turn something up";
 }
+
+// The sign a road shows maps straight onto the leg's own three authored lines,
+// so the wording is terrain's rather than the rules'.
+const SIGN_TEXT: Record<RoadSign, keyof JourneyLeg["signs"]> = {
+  animal: "animal",
+  place: "place",
+  quiet: "quiet",
+};
 
 // Deliberately kept as local components in this one file: at this size,
 // separate screen files would be fragmentation, not organization.
@@ -231,6 +251,16 @@ function TravelScreen({
   // routes are the only way forward, so a screen rendered without them would
   // soft-lock the journey.
   const leg = journey.legs[state.legIndex]!;
+  const routes = offeredRoutes(state);
+  // Both ways can read the same, and often do. Printing one sentence twice is
+  // noise, and worse than noise: it dresses a leg where the ways AGREE as
+  // though it were a choice between them. Said once, above, it reads as what it
+  // is — a fact about the road rather than an argument for either way.
+  const signs = routes.map((route) => peekRoad(state, route));
+  const sharedSign =
+    routes.length > 1 && signs.every((sign) => sign === signs[0])
+      ? leg.signs[SIGN_TEXT[signs[0]!]]
+      : null;
 
   return (
     <div className="screen">
@@ -254,18 +284,27 @@ function TravelScreen({
           HP.
         </p>
       )}
+      {sharedSign && <p className="route-sign shared-sign">{sharedSign}</p>}
       <FieldNotes state={state} />
       <div className="route-options">
-        {leg.routes.map((route) => (
+        {routes.map((route) => (
           <button
             key={route.id}
             onClick={() => dispatch({ type: "TRAVEL", routeId: route.id })}
           >
             <span className="route-label">
               {route.label}
-              {trafficHint(leg, route)}
+              {trafficHint(routes, route)}
             </span>
             <span className="route-description">{route.description}</span>
+            {/* Only where there is a choice to make. On a leg that runs on one
+                way, reading the ground would tell the traveler something they
+                cannot act on, which is the definition of noise. */}
+            {routes.length > 1 && sharedSign === null && (
+              <span className="route-sign">
+                {leg.signs[SIGN_TEXT[peekRoad(state, route)]]}
+              </span>
+            )}
           </button>
         ))}
       </div>
