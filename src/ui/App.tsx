@@ -1,6 +1,11 @@
 import { useReducer } from "react";
 import type { Dispatch } from "react";
-import { canChooseOption, offeredOptions, reduce } from "../core/reducer";
+import {
+  canChooseOption,
+  findScene,
+  offeredOptions,
+  reduce,
+} from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
 import { arrivalEnding } from "../core/arrival";
 import type { GameState } from "../core/game-state";
@@ -45,6 +50,16 @@ export function costHint(
   // A planning reader under-predicted the hollow's return twice in a row:
   // "Costs are stated on the label; gains are not stated anywhere."
   const gains: string[] = [];
+  // Named, never priced — the mirror of the `blood` rule above, and added for
+  // the same reason it was: the first option that GIVES hp back read as pure
+  // loss on the screen ("Sleep under their lean-to — costs 1 food"), which is
+  // the exact shape of the bug that made a missing cost read as harmless.
+  // Conditional because the healing is: hp is clamped at the pool the traveler
+  // set out with, so at full health resting costs a meal and returns nothing,
+  // and promising otherwise is the same lie in the other direction.
+  if (option.hpDelta > 0 && state.hp < journey.start.hp) {
+    gains.push("some of yourself back");
+  }
   if (option.foodDelta > 0) {
     gains.push(`${option.foodDelta} food`);
   }
@@ -246,12 +261,16 @@ function EncounterScreen({
   dispatch: Dispatch<GameAction>;
 }) {
   // The encounter phase is only ever entered with an id the reducer just picked
-  // out of this same list, so a miss here is a broken invariant, not a state the
-  // player can reach. Assert rather than render a fallback: a screen with no
+  // out of these same lists, so a miss here is a broken invariant, not a state
+  // the player can reach. Assert rather than render a fallback: a screen with no
   // options would soft-lock the journey.
-  const encounter = encounters.find(
-    (candidate) => candidate.id === state.activeEncounterId,
-  )!;
+  const scene = findScene(state.activeEncounterId)!;
+  // Only an animal has anything to know about it, and only once it is known.
+  // A place is just a place.
+  const fieldNote = encounters.find(
+    (candidate) =>
+      candidate.id === scene.id && state.known.includes(candidate.id),
+  )?.fieldNote;
 
   return (
     <div className="screen">
@@ -259,15 +278,13 @@ function EncounterScreen({
       <p className="leg-progress">
         Leg {state.legIndex + 1} of {journey.legs.length}
       </p>
-      <h2>{encounter.title}</h2>
-      <p>{encounter.description}</p>
+      <h2>{scene.title}</h2>
+      <p>{scene.description}</p>
       {/* The single entry for the animal in front of you, not the whole
           notebook: what you know is only actionable here. */}
-      {state.known.includes(encounter.id) && (
-        <p className="field-note">What you know: {encounter.fieldNote}</p>
-      )}
+      {fieldNote && <p className="field-note">What you know: {fieldNote}</p>}
       <div className="encounter-options">
-        {offeredOptions(state, encounter).map((option) => (
+        {offeredOptions(state, scene).map((option) => (
           <button
             key={option.id}
             disabled={!canChooseOption(state, option)}

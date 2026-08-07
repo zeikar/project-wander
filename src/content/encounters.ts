@@ -146,7 +146,16 @@ export const encounters: readonly Encounter[] = [
       {
         id: "read-the-pack",
         label: "Keep pace with them and watch what they do",
-        hpDelta: -2,
+        // Cheapened from -2 when the road went to eight legs: spreading five
+        // species over it made a second wolf meeting rarer, and this
+        // observation fell under the 10% of its offers at which this project
+        // calls an option decoration. -1 is the FLOOR, not a tuning choice —
+        // anything cheaper stops being strictly worse than `share-food`, and
+        // that domination is the whole thing keeping knowledge from being free.
+        // Current figures live in docs/CONTENT.md; they are not repeated here,
+        // because a number in two places is a number that will disagree with
+        // itself.
+        hpDelta: -1,
         foodDelta: -1,
         preparationDelta: 0,
         codex: "teaches",
@@ -209,6 +218,126 @@ export const encounters: readonly Encounter[] = [
         codex: "requires",
         resultText:
           "You go in where you know they are not: past the bright new comb at the mouth, along the seam to the old capped stuff at the back. Two fists of it, and no tinder spent — you were never where the guards were.",
+      },
+    ],
+  },
+  // The fourth animal is a SECOND FOOD SOURCE, and that is not flavour. A sweep
+  // that added two cost-shaped animals cut the bee hollow's share of encounters
+  // from a third to a fifth and pushed the seeds where death is unavoidable from
+  // 2.7% to 8.0%. A longer road needs another way to eat.
+  {
+    id: "rowan-flock",
+    title: "A Flock in the Rowan",
+    description:
+      "A rowan by the road is loud with waxwings, forty or fifty of them working the berries in a rolling scrum. They take no notice of you at all. The ground underneath is scattered with what they have dropped.",
+    fieldNote:
+      "A flock strips a rowan from the sunlit side, where the fruit reddens first. Whatever hangs in the shade ripens later and is still hanging when they have finished, with nobody left to argue about it.",
+    options: [
+      {
+        id: "shake-the-bough",
+        label: "Climb up and shake the laden bough",
+        hpDelta: -2,
+        foodDelta: 2,
+        preparationDelta: 0,
+        resultText:
+          "The flock goes up around you like thrown gravel. You come down with two double handfuls of berries and a long strip of bark taken out of your forearm.",
+      },
+      {
+        id: "net-the-fall",
+        label: "Spread your cloth below and shake it down",
+        hpDelta: 0,
+        foodDelta: 2,
+        preparationDelta: -1,
+        resultText:
+          "Your groundsheet catches nearly everything that falls. It does not come out of the business clean, and you leave it behind stained through.",
+      },
+      {
+        id: "take-the-windfall",
+        label: "Gather what has already fallen",
+        hpDelta: 0,
+        foodDelta: 1,
+        preparationDelta: 0,
+        resultText:
+          "Bruised, some of it walked on by the birds, but it is food and it costs you nothing but stooping.",
+      },
+      {
+        id: "watch-which-side",
+        label: "Sit down and watch how the flock works the tree",
+        hpDelta: 0,
+        foodDelta: 0,
+        preparationDelta: 0,
+        codex: "teaches",
+        resultText:
+          "You give the tree an hour instead of a handful. They are not working it at random: they start where the sun has been longest and the berries have gone deepest red, and they leave the shaded side alone entirely. It is not ready yet. It will be.",
+      },
+      {
+        id: "work-the-shaded-side",
+        label: "Go round to the shaded side and pick there",
+        hpDelta: 0,
+        foodDelta: 2,
+        preparationDelta: 0,
+        codex: "requires",
+        resultText:
+          "You walk round to the north face, where the flock has not started and will not for days, and pick standing up with both hands. Nothing shaken, nothing spread, nothing torn.",
+      },
+    ],
+  },
+  // The fifth answers to SPACE, which neither of the other cost animals does:
+  // the boar goes where its nose goes and the wolves read what you carry.
+  {
+    id: "rut-stag",
+    title: "A Stag Holding the Hollow",
+    description:
+      "A red stag stands square in the low ground where the path runs, head up, breathing hard through a throat gone thick with the season. He has not been startled by you. He has been waiting for something to argue with, and you will do.",
+    fieldNote:
+      "A stag in the rut is not hunting you, he is moving you. He drives downhill, away from the ground he is holding. Step up rather than back and you stop being a rival at all.",
+    options: [
+      {
+        id: "push-past",
+        label: "Walk straight through and do not look at him",
+        hpDelta: -5,
+        foodDelta: 0,
+        preparationDelta: 0,
+        resultText:
+          "He comes at the shoulder and you go down in the wet. It is the antler brow that opens your thigh, not the points. When you get up he has already gone back to standing where he was.",
+      },
+      {
+        id: "wave-your-kit",
+        label: "Make yourself large with everything you are carrying",
+        hpDelta: 0,
+        foodDelta: 0,
+        preparationDelta: -1,
+        resultText:
+          "You open your arms with the groundsheet in both hands and become twice your own width. He decides against it. The sheet does not survive the hedge you back into.",
+      },
+      {
+        id: "back-off-and-circle",
+        label: "Back off and go the long way round the hollow",
+        hpDelta: 0,
+        foodDelta: -1,
+        preparationDelta: 0,
+        resultText:
+          "It costs you the rest of the afternoon and a meal eaten walking, but the hollow is behind you and so is he.",
+      },
+      {
+        id: "watch-where-it-drives",
+        label: "Let him move you, and watch where he wants you to go",
+        hpDelta: -1,
+        foodDelta: -1,
+        preparationDelta: 0,
+        codex: "teaches",
+        resultText:
+          "You give him ground and let him work, eating as you go, and he takes a strip off your forearm for being slow about it. But he only ever pushes one way. Downhill, every time, out of the hollow and away from it — and the moment you are below him he stops caring where you are.",
+      },
+      {
+        id: "step-uphill",
+        label: "Step uphill and let him keep the hollow",
+        hpDelta: 0,
+        foodDelta: 0,
+        preparationDelta: 0,
+        codex: "requires",
+        resultText:
+          "You go up the bank instead of back down the path, which is the one direction he has no argument with. He watches you climb out of his hollow and loses interest somewhere around the third step.",
       },
     ],
   },

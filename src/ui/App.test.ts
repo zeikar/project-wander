@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../core/game-state";
 import { encounters } from "../content/encounters";
+import { roadEvents } from "../content/events";
 import { canChooseOption } from "../core/reducer";
 import { costHint, leavesNoFood, trafficHint } from "./App";
 import { journey } from "../content/journey";
@@ -11,7 +12,10 @@ import { journey } from "../content/journey";
 function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
   return {
     phase: "encounter",
-    hp: 20,
+    // At `journey.start.hp` minus a little, because hp is clamped at the
+    // starting pool: a fixture ABOVE the ceiling is a state the game cannot
+    // reach, and it hid a label promising healing that would not happen.
+    hp: journey.start.hp - 4,
     food: 1,
     preparation: 1,
     legIndex: 0,
@@ -58,7 +62,7 @@ const baitATrace = fordBoar.options.find(
 )!; // requiresPreparation 1, spends nothing
 const readThePack = pineShadows.options.find(
   (option) => option.id === "read-the-pack",
-)!; // hpDelta -2, foodDelta -1
+)!; // hpDelta -1, foodDelta -1
 const watchTheFlightLine = beeHollow.options.find(
   (option) => option.id === "watch-the-flight-line",
 )!; // no delta of any kind
@@ -190,12 +194,50 @@ describe("costHint", () => {
   it("never lets a wounding option read as cheaper than a bloodless one", () => {
     const state = makeEncounterState({ preparation: 2, food: 2 });
 
-    for (const encounter of encounters) {
-      for (const option of encounter.options) {
+    // Places as well as animals: a place's options run through the same label.
+    for (const scene of [...encounters, ...roadEvents]) {
+      for (const option of scene.options) {
         expect(costHint(state, option).includes("blood")).toBe(
           option.hpDelta < 0,
         );
       }
+    }
+  });
+
+  // The mirror of the rule above, and it exists because the first option that
+  // gave hp back shipped reading as pure loss: "Sleep under their lean-to —
+  // costs 1 food", with the whole point of it unmentioned. Named on both
+  // sides, priced on neither.
+  it("names an option that gives hp back, without pricing it", () => {
+    const hurt = makeEncounterState({ preparation: 2, food: 2 });
+    const healing = [...encounters, ...roadEvents].flatMap((scene) =>
+      scene.options.filter((option) => option.hpDelta > 0),
+    );
+
+    expect(healing.length).toBeGreaterThan(0);
+    for (const option of healing) {
+      const hint = costHint(hurt, option);
+      expect(hint).toContain("some of yourself back");
+      expect(hint).not.toContain(String(option.hpDelta));
+    }
+  });
+
+  // The other half of the same rule. hp is clamped at the pool the traveler set
+  // out with, so at full health this option costs a meal and returns nothing —
+  // and a label still promising rest would be the same false clause the one
+  // above exists to fix, pointing the other way.
+  it("promises no healing to a traveler who is already whole", () => {
+    const whole = makeEncounterState({
+      hp: journey.start.hp,
+      preparation: 2,
+      food: 2,
+    });
+    const healing = [...encounters, ...roadEvents].flatMap((scene) =>
+      scene.options.filter((option) => option.hpDelta > 0),
+    );
+
+    for (const option of healing) {
+      expect(costHint(whole, option)).not.toContain("some of yourself back");
     }
   });
 
