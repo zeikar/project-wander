@@ -100,6 +100,25 @@ describe("leavesNoFood", () => {
     // also claim finishing the leg will cost HP.
     expect(leavesNoFood(state, waitItOut)).toBe(false);
   });
+
+  // The reducer returns `defeated` the moment an encounter empties the hp bar
+  // and never completes the leg, so a wound the traveler does not survive is
+  // followed by no toll at all. Promising one is the same false model this
+  // label exists to stop, pointing the other way.
+  it("does not warn when the wound itself ends the journey", () => {
+    const lethal = makeEncounterState({
+      hp: -wadePast.hpDelta,
+      food: 0,
+      activeEncounterId: "ford-boar",
+    });
+
+    expect(canChooseOption(lethal, wadePast)).toBe(true);
+    expect(lethal.hp + wadePast.hpDelta).toBe(0);
+    expect(leavesNoFood(lethal, wadePast)).toBe(false);
+
+    // One more hp and the traveler lives to be charged, so the warning returns.
+    expect(leavesNoFood({ ...lethal, hp: lethal.hp + 1 }, wadePast)).toBe(true);
+  });
 });
 
 describe("costHint", () => {

@@ -21,9 +21,10 @@ function newSeed(): number {
   return (Math.random() * 0x100000000) >>> 0;
 }
 
-// Shows food and preparation exactly; says only THAT an option costs hp, never
-// how much. Exported for its unit test: this file has no JSX-rendering harness,
-// so the pure string function is tested directly, the same way `leavesNoFood` is.
+// Shows food and preparation exactly. An hp cost is given as a relative band —
+// how it compares to what a hungry leg takes — and never as a number.
+// Exported for its unit test: this file has no JSX-rendering harness, so the
+// pure string function is tested directly, the same way `leavesNoFood` is.
 export function costHint(
   state: GameState,
   option: EncounterOption,
@@ -126,12 +127,19 @@ export function costHint(
 // the same click. Truthful warning about that, not about the hidden delta.
 // Guarded by canChooseOption so a disabled (unaffordable) option is never
 // described as costing HP it can't actually be chosen to spend.
+// And guarded against a LETHAL option, because the reducer returns `defeated`
+// the moment an encounter empties the hp bar and never completes the leg — so
+// on a wound the traveler does not survive, the road charges nothing. Warning
+// about a toll that cannot arrive is the same false model this label exists to
+// stop, told the other way round.
 export function leavesNoFood(
   state: GameState,
   option: EncounterOption,
 ): boolean {
   return (
-    canChooseOption(state, option) && state.food + option.foodDelta === 0
+    canChooseOption(state, option) &&
+    state.hp + option.hpDelta > 0 &&
+    state.food + option.foodDelta === 0
   );
 }
 
