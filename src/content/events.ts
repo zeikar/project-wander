@@ -38,9 +38,14 @@ export interface RoadEvent {
 // those nodes rather than 24.2%.
 export const EVENT_CHANCE = 0.25;
 
-// One authored place for now. It turns up about twice in an eight-leg journey,
-// so a second and third are the obvious next content — but one is what was
-// measured, and the deltas below are exactly the profile the sweep passed.
+// Three places, all offering the SAME four trades: take supplies and leave
+// something of your own, spend an evening for materials, pay in skin for what
+// is out of reach, or stop and sleep. Identical deltas is not laziness — it is
+// what lets the fiction vary without any of the measured balance moving, since
+// which place a roll picks cannot change a single reachable outcome. Only the
+// prose differs, and prose is what "about two discoveries a journey" needed.
+// Vary the deltas later if a place should mean something different; that is a
+// change to re-measure, not a change to author.
 export const roadEvents: readonly RoadEvent[] = [
   {
     id: "old-camp",
@@ -83,6 +88,94 @@ export const roadEvents: readonly RoadEvent[] = [
         preparationDelta: 0,
         resultText:
           "You eat, and you sleep dry under someone else's roof, and you wake up feeling considerably more like a person. You leave the shelter standing.",
+      },
+    ],
+  },
+  {
+    id: "wrecked-cart",
+    title: "A Cart Off the Road",
+    description:
+      "A two-wheeled cart lies over on its side where the verge gave way, one shaft snapped clean off. The load is still roped under its sheet, and grass has grown up through the spokes since it happened.",
+    options: [
+      {
+        id: "take-the-load",
+        label: "Take from the load, and mark it as taken",
+        hpDelta: 0,
+        foodDelta: 2,
+        preparationDelta: -1,
+        resultText:
+          "Sacked meal, mostly dry where the sheet held. You take two of them and tie a length of your own cord to the shaft where anyone coming back for it will see, which is the whole of the arrangement.",
+      },
+      {
+        id: "cut-the-harness",
+        label: "Cut away the harness for leather and rope",
+        hpDelta: 0,
+        foodDelta: -1,
+        preparationDelta: 1,
+        resultText:
+          "The buckles have seized and it takes the evening and a meal to work them free, but harness leather is harness leather, and there is a great deal of good cord on a cart.",
+      },
+      {
+        id: "lever-the-bed-up",
+        label: "Lever the bed up and get at what went under it",
+        hpDelta: -2,
+        foodDelta: 2,
+        preparationDelta: 0,
+        resultText:
+          "You get a fence rail under the bed and most of it up, and what spilled underneath is still there. The rail goes when your hands do, and the bed comes down across your shins.",
+      },
+      {
+        id: "sleep-in-the-bed",
+        label: "Sleep in the cart bed, out of the wet",
+        hpDelta: 2,
+        foodDelta: -1,
+        preparationDelta: 0,
+        resultText:
+          "The sheet still sheds rain and the bed is a hand above the ground, which turns out to be the difference between a night and a bad night. You eat, and you sleep, and you leave the sheet where it is.",
+      },
+    ],
+  },
+  {
+    id: "out-of-season-shieling",
+    title: "A Shieling Out of Season",
+    description:
+      "A round stone hut on the slope above the path, roofed with turf that has begun to slip. Whoever brings animals up here will not be back until the grass turns. The door is a slab of stone leaned aside, which is how they left it.",
+    options: [
+      {
+        id: "take-from-the-crock",
+        label: "Take what is in the crock, and leave what you can spare",
+        hpDelta: 0,
+        foodDelta: 2,
+        preparationDelta: -1,
+        resultText:
+          "Oats under a weighted lid, kept for a season that has not come round yet. You take what you need and put your spare tinder in beside them, and lean the lid back the way it was.",
+      },
+      {
+        id: "pull-the-turf",
+        label: "Pull dry turf and heather out of the roof",
+        hpDelta: 0,
+        foodDelta: -1,
+        preparationDelta: 1,
+        resultText:
+          "The underside of a turf roof is the driest thing on a wet hill. It costs you the evening and a meal to work enough of it loose without bringing the rest down, and it will light in any weather.",
+      },
+      {
+        id: "shift-the-hearth-slab",
+        label: "Shift the hearth slab and get at the store beneath",
+        hpDelta: -2,
+        foodDelta: 2,
+        preparationDelta: 0,
+        resultText:
+          "It is a herder's trick and it is not a light stone. You get it walked aside and the store under it is dry and good, and you take the skin off two knuckles putting the slab back.",
+      },
+      {
+        id: "sleep-in-the-shieling",
+        label: "Sleep inside with the slab pulled to",
+        hpDelta: 2,
+        foodDelta: -1,
+        preparationDelta: 0,
+        resultText:
+          "Stone walls, a roof that mostly holds, and a door you can close. You eat and you sleep properly for once, and in the morning you leave the slab leaned exactly where it was.",
       },
     ],
   },

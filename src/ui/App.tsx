@@ -54,7 +54,10 @@ export function costHint(
   // the same reason it was: the first option that GIVES hp back read as pure
   // loss on the screen ("Sleep under their lean-to — costs 1 food"), which is
   // the exact shape of the bug that made a missing cost read as harmless.
-  if (option.hpDelta > 0) {
+  // Conditional because the healing is: hp is clamped at the pool the traveler
+  // set out with, so at full health resting costs a meal and returns nothing,
+  // and promising otherwise is the same lie in the other direction.
+  if (option.hpDelta > 0 && state.hp < journey.start.hp) {
     gains.push("some of yourself back");
   }
   if (option.foodDelta > 0) {

@@ -12,7 +12,10 @@ import { journey } from "../content/journey";
 function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
   return {
     phase: "encounter",
-    hp: 20,
+    // At `journey.start.hp` minus a little, because hp is clamped at the
+    // starting pool: a fixture ABOVE the ceiling is a state the game cannot
+    // reach, and it hid a label promising healing that would not happen.
+    hp: journey.start.hp - 4,
     food: 1,
     preparation: 1,
     legIndex: 0,
@@ -206,16 +209,35 @@ describe("costHint", () => {
   // costs 1 food", with the whole point of it unmentioned. Named on both
   // sides, priced on neither.
   it("names an option that gives hp back, without pricing it", () => {
-    const state = makeEncounterState({ preparation: 2, food: 2 });
+    const hurt = makeEncounterState({ preparation: 2, food: 2 });
     const healing = [...encounters, ...roadEvents].flatMap((scene) =>
       scene.options.filter((option) => option.hpDelta > 0),
     );
 
     expect(healing.length).toBeGreaterThan(0);
     for (const option of healing) {
-      const hint = costHint(state, option);
+      const hint = costHint(hurt, option);
       expect(hint).toContain("some of yourself back");
       expect(hint).not.toContain(String(option.hpDelta));
+    }
+  });
+
+  // The other half of the same rule. hp is clamped at the pool the traveler set
+  // out with, so at full health this option costs a meal and returns nothing —
+  // and a label still promising rest would be the same false clause the one
+  // above exists to fix, pointing the other way.
+  it("promises no healing to a traveler who is already whole", () => {
+    const whole = makeEncounterState({
+      hp: journey.start.hp,
+      preparation: 2,
+      food: 2,
+    });
+    const healing = [...encounters, ...roadEvents].flatMap((scene) =>
+      scene.options.filter((option) => option.hpDelta > 0),
+    );
+
+    for (const option of healing) {
+      expect(costHint(whole, option)).not.toContain("some of yourself back");
     }
   });
 

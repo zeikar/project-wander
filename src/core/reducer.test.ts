@@ -1218,11 +1218,10 @@ describe("full journeys", () => {
   // to the PRNG, a route's odds, content deltas, or the number of authored
   // encounters (which shifts what the selection roll picks) — update it only
   // when such a change is deliberate.
-  // NOT re-recorded for route branches, and that is not an oversight: seed 1's
-  // four trigger rolls all happen to miss the band between the old flat 0.6 and
-  // the quiet way's 0.5, so this one line of play is genuinely unchanged. The
-  // branch is pinned by the tests above it instead — the two ways reach a
-  // different outcome on 205 of 300 seeds under a fixed option policy.
+  // Re-recorded for the eight-leg road, and again when two more places were
+  // authored. That second re-recording changed ONLY the two `activeEncounterId`
+  // values, because all three places offer identical deltas — which is exactly
+  // the evidence that adding them moved no balance, only fiction.
   // Re-recorded when the travel toll moved from the start of a leg to its
   // completion: the encounter row now carries the food that leg will spend
   // later, so only that row's food column changed.
@@ -1270,7 +1269,7 @@ describe("full journeys", () => {
       },
       {
         phase: "encounter",
-        activeEncounterId: "old-camp",
+        activeEncounterId: "out-of-season-shieling",
         hp: 14,
         food: 2,
         preparation: 2,
@@ -1310,7 +1309,7 @@ describe("full journeys", () => {
       },
       {
         phase: "encounter",
-        activeEncounterId: "old-camp",
+        activeEncounterId: "wrecked-cart",
         hp: 11,
         food: 1,
         preparation: 1,

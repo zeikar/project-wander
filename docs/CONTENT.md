@@ -61,6 +61,8 @@ Its options must include at least one a traveler with nothing left can still tak
 
 Places share an id space with animals. A collision serves the wrong scene.
 
+All three places offer the same four trades on purpose: take supplies and leave something of your own, spend an evening for materials, pay in skin for what is out of reach, or stop and sleep. Identical deltas let the fiction vary without moving any measured balance. Vary them later if a place should mean something different — that is a change to re-measure, not a change to author.
+
 They are drawn from the band ABOVE a route's own odds — the stretch that used to be an empty leg. Never mix them into the animal pool: that thins the species and the codex lives on meeting one twice.
 
 ---

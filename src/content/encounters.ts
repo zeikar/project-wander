@@ -146,13 +146,15 @@ export const encounters: readonly Encounter[] = [
       {
         id: "read-the-pack",
         label: "Keep pace with them and watch what they do",
-        // Cheapened from -2 when the road went to eight legs and five species.
-        // This is the weakest observation in the game — 12.6% of the offers
-        // where it was available at four legs — and spreading the animals
-        // thinner made a second wolf meeting rarer, dropping it to 5.2%, under
-        // the 10% at which this project calls an option decoration. At -1 it
-        // sits at 11.2% and is still strictly worse than `share-food`, which is
-        // the invariant that keeps knowledge from being free.
+        // Cheapened from -2 when the road went to eight legs: spreading five
+        // species over it made a second wolf meeting rarer, and this
+        // observation fell under the 10% of its offers at which this project
+        // calls an option decoration. -1 is the FLOOR, not a tuning choice —
+        // anything cheaper stops being strictly worse than `share-food`, and
+        // that domination is the whole thing keeping knowledge from being free.
+        // Current figures live in docs/CONTENT.md; they are not repeated here,
+        // because a number in two places is a number that will disagree with
+        // itself.
         hpDelta: -1,
         foodDelta: -1,
         preparationDelta: 0,
