@@ -1091,7 +1091,7 @@ describe("full journeys", () => {
     // "Most", not "nearly every", and the name changed with the number: this
     // guarantee genuinely weakened on an eight-leg road. It used to be 200 of
     // 200 and measures 145 now. Two things moved. The policy had to — `prudent`
-    // above only avoids wounds and never eats, which was enough when four days
+    // above only avoids wounds and never eats, which was enough when three days
     // of food covered a four-leg walk and starves on eight, so this measures
     // `provisioned` instead. And the road is simply longer, so there is more of
     // it to get wrong. That the remaining losses are the LINE's fault and not
