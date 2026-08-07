@@ -1238,10 +1238,10 @@ describe("full journeys", () => {
   // KNOWN BLIND SPOT: this line meets `old-camp` and takes its rest, but always
   // at full hp, where the ceiling clamps the result — so raising that rest from
   // 2 to 3 left this trace byte-identical. A trace that touches a value is not
-  // the same as a trace that covers it. The figure is pinned by name in the
-  // rest test above instead. This line also never learns the wolves, so
-  // `show-your-kit` never appears and its requirement is not covered here
-  // either; `App.test.ts` derives that one from the content.
+  // the same as a trace that covers it. That figure is pinned by name in the
+  // road-event content test in `encounters.test.ts`. This line also never
+  // learns the wolves, so `show-your-kit` never appears and its requirement is
+  // not covered here either; `App.test.ts` derives that one from the content.
   // Re-recorded when the travel toll moved from the start of a leg to its
   // completion: the encounter row now carries the food that leg will spend
   // later, so only that row's food column changed.
