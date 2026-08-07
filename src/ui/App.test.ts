@@ -62,7 +62,7 @@ const baitATrace = fordBoar.options.find(
 )!; // requiresPreparation 1, spends nothing
 const readThePack = pineShadows.options.find(
   (option) => option.id === "read-the-pack",
-)!; // hpDelta -2, foodDelta -1
+)!; // hpDelta -1, foodDelta -1
 const watchTheFlightLine = beeHollow.options.find(
   (option) => option.id === "watch-the-flight-line",
 )!; // no delta of any kind

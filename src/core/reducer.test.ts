@@ -434,8 +434,9 @@ describe("travel encounters", () => {
   });
 });
 
-// An rng state whose next roll lands BETWEEN the two ways' odds: the busy way
-// turns something up on it, the quiet way walks straight through.
+// An rng state whose next roll lands BETWEEN the two ways' odds. Both ways turn
+// something up on it, but not the same kind of thing: it is inside the busy
+// way's ANIMAL band and inside the quiet way's PLACE band.
 function findSplittingRngState(): number {
   const quiet = routeFor(0, "quiet").encounterChance;
   const busy = routeFor(0, "busy").encounterChance;
@@ -1081,21 +1082,23 @@ describe("full journeys", () => {
     expect(lost.length).toBeGreaterThan(0);
   });
 
-  it("can be won: a simple careful line arrives alive on nearly every seed", () => {
+  it("can be won: a simple careful line arrives alive on most seeds", () => {
     const won = SCANNED_SEEDS.filter((seed) => {
       const end = playJourney(seed, provisioned).at(-1);
       return end?.phase === "arrived" && end.hp > 0;
     });
 
-    // Re-baselined for an eight-leg road, and the guarantee genuinely weakened:
-    // it used to be 200 of 200 and is now 145. Two things changed. The policy
-    // had to — `prudent` above only avoids wounds and never eats, which was
-    // enough when three days of food covered a four-leg walk and starves on
-    // eight, so this measures `provisioned` instead. And the road is simply
-    // longer, so there is more of it to get wrong. That the remaining losses
-    // are the line's fault rather than the road's is what the sweep pins:
-    // death is unavoidable on 0.3% of seeds. The floor keeps roughly the same
-    // headroom under the measured figure as the 180/200 it replaces.
+    // "Most", not "nearly every", and the name changed with the number: this
+    // guarantee genuinely weakened on an eight-leg road. It used to be 200 of
+    // 200 and measures 145 now. Two things moved. The policy had to — `prudent`
+    // above only avoids wounds and never eats, which was enough when four days
+    // of food covered a four-leg walk and starves on eight, so this measures
+    // `provisioned` instead. And the road is simply longer, so there is more of
+    // it to get wrong. That the remaining losses are the LINE's fault and not
+    // the road's is what the sweep pins: death is unavoidable on 0.3% of seeds.
+    // The floor is 125 — deliberately well under the measured 145, because a
+    // simple policy's exact score is brittle to content retuning. What it
+    // guards is a collapse, not a wobble.
     expect(won.length).toBeGreaterThanOrEqual(125);
   });
 
@@ -1234,13 +1237,10 @@ describe("full journeys", () => {
   // so this line eats through three legs instead of two and walks only the last
   // one hungry. The single 3 hp toll at the end is the whole difference; the
   // choices are again unchanged.
-  // NOT re-recorded for milestone 5's codex, and that is the point: this line
-  // meets `pine-shadows` knowing nothing, so its menu is
-  // walk-on / light-torch / share-food / read-the-pack — `show-your-kit` is now
-  // hidden and `read-the-pack` (-2 hp) takes its slot. `prudent` still keeps the
-  // first of equal maximal hpDeltas, which is still `light-torch` at 0. Adding
-  // content that swaps a menu slot must not move a journey that never learns
-  // anything, and this trace is what proves it.
+  // A line that never learns anything meets `pine-shadows` with `show-your-kit`
+  // hidden and `read-the-pack` (-1 hp) in its slot. `prudent` keeps the first of
+  // equal maximal hpDeltas, so it still spends a torch. Content that swaps a
+  // menu slot must not move a journey that never opens it.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
