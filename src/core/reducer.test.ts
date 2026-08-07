@@ -1222,10 +1222,14 @@ describe("full journeys", () => {
   });
 
   // Golden trace: recorded by running this journey down the QUIET way, which is
-  // what `playJourney` walks by default. It intentionally breaks on any change
-  // to the PRNG, a route's odds, content deltas, or the number of authored
-  // encounters (which shifts what the selection roll picks) — update it only
-  // when such a change is deliberate.
+  // what `playJourney` walks by default. It breaks on any change whose effect
+  // reaches the six projected columns ALONG THIS ONE LINE — the PRNG, a route's
+  // odds, the number of authored encounters (which shifts what the selection
+  // roll picks), and the deltas this line actually spends. Update it only when
+  // such a change is deliberate.
+  // It is a snapshot of one line of play, not a fence around the content: a
+  // delta this line never pays, or pays where a clamp swallows it, goes by
+  // unseen. See the blind spot recorded below.
   // Re-recorded for the eight-leg road, and again when two more places were
   // authored. That second re-recording changed ONLY the two `activeEncounterId`
   // values, because the places offer identical trades — which is exactly the
