@@ -19,10 +19,13 @@ export interface LegRoute {
 // leg, in that leg's own terrain, because a fork the player cannot read is not
 // a decision: measured blind, choosing between two roads was worth 2.7 points
 // when the roads said only what they were LIKE, and 17.3 when they said what
-// was on them today. Deliberately a CATEGORY and never a species — knowing it
-// is an animal recovers almost all of that value (48.3% against 51.7% for
-// naming the creature), and stays clear of the one thing that would break the
-// codex.
+// was on them today.
+// A CATEGORY and never a species, and NOT because naming the creature would
+// break anything — that was the hypothesis, and it was measured and wrong: the
+// codex repeat rate held at 71-74% even when the sign named the animal. The
+// reason is a plain trade. The kind recovers almost all the value (48.3%
+// against 51.7% for the species), and a traveler reading a print in the mud
+// knows something came through, not what to call it.
 export interface LegSigns {
   animal: string;
   place: string;

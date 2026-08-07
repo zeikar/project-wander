@@ -115,6 +115,6 @@ Every leg forking was a rhythm, not an event, and a playtester stopped reading t
 
 Each leg carries three signs — what an animal ahead looks like there, what a stopped traveler looks like there, what empty looks like there — in that leg's own terrain.
 
-A sign names a KIND, never a species. Naming the creature would let a player dodge one, which is the mechanism that killed an earlier design's codex.
+A sign names a KIND, never a species. Naming the creature was measured and it does not hurt the codex — the repeat rate holds. It simply buys almost nothing: the kind is worth 48.3% of seeds against 51.7% for the species, and a print in the mud does not tell you what to call the animal.
 
 A sign must be true. It is computed from the same band the road then walks, so it cannot promise something the leg does not deliver.

@@ -56,10 +56,11 @@ export function offeredRoutes(state: GameState): readonly LegRoute[] {
 }
 
 // What a traveler standing at the fork can read off the ground about one of
-// the ways. A CATEGORY and never a species: measured blind, naming the kind of
-// thing ahead recovers almost all the value of naming the creature itself, and
-// naming the creature is what would let a player dodge a species and hollow out
-// the codex.
+// the ways. A CATEGORY and never a species: naming the kind recovers almost all
+// the value of naming the creature (48.3% of seeds against 51.7%), and a print
+// in the mud tells you something came through, not what to call it. Dodging a
+// species was the feared cost of going further and it was measured away — the
+// codex repeat rate did not move — so this is a trade, not a guard.
 export type RoadSign = "animal" | "place" | "quiet";
 
 export function peekRoad(state: GameState, route: LegRoute): RoadSign {

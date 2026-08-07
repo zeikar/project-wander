@@ -8,13 +8,12 @@ import {
   peekRoad,
   reduce,
 } from "../core/reducer";
-import type { RoadSign } from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
 import { arrivalEnding } from "../core/arrival";
 import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
-import type { JourneyLeg, LegRoute } from "../content/journey";
+import type { LegRoute } from "../content/journey";
 import { encounters } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 
@@ -174,14 +173,6 @@ export function trafficHint(
     : " — less likely to turn something up";
 }
 
-// The sign a road shows maps straight onto the leg's own three authored lines,
-// so the wording is terrain's rather than the rules'.
-const SIGN_TEXT: Record<RoadSign, keyof JourneyLeg["signs"]> = {
-  animal: "animal",
-  place: "place",
-  quiet: "quiet",
-};
-
 // Deliberately kept as local components in this one file: at this size,
 // separate screen files would be fragmentation, not organization.
 
@@ -259,7 +250,7 @@ function TravelScreen({
   const signs = routes.map((route) => peekRoad(state, route));
   const sharedSign =
     routes.length > 1 && signs.every((sign) => sign === signs[0])
-      ? leg.signs[SIGN_TEXT[signs[0]!]]
+      ? leg.signs[signs[0]!]
       : null;
 
   return (
@@ -302,7 +293,7 @@ function TravelScreen({
                 cannot act on, which is the definition of noise. */}
             {routes.length > 1 && sharedSign === null && (
               <span className="route-sign">
-                {leg.signs[SIGN_TEXT[peekRoad(state, route)]]}
+                {leg.signs[peekRoad(state, route)]}
               </span>
             )}
           </button>
