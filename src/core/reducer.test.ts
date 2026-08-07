@@ -534,17 +534,18 @@ describe("route branches", () => {
 
     expect(next.hp).toBe(journey.start.hp);
 
-    // And it still heals from below — by THREE at the camp, stated as a number
-    // rather than derived from the option, because nothing else pins it. The
-    // golden trace does meet this place and does take this option, but only
-    // ever at full hp, where the clamp above hides the figure entirely.
-    expect(roadEvents[0]!.id).toBe("old-camp");
+    // And it still heals from below, by whatever the option is AUTHORED to
+    // give — this file's job is that the reducer applies the delta, not what
+    // the delta is. The figure itself is pinned by name in encounters.test.ts,
+    // which is the only thing that pins it: the golden trace meets this place
+    // and takes this option, but always at full hp, where the clamp above
+    // swallows the number entirely.
     expect(
       reduce({ ...state, hp: journey.start.hp - 5 }, {
         type: "CHOOSE_ENCOUNTER_OPTION",
         optionId: rest.id,
       }).hp,
-    ).toBe(journey.start.hp - 5 + 3);
+    ).toBe(journey.start.hp - 5 + rest.hpDelta);
   });
 
   it("turns up a place on the band above the animals", () => {
