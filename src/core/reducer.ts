@@ -4,7 +4,29 @@ import { HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
 import { encounters } from "../content/encounters";
-import type { Encounter, EncounterOption } from "../content/encounters";
+import type { EncounterOption } from "../content/encounters";
+import { EVENT_CHANCE, roadEvents } from "../content/events";
+
+// What the core needs from whatever the road just put in front of the traveler,
+// whether that is an animal or a place. `EventOption` carries every required
+// field of `EncounterOption` and none of its optional ones, so a place's options
+// read here as encounter options whose `codex` and `requiresPreparation` are
+// simply absent — which is exactly what a place is: nothing to learn, nothing to
+// require.
+export interface Scene {
+  id: string;
+  title: string;
+  description: string;
+  options: readonly EncounterOption[];
+}
+
+// Animals and places share one id space, pinned unique in encounters.test.ts.
+export function findScene(id: string | null): Scene | undefined {
+  return (
+    encounters.find((candidate) => candidate.id === id) ??
+    roadEvents.find((candidate) => candidate.id === id)
+  );
+}
 
 // Which options this encounter puts on the table right now. A "teaches" option
 // is the observation itself and vanishes once the species is known; a "requires"
@@ -14,7 +36,7 @@ import type { Encounter, EncounterOption } from "../content/encounters";
 // whether a shown option can be paid for.
 export function offeredOptions(
   state: GameState,
-  encounter: Encounter,
+  encounter: Scene,
 ): readonly EncounterOption[] {
   const known = state.known.includes(encounter.id);
   return encounter.options.filter(
@@ -134,8 +156,14 @@ export function reduce(state: GameState, action: GameAction): GameState {
 
       // Setting out costs nothing: the leg is only paid for once it is
       // finished, whether that happens here or after an encounter.
+      // One roll decides all three outcomes, in bands: below the route's own
+      // odds is an animal, the next EVENT_CHANCE is a place, and whatever is
+      // left is an uneventful day. Places fill the stretch that used to turn up
+      // nothing rather than sharing the animals' band, which is what keeps the
+      // species repeat rate the codex depends on.
       const trigger = rollRandom(state.rngState);
-      if (trigger.value >= route.encounterChance) {
+      const eventCeiling = route.encounterChance + EVENT_CHANCE;
+      if (trigger.value >= eventCeiling) {
         return completeLeg({
           ...state,
           lastEncounterResult: null,
@@ -143,13 +171,15 @@ export function reduce(state: GameState, action: GameAction): GameState {
         });
       }
 
-      // Uniform pick over the authored list. `value` is in [0, 1) and the list
-      // is non-empty (asserted in encounters.test.ts), so the index is always
-      // in range. Repeats within one journey are allowed; the road does not
-      // promise you a new animal every time.
+      // Uniform pick over whichever authored list the band selected. `value` is
+      // in [0, 1) and both lists are non-empty (asserted in encounters.test.ts),
+      // so the index is always in range. Repeats within one journey are
+      // allowed; the road does not promise you something new every time.
       const selection = rollRandom(trigger.nextState);
-      const encounter =
-        encounters[Math.floor(selection.value * encounters.length)]!;
+      const scene =
+        trigger.value < route.encounterChance
+          ? encounters[Math.floor(selection.value * encounters.length)]!
+          : roadEvents[Math.floor(selection.value * roadEvents.length)]!;
 
       return {
         ...state,
@@ -161,7 +191,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         lastRoadToll: null,
         rngState: selection.nextState,
         phase: "encounter",
-        activeEncounterId: encounter.id,
+        activeEncounterId: scene.id,
       };
     }
 
@@ -170,31 +200,40 @@ export function reduce(state: GameState, action: GameAction): GameState {
         return state;
       }
 
-      const encounter = encounters.find(
-        (candidate) => candidate.id === state.activeEncounterId,
-      );
-      const option = encounter?.options.find(
+      const scene = findScene(state.activeEncounterId);
+      const option = scene?.options.find(
         (candidate) => candidate.id === action.optionId,
       );
-      if (!encounter || !option || !canChooseOption(state, option)) {
+      if (!scene || !option || !canChooseOption(state, option)) {
         return state;
       }
 
       const resolved: GameState = {
         ...state,
-        hp: Math.max(0, state.hp + option.hpDelta),
+        // Clamped at both ends. The floor has always been here; the ceiling
+        // arrived with the first option that GIVES hp back — sleeping under a
+        // found lean-to. Without it, resting is not recovery but accumulation:
+        // an hp-greedy line took that option every time it appeared and walked
+        // into the village with more of itself than it set out with, which also
+        // quietly moves every arrival threshold, since those are fractions of
+        // the starting pool.
+        hp: Math.min(
+          journey.start.hp,
+          Math.max(0, state.hp + option.hpDelta),
+        ),
         food: state.food + option.foodDelta,
         preparation: state.preparation + option.preparationDelta,
         activeEncounterId: null,
         lastEncounterResult: option.resultText,
         // Watching the animal is what teaches you about it. No dedupe is needed:
         // a "teaches" option stops being choosable the moment its encounter is
-        // known, so this can never append the same id twice.
+        // known, so this can never append the same id twice. A place carries no
+        // `codex` on any option, so this branch never fires for one.
         known:
           option.codex === "teaches"
-            ? [...state.known, encounter.id]
+            ? [...state.known, scene.id]
             : state.known,
-        log: [...state.log, `${encounter.title} — ${option.label}`],
+        log: [...state.log, `${scene.title} — ${option.label}`],
       };
 
       // Dying at the encounter site: the leg was never completed, so no toll is

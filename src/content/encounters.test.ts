@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { encounters } from "./encounters";
+import { roadEvents } from "./events";
 
 describe("encounters content", () => {
   // The reducer selects an encounter with a non-null assertion, which is only
@@ -107,4 +108,58 @@ describe("encounters content", () => {
       ).toBe(true);
     },
   );
+});
+
+describe("road events content", () => {
+  it("is not empty and has unique ids", () => {
+    expect(roadEvents.length).toBeGreaterThan(0);
+    expect(new Set(roadEvents.map((event) => event.id)).size).toBe(
+      roadEvents.length,
+    );
+  });
+
+  // Animals and places share one id space: the reducer stores whichever the
+  // road turned up in the same `activeEncounterId`, and resolves it by looking
+  // in both lists. A collision would silently serve the wrong scene.
+  it("shares no id with any animal", () => {
+    const animalIds = new Set(encounters.map((encounter) => encounter.id));
+
+    for (const event of roadEvents) {
+      expect(animalIds.has(event.id)).toBe(false);
+    }
+  });
+
+  it("gives every place at least two options, with unique ids", () => {
+    for (const event of roadEvents) {
+      expect(event.options.length).toBeGreaterThanOrEqual(2);
+      expect(new Set(event.options.map((option) => option.id)).size).toBe(
+        event.options.length,
+      );
+    }
+  });
+
+  // A place is not a species: there is nothing to learn about it and nothing
+  // knowledge unlocks there. Enforced structurally rather than by convention,
+  // because an event option carrying a codex marker would put an id into
+  // `state.known` that the field-note lookup cannot resolve.
+  it("carries nothing the codex could latch onto", () => {
+    for (const event of roadEvents) {
+      for (const option of event.options) {
+        expect(option).not.toHaveProperty("codex");
+        expect(option).not.toHaveProperty("requiresPreparation");
+      }
+    }
+  });
+
+  // The road always has to leave something to click. A place whose every option
+  // costs food or preparation could be reached with neither in hand.
+  it("always leaves at least one option a destitute traveler can take", () => {
+    for (const event of roadEvents) {
+      const free = event.options.filter(
+        (option) => option.foodDelta >= 0 && option.preparationDelta >= 0,
+      );
+
+      expect(free.length).toBeGreaterThan(0);
+    }
+  });
 });

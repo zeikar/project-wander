@@ -49,3 +49,28 @@ Open ground carries the lower chance, thick cover the higher. Keep that true on 
 Every leg carries the same pair of odds as every other leg.
 
 The traffic hint is derived from those numbers, never authored beside them.
+
+
+---
+
+Places
+
+A place carries no `codex` and no `fieldNote`. Nothing about it is learnable.
+
+Its options must include at least one a traveler with nothing left can still take.
+
+Places share an id space with animals. A collision serves the wrong scene.
+
+They are drawn from the band ABOVE a route's own odds — the stretch that used to be an empty leg. Never mix them into the animal pool: that thins the species and the codex lives on meeting one twice.
+
+---
+
+Animals
+
+Five species. Two of them give food.
+
+That ratio is not flavour. Adding cost-shaped animals thins the share of encounters that can feed you, and an eight-leg road runs on food.
+
+An observation must be strictly dominated by an option that is always offered. That gap is the price of the knowledge.
+
+`read-the-pack` sits at 10.3% of its offers, the lowest of the five observations and the closest to being decoration. It cannot be made cheaper without breaking the dominance rule, so its payoff — `show-your-kit`, gated on holding two preparation an eight-leg road tends to spend — is what a later milestone should look at.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../core/game-state";
 import { encounters } from "../content/encounters";
+import { roadEvents } from "../content/events";
 import { canChooseOption } from "../core/reducer";
 import { costHint, leavesNoFood, trafficHint } from "./App";
 import { journey } from "../content/journey";
@@ -190,12 +191,31 @@ describe("costHint", () => {
   it("never lets a wounding option read as cheaper than a bloodless one", () => {
     const state = makeEncounterState({ preparation: 2, food: 2 });
 
-    for (const encounter of encounters) {
-      for (const option of encounter.options) {
+    // Places as well as animals: a place's options run through the same label.
+    for (const scene of [...encounters, ...roadEvents]) {
+      for (const option of scene.options) {
         expect(costHint(state, option).includes("blood")).toBe(
           option.hpDelta < 0,
         );
       }
+    }
+  });
+
+  // The mirror of the rule above, and it exists because the first option that
+  // gave hp back shipped reading as pure loss: "Sleep under their lean-to —
+  // costs 1 food", with the whole point of it unmentioned. Named on both
+  // sides, priced on neither.
+  it("names an option that gives hp back, without pricing it", () => {
+    const state = makeEncounterState({ preparation: 2, food: 2 });
+    const healing = [...encounters, ...roadEvents].flatMap((scene) =>
+      scene.options.filter((option) => option.hpDelta > 0),
+    );
+
+    expect(healing.length).toBeGreaterThan(0);
+    for (const option of healing) {
+      const hint = costHint(state, option);
+      expect(hint).toContain("some of yourself back");
+      expect(hint).not.toContain(String(option.hpDelta));
     }
   });
 

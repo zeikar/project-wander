@@ -74,7 +74,18 @@ export const journey: Journey = {
   // its best fixed policy was only SEARCHED for, by hill climbing, which bounds
   // the true best from below (33.7%), so a result under 70% proves nothing.
   // What is exhaustive about dominance sits beside the route constants above.
-  start: { hp: 14, food: 3, preparation: 2 },
+  // food 3 -> 4 when the road doubled to eight legs. Not a difficulty knob but
+  // a length one, and it was chosen against a measured tension: starting food
+  // moves BOTH the lockout and how survivable the road is, in the same
+  // direction. At 3 the best ending was unreachable on 22.7% of seeds and a
+  // simple careful line (fill the pack when it runs low, otherwise avoid
+  // wounds) arrived alive on 60.3%; at 5 those become 5.0% and 79.0%, but the
+  // rowan's `shake-the-bough` falls under 10% of its offers and stops being
+  // worth taking. 4 halves the lockout to 13.0%, drops unavoidable death from
+  // 1.7% to 0.3%, and leaves every option exactly as healthy as it was at 3.
+  // Losing a twenty-minute journey to a seed costs far more than losing a
+  // five-minute one, which is what moved this at all.
+  start: { hp: 14, food: 4, preparation: 2 },
   legs: [
     {
       name: "The Old Millpond Road",
@@ -119,6 +130,27 @@ export const journey: Journey = {
       ],
     },
     {
+      name: "The Hedged Furlongs",
+      description:
+        "The road runs between old strip fields, each one a different green, divided by hedges nobody has laid in a generation. A woman working a bean row straightens up to watch you go by, and does not wave.",
+      routes: [
+        {
+          id: "headland",
+          label: "Walk the headland",
+          description:
+            "Bare ploughed earth along the field's edge, with the whole furlong open beside you.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "hedge-line",
+          label: "Follow the hedge line",
+          description:
+            "Blackthorn and hazel grown together into a wall, with a green tunnel running along the foot of it.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
+    },
+    {
       name: "The Ferry Crossing",
       description:
         "An old ferryman rings a small bell to call the boat back from the far bank. Below the crossing the river spreads out wide and shallow, and a footpath runs down to meet it.",
@@ -140,6 +172,48 @@ export const journey: Journey = {
       ],
     },
     {
+      name: "Beckwith Common",
+      description:
+        "The hedges give out and the land opens into rough common — gorse, thin grass, and a scatter of sheep that belong to somebody. The wind up here has nothing to be stopped by.",
+      routes: [
+        {
+          id: "open-common",
+          label: "Cross the open common",
+          description:
+            "Cropped grass and burnt gorse stumps, and nothing taller than your knee for half a mile.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "gorse-brakes",
+          label: "Skirt the gorse brakes",
+          description:
+            "The gorse has gone unburned for years and stands over head height. There are runs through it that you did not make.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
+    },
+    {
+      name: "The Charcoal Burners' Ground",
+      description:
+        "The wood here has been cut and cut again. Black circles mark where the stacks stood, and the ground underfoot is soft with a century of ash. Nobody has burned here this season.",
+      routes: [
+        {
+          id: "burnt-platforms",
+          label: "Cross the burnt platforms",
+          description:
+            "Flat swept circles of black ground, open to the sky and joined end to end.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "coppice-path",
+          label: "Take the coppice path",
+          description:
+            "Hazel cut and regrown a dozen times into a thicket of poles, close enough that you go through it sideways.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
+    },
+    {
       name: "Pinewood Rise",
       description:
         "The path climbs through a thin pine wood where the wind sounds like distant conversation. Somewhere off in the trees, something large moves and then goes quiet.",
@@ -156,6 +230,27 @@ export const journey: Journey = {
           label: "Keep to the pines",
           description:
             "Sheltered and close, and quiet the way a room is quiet when someone else is in it.",
+          encounterChance: BUSY_ROUTE_CHANCE,
+        },
+      ],
+    },
+    {
+      name: "The Long Descent",
+      description:
+        "The land tips, and for the first time you can see where you have been going: a valley with smoke standing in it, and somewhere down there a mill wheel you cannot hear yet.",
+      routes: [
+        {
+          id: "drove-road",
+          label: "Take the drove road down",
+          description:
+            "Wide, stony and walled on both sides, dropping the whole way with the valley open below you.",
+          encounterChance: QUIET_ROUTE_CHANCE,
+        },
+        {
+          id: "hanging-wood",
+          label: "Cut down through the hanging wood",
+          description:
+            "Old oak on a steep slope, holding the mist under it long after the road above has cleared.",
           encounterChance: BUSY_ROUTE_CHANCE,
         },
       ],
