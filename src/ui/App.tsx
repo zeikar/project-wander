@@ -21,22 +21,35 @@ function newSeed(): number {
   return (Math.random() * 0x100000000) >>> 0;
 }
 
-// Shows food and preparation exactly; says only THAT an option costs hp, never
-// how much. Exported for its unit test: this file has no JSX-rendering harness,
-// so the pure string function is tested directly, the same way `leavesNoFood` is.
+// Shows food and preparation exactly. An hp cost is given as a relative band —
+// how it compares to what a hungry leg takes — and never as a number.
+// Exported for its unit test: this file has no JSX-rendering harness, so the
+// pure string function is tested directly, the same way `leavesNoFood` is.
 export function costHint(
   state: GameState,
   option: EncounterOption,
 ): string {
   const costs: string[] = [];
-  // The sign of an hp cost, never its size. While only food and preparation were
-  // labelled, all five options carrying a `costs` clause were hp-neutral and three
-  // of the five carrying none drew blood, so a missing COST read as "harmless".
-  // At the hollow that inverted the real ordering: `reach-in — gains 2 food` looked
-  // strictly better than `smoke-them`, which pays preparation for the same food,
-  // while quietly costing 3 hp. How big the wound is, is still found by taking it.
+  // The SCALE of an hp cost, never the number. Naming the cost at all came
+  // first, because a missing clause read as "harmless" and inverted the real
+  // ordering at the hollow. But one flat word for costs running from 1 to 6 was
+  // not neutral either — a playtester saw a 2 hp wound three times, generalised
+  // it, and bet on a fourth encounter costing the same. It cost 4:
+  // "I generalized a fixed value from three matching data points and was wrong
+  // the moment the encounter type changed." Silence does not leave the player
+  // without a model; it leaves them with a WRONG one.
+  // Three bands, hinged on the one hp figure the game already states outright —
+  // what a leg costs when there is nothing left to eat. Under it, at it, over
+  // it. Exactly how much is still found by taking it.
   if (option.hpDelta < 0) {
-    costs.push("blood");
+    const wound = -option.hpDelta;
+    costs.push(
+      wound < HUNGRY_TRAVEL_HP_LOSS
+        ? "a little blood"
+        : wound > HUNGRY_TRAVEL_HP_LOSS
+          ? "a lot of blood"
+          : "blood",
+    );
   }
   if (option.foodDelta < 0) {
     costs.push(`${-option.foodDelta} food`);
@@ -114,12 +127,19 @@ export function costHint(
 // the same click. Truthful warning about that, not about the hidden delta.
 // Guarded by canChooseOption so a disabled (unaffordable) option is never
 // described as costing HP it can't actually be chosen to spend.
+// And guarded against a LETHAL option, because the reducer returns `defeated`
+// the moment an encounter empties the hp bar and never completes the leg — so
+// on a wound the traveler does not survive, the road charges nothing. Warning
+// about a toll that cannot arrive is the same false model this label exists to
+// stop, told the other way round.
 export function leavesNoFood(
   state: GameState,
   option: EncounterOption,
 ): boolean {
   return (
-    canChooseOption(state, option) && state.food + option.foodDelta === 0
+    canChooseOption(state, option) &&
+    state.hp + option.hpDelta > 0 &&
+    state.food + option.foodDelta === 0
   );
 }
 
@@ -297,10 +317,19 @@ function EncounterScreen({
           >
             {option.label}
             {costHint(state, option)}
+            {/* "as well" and "then" are load-bearing. A playtester could not
+                tell whether this figure replaced the option's own cost, was
+                added to it, or only applied depending on something later in the
+                leg, and worked the rule out by trial instead: it "fires when
+                food hits/stays at 0 at leg-end, but the game never stated that
+                rule directly on screen." Banding the option's own hp cost put a
+                worded price next to a numbered one, which made saying which is
+                which more urgent, not less. */}
             {leavesNoFood(state, option) && (
               <span className="warning">
                 {" "}
-                — finishing the leg will cost you {HUNGRY_TRAVEL_HP_LOSS} HP
+                — and then, with nothing left to eat, finishing the leg will
+                cost you {HUNGRY_TRAVEL_HP_LOSS} HP as well
               </span>
             )}
           </button>
