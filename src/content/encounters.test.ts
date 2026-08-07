@@ -151,6 +151,38 @@ describe("road events content", () => {
     }
   });
 
+  // The one number that distinguishes one place from another, pinned because
+  // four measured attempts at richer differentiation each turned some place's
+  // own options into decoration. Also pins the floor: a rest costs a meal, and
+  // a meal is worth roughly the 3 hp a hungry leg takes, so hp+1 is never a
+  // trade worth making — it measured at 2.3% of its offers.
+  it("varies places only by how good the night is, and never below the floor", () => {
+    const rests = roadEvents.map((event) => {
+      const rest = event.options.find((option) => option.hpDelta > 0);
+      expect(rest).toBeDefined();
+      return { id: event.id, hp: rest!.hpDelta };
+    });
+
+    for (const rest of rests) {
+      expect(rest.hp).toBeGreaterThanOrEqual(2);
+    }
+    // Exactly one place sleeps better than the rest.
+    const best = Math.max(...rests.map((rest) => rest.hp));
+    expect(rests.filter((rest) => rest.hp === best)).toHaveLength(1);
+
+    // And everything OTHER than the night is identical across places, which is
+    // what keeps every place option worth taking.
+    const shape = (id: string) =>
+      roadEvents
+        .find((event) => event.id === id)!
+        .options.filter((option) => option.hpDelta <= 0)
+        .map((option) => `${option.hpDelta},${option.foodDelta},${option.preparationDelta}`)
+        .sort()
+        .join(" | ");
+
+    expect(new Set(roadEvents.map((event) => shape(event.id))).size).toBe(1);
+  });
+
   // The road always has to leave something to click. A place whose every option
   // costs food or preparation could be reached with neither in hand.
   it("always leaves at least one option a destitute traveler can take", () => {

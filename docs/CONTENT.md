@@ -61,7 +61,15 @@ Its options must include at least one a traveler with nothing left can still tak
 
 Places share an id space with animals. A collision serves the wrong scene.
 
-All three places offer the same four trades on purpose: take supplies and leave something of your own, spend an evening for materials, pay in skin for what is out of reach, or stop and sleep. Identical deltas let the fiction vary without moving any measured balance. Vary them later if a place should mean something different — that is a change to re-measure, not a change to author.
+All three places offer the same four trades: take supplies and leave something of your own, spend an evening for materials, pay in skin for what is out of reach, or stop and sleep.
+
+They differ in exactly one number — how good the night is — and that restraint cost four measured attempts to learn.
+
+Food is the binding resource on this road, so a place that hands over more of it makes its own other choices pointless. A cargo worth 3 food was taken on 99.8% of its offers and left that place's other three options at 0.9%, 2.9% and 0.4%. Thinning every take instead moved the decoration elsewhere; differentiating the roof as well made it worse still.
+
+The night is the one axis food does not bind. Even there the floor is 2: a rest costs a meal, a meal is worth roughly the 3 hp a hungry leg takes, and a rest worth 1 hp measured at 2.3% of its offers.
+
+A place that should genuinely mean something different needs a new KIND of trade, not a bigger one.
 
 They are drawn from the band ABOVE a route's own odds — the stretch that used to be an empty leg. Never mix them into the animal pool: that thins the species and the codex lives on meeting one twice.
 
@@ -75,4 +83,6 @@ That ratio is not flavour. Adding cost-shaped animals thins the share of encount
 
 An observation must be strictly dominated by an option that is always offered. That gap is the price of the knowledge.
 
-`read-the-pack` sits at 10.3% of its offers, the lowest of the five observations and the closest to being decoration. It cannot be made cheaper without breaking the dominance rule, so its payoff — `show-your-kit`, gated on holding two preparation an eight-leg road tends to spend — is what a later milestone should look at.
+`read-the-pack` was the weakest observation in the game at 10.3% of its offers, and the fix was on the payoff side rather than the price: `show-your-kit` was the only `requires` option asking for two preparation HELD, which an eight-leg road spends. At one it is offered 130 times across 300 seeds instead of 59, and `read-the-pack` reaches 19.0%.
+
+It was not lowered to zero, which measured better again at 20.4%. `requiresPreparation` would then have exactly one consumer left — the state a playtest already found registers with nobody — and the label promises a kit to show.

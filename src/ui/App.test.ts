@@ -150,7 +150,7 @@ describe("costHint", () => {
     // Playtest finding: the requirement/cost distinction was legible but not
     // TRUSTED — a hoarder read it correctly and still took a wound rather than
     // risk being billed. Saying "spends none" removes the inference.
-    expect(hint).toBe(" — needs 2 preparation in hand, spends none");
+    expect(hint).toBe(" — needs 1 preparation in hand, spends none");
     expect(hint).not.toContain("costs");
   });
 
@@ -166,7 +166,7 @@ describe("costHint", () => {
 
     expect(canChooseOption(state, showYourKit)).toBe(false);
     expect(costHint(state, showYourKit)).toContain(
-      "needs 2 preparation in hand",
+      "needs 1 preparation in hand",
     );
   });
 

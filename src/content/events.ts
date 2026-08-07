@@ -38,14 +38,25 @@ export interface RoadEvent {
 // those nodes rather than 24.2%.
 export const EVENT_CHANCE = 0.25;
 
-// Three places, all offering the SAME four trades: take supplies and leave
+// Three places offering the same four trades — take supplies and leave
 // something of your own, spend an evening for materials, pay in skin for what
-// is out of reach, or stop and sleep. Identical deltas is not laziness — it is
-// what lets the fiction vary without any of the measured balance moving, since
-// which place a roll picks cannot change a single reachable outcome. Only the
-// prose differs, and prose is what "about two discoveries a journey" needed.
-// Vary the deltas later if a place should mean something different; that is a
-// change to re-measure, not a change to author.
+// is out of reach, or stop and sleep — differing in ONE number: how good the
+// night is.
+//
+// That restraint is measured, and four attempts bought it. Giving the places
+// real characters kills their own options, because food is the binding resource
+// on this road and any place handing over more of it makes its other three
+// choices pointless: a cargo worth 3 food was taken on 99.8% of its offers and
+// left the cart's other options at 0.9%, 2.9% and 0.4%. Thinning every take
+// instead moved the decoration elsewhere (three options under 10%), and
+// differentiating the roof as well made it worse (four, one at 0.5%). Only the
+// night can vary, because it is the one axis food does not bind — and even
+// there hp+1 is never worth a meal, since a meal is worth roughly the 3 hp a
+// hungry leg costs. Two is the floor; the camp's three is the whole of the
+// difference between these places.
+//
+// If a place should ever mean something genuinely different, it needs a new
+// KIND of trade rather than a bigger one — and that is a change to re-measure.
 export const roadEvents: readonly RoadEvent[] = [
   {
     id: "old-camp",
@@ -83,11 +94,16 @@ export const roadEvents: readonly RoadEvent[] = [
       {
         id: "sleep-under-it",
         label: "Sleep under their lean-to and go on in the morning",
-        hpDelta: 2,
+        // Three, where the other two places give two. A lean-to built by
+        // someone who knew what they were doing is the best night on the road,
+        // and this single number is the only thing distinguishing one place
+        // from another. Measured: it lifts this option to 33.1% of its offers
+        // against 17.3% for the other two, with nothing else moving.
+        hpDelta: 3,
         foodDelta: -1,
         preparationDelta: 0,
         resultText:
-          "You eat, and you sleep dry under someone else's roof, and you wake up feeling considerably more like a person. You leave the shelter standing.",
+          "You eat, and you sleep dry under someone else's roof, and you wake in the morning feeling like a different traveler entirely — the boughs were laid by somebody who had done it a hundred times. You leave the shelter standing.",
       },
     ],
   },
@@ -175,7 +191,7 @@ export const roadEvents: readonly RoadEvent[] = [
         foodDelta: -1,
         preparationDelta: 0,
         resultText:
-          "Stone walls, a roof that mostly holds, and a door you can close. You eat and you sleep properly for once, and in the morning you leave the slab leaned exactly where it was.",
+          "Stone walls, a roof that mostly holds, and a door you can close. You eat, and you get a few hours that are better than none, and in the morning you leave the slab leaned exactly where it was.",
       },
     ],
   },
