@@ -53,7 +53,7 @@ const pineShadows = encounters.find(
 )!;
 const showYourKit = pineShadows.options.find(
   (option) => option.id === "show-your-kit",
-)!; // requiresPreparation 2, spends nothing
+)!; // requiresPreparation 1, spends nothing
 const lightTorch = pineShadows.options.find(
   (option) => option.id === "light-torch",
 )!; // preparationDelta -1

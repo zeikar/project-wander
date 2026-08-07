@@ -533,13 +533,18 @@ describe("route branches", () => {
     });
 
     expect(next.hp).toBe(journey.start.hp);
-    // And it still heals from below.
+
+    // And it still heals from below — by THREE at the camp, stated as a number
+    // rather than derived from the option, because nothing else pins it. The
+    // golden trace does meet this place and does take this option, but only
+    // ever at full hp, where the clamp above hides the figure entirely.
+    expect(roadEvents[0]!.id).toBe("old-camp");
     expect(
       reduce({ ...state, hp: journey.start.hp - 5 }, {
         type: "CHOOSE_ENCOUNTER_OPTION",
         optionId: rest.id,
       }).hp,
-    ).toBe(journey.start.hp - 5 + rest.hpDelta);
+    ).toBe(journey.start.hp - 5 + 3);
   });
 
   it("turns up a place on the band above the animals", () => {
@@ -1223,8 +1228,15 @@ describe("full journeys", () => {
   // when such a change is deliberate.
   // Re-recorded for the eight-leg road, and again when two more places were
   // authored. That second re-recording changed ONLY the two `activeEncounterId`
-  // values, because all three places offer identical deltas — which is exactly
-  // the evidence that adding them moved no balance, only fiction.
+  // values, because the places offer identical trades — which is exactly the
+  // evidence that adding them moved no balance, only fiction.
+  // KNOWN BLIND SPOT: this line meets `old-camp` and takes its rest, but always
+  // at full hp, where the ceiling clamps the result — so raising that rest from
+  // 2 to 3 left this trace byte-identical. A trace that touches a value is not
+  // the same as a trace that covers it. The figure is pinned by name in the
+  // rest test above instead. This line also never learns the wolves, so
+  // `show-your-kit` never appears and its requirement is not covered here
+  // either; `App.test.ts` derives that one from the content.
   // Re-recorded when the travel toll moved from the start of a leg to its
   // completion: the encounter row now carries the food that leg will spend
   // later, so only that row's food column changed.
