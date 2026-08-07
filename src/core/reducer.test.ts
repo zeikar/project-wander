@@ -533,7 +533,13 @@ describe("route branches", () => {
     });
 
     expect(next.hp).toBe(journey.start.hp);
-    // And it still heals from below.
+
+    // And it still heals from below, by whatever the option is AUTHORED to
+    // give — this file's job is that the reducer applies the delta, not what
+    // the delta is. The figure itself is pinned by name in encounters.test.ts,
+    // which is the only thing that pins it: the golden trace meets this place
+    // and takes this option, but always at full hp, where the clamp above
+    // swallows the number entirely.
     expect(
       reduce({ ...state, hp: journey.start.hp - 5 }, {
         type: "CHOOSE_ENCOUNTER_OPTION",
@@ -1217,14 +1223,25 @@ describe("full journeys", () => {
   });
 
   // Golden trace: recorded by running this journey down the QUIET way, which is
-  // what `playJourney` walks by default. It intentionally breaks on any change
-  // to the PRNG, a route's odds, content deltas, or the number of authored
-  // encounters (which shifts what the selection roll picks) — update it only
-  // when such a change is deliberate.
+  // what `playJourney` walks by default. It breaks on any change whose effect
+  // reaches the six projected columns ALONG THIS ONE LINE — the PRNG, a route's
+  // odds, the number of authored encounters (which shifts what the selection
+  // roll picks), and the deltas this line actually spends. Update it only when
+  // such a change is deliberate.
+  // It is a snapshot of one line of play, not a fence around the content: a
+  // delta this line never pays, or pays where a clamp swallows it, goes by
+  // unseen. See the blind spot recorded below.
   // Re-recorded for the eight-leg road, and again when two more places were
   // authored. That second re-recording changed ONLY the two `activeEncounterId`
-  // values, because all three places offer identical deltas — which is exactly
-  // the evidence that adding them moved no balance, only fiction.
+  // values, because the places offer identical trades — which is exactly the
+  // evidence that adding them moved no balance, only fiction.
+  // KNOWN BLIND SPOT: this line meets `old-camp` and takes its rest, but always
+  // at full hp, where the ceiling clamps the result — so raising that rest from
+  // 2 to 3 left this trace byte-identical. A trace that touches a value is not
+  // the same as a trace that covers it. That figure is pinned by name in the
+  // road-event content test in `encounters.test.ts`. This line also never
+  // learns the wolves, so `show-your-kit` never appears and its requirement is
+  // not covered here either; `App.test.ts` derives that one from the content.
   // Re-recorded when the travel toll moved from the start of a leg to its
   // completion: the encounter row now carries the food that leg will spend
   // later, so only that row's food column changed.

@@ -134,7 +134,18 @@ export const encounters: readonly Encounter[] = [
         hpDelta: 0,
         foodDelta: 0,
         preparationDelta: 0,
-        requiresPreparation: 2,
+        // Lowered from 2 when the road went to eight legs. This was the only
+        // `requires` option in the game asking for two preparation HELD, and a
+        // longer walk spends preparation, so the payoff was simply not on the
+        // table often enough to be worth learning: it was offered 59 times
+        // across 300 seeds, and `read-the-pack` — the price of that knowledge —
+        // sat at 10.3% of its offers, barely over the line at which this
+        // project calls an option decoration. At 1 it is offered 130 times and
+        // `read-the-pack` reaches 19.0%. Not lowered to 0, which measured
+        // better still at 20.4%: `requiresPreparation` would then have exactly
+        // one consumer left, which is the state a playtest already found
+        // registers with nobody — and the label promises a kit to show.
+        requiresPreparation: 1,
         // Gated on knowledge because, offered from a first meeting, this
         // answered the wolves for free on almost every line that held the kit —
         // which left `light-torch` and `share-food` almost never worth taking.

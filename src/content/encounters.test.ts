@@ -151,6 +151,61 @@ describe("road events content", () => {
     }
   });
 
+  // The one number that distinguishes one place from another, pinned by VALUE
+  // because four measured attempts at richer differentiation each turned some
+  // place's own options into decoration. Changing any figure here is a design
+  // decision to re-measure, not a tuning slip to wave through.
+  it("varies places only by how good the night is, and never below the floor", () => {
+    // A rest costs a meal, and a meal is worth roughly the 3 hp a hungry leg
+    // takes, so hp+1 is never a trade worth making — it measured at 2.3% of its
+    // offers. Two is the floor; the camp's three is the whole of the difference
+    // between these places.
+    const NIGHTS: Record<string, number> = {
+      "old-camp": 3,
+      "wrecked-cart": 2,
+      "out-of-season-shieling": 2,
+    };
+
+    expect(roadEvents.map((event) => event.id).sort()).toEqual(
+      Object.keys(NIGHTS).sort(),
+    );
+
+    for (const event of roadEvents) {
+      // Exactly one, so "the night" is a single well-defined thing rather than
+      // whichever healing option happens to come first.
+      const nights = event.options.filter((option) => option.hpDelta > 0);
+      expect(nights).toHaveLength(1);
+
+      const night = nights[0]!;
+      expect(night.hpDelta).toBe(NIGHTS[event.id]);
+      expect(night.hpDelta).toBeGreaterThanOrEqual(2);
+      // And every night is bought with the same meal, so the hp figure above is
+      // genuinely the only thing that varies.
+      expect(night.foodDelta).toBe(-1);
+      expect(night.preparationDelta).toBe(0);
+    }
+
+    // Exactly one place sleeps better than the rest.
+    const best = Math.max(...Object.values(NIGHTS));
+    expect(
+      Object.values(NIGHTS).filter((hp) => hp === best),
+    ).toHaveLength(1);
+
+    // Everything OTHER than the night is identical across places, which is what
+    // keeps every place option worth taking.
+    const trades = (event: (typeof roadEvents)[number]) =>
+      event.options
+        .filter((option) => option.hpDelta <= 0)
+        .map(
+          (option) =>
+            `${option.hpDelta},${option.foodDelta},${option.preparationDelta}`,
+        )
+        .sort()
+        .join(" | ");
+
+    expect(new Set(roadEvents.map(trades)).size).toBe(1);
+  });
+
   // The road always has to leave something to click. A place whose every option
   // costs food or preparation could be reached with neither in hand.
   it("always leaves at least one option a destitute traveler can take", () => {
