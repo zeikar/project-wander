@@ -3,6 +3,7 @@ import type { GameState } from "../core/game-state";
 import { encounters } from "../content/encounters";
 import { roadEvents } from "../content/events";
 import { canChooseOption } from "../core/reducer";
+import { HUNGRY_TRAVEL_HP_LOSS } from "../core/game-state";
 import { costHint, leavesNoFood, trafficHint } from "./App";
 import { journey } from "../content/journey";
 
@@ -178,7 +179,7 @@ describe("costHint", () => {
     const state = makeEncounterState();
 
     // wade-past is hpDelta -6 and spends nothing else.
-    expect(costHint(state, wadePast)).toBe(" — costs blood");
+    expect(costHint(state, wadePast)).toBe(" — costs a lot of blood");
     expect(costHint(state, wadePast)).not.toContain("6");
     // reach-in is hpDelta -3 AND foodDelta +2: both sides show, neither number
     // for the wound.
@@ -202,6 +203,59 @@ describe("costHint", () => {
         );
       }
     }
+  });
+
+  // The band has to track the actual size, or it is the flat word again with
+  // more syllables. Hinged on the one hp figure the game states outright: a
+  // playtester generalised a 2 hp wound across encounters, bet on a fourth
+  // costing the same, and paid 4.
+  it("scales the wound to the one hp figure the game states outright", () => {
+    const state = makeEncounterState({ preparation: 2, food: 2 });
+
+    for (const scene of [...encounters, ...roadEvents]) {
+      for (const option of scene.options) {
+        if (option.hpDelta >= 0) continue;
+        const hint = costHint(state, option);
+        const wound = -option.hpDelta;
+
+        expect(hint).toContain(
+          wound < HUNGRY_TRAVEL_HP_LOSS
+            ? "a little blood"
+            : wound > HUNGRY_TRAVEL_HP_LOSS
+              ? "a lot of blood"
+              : "blood",
+        );
+        // Banded, still not priced. Checked against the BLOOD clause rather
+        // than the whole string, because food and preparation are stated as
+        // numbers and legitimately put digits in the same sentence.
+        expect(hint).not.toMatch(/\d\s*(hp|blood)/i);
+        expect(hint).not.toMatch(/blood\s*\d/i);
+        expect(hint.toLowerCase()).not.toContain("hp");
+      }
+    }
+  });
+
+  // Every wound in the catalogue has to land in a band that some option
+  // actually reaches, or the scale is finer than the content and reads as
+  // precision the player cannot use.
+  it("uses every band it defines", () => {
+    const state = makeEncounterState({ preparation: 2, food: 2 });
+    const hints = [...encounters, ...roadEvents]
+      .flatMap((scene) => scene.options)
+      .filter((option) => option.hpDelta < 0)
+      .map((option) => costHint(state, option));
+
+    for (const band of ["a little blood", "a lot of blood"]) {
+      expect(hints.some((hint) => hint.includes(band))).toBe(true);
+    }
+    expect(
+      hints.some(
+        (hint) =>
+          hint.includes("blood") &&
+          !hint.includes("a little blood") &&
+          !hint.includes("a lot of blood"),
+      ),
+    ).toBe(true);
   });
 
   // The mirror of the rule above, and it exists because the first option that
@@ -284,7 +338,9 @@ describe("costHint", () => {
     expect(costHint(atBoar, baitATrace)).toBe(
       " — needs 1 preparation in hand, spends none",
     );
-    expect(costHint(atWolves, readThePack)).toBe(" — costs blood and 1 food");
+    expect(costHint(atWolves, readThePack)).toBe(
+      " — costs a little blood and 1 food",
+    );
   });
 
   it("gives an observation that spends nothing an empty clause, not a missing one", () => {
