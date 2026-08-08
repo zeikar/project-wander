@@ -283,7 +283,7 @@ function TravelScreen({
                 cannot act on, which is the definition of noise. */}
             {routes.length > 1 && (
               <span className="route-sign">
-                {leg.signs[peekRoad(state, route)]}
+                {route.signs[peekRoad(state, route)]}
               </span>
             )}
           </button>

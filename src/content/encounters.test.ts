@@ -111,28 +111,35 @@ describe("encounters content", () => {
   );
 });
 
-describe("leg signs", () => {
+describe("road signs", () => {
   // A sign is printed inside ONE road's button, beside a road that may be
   // showing something else entirely, so it may only speak for the way it is on.
-  // "Empty both ways" and "nothing moving in either" were both written here and
-  // both contradicted the other button whenever it held something.
-  it("never speaks for the way the traveler did not take", () => {
+  // Signs live on the route for exactly that reason; this is a lexical backstop
+  // for the wording that gave it away when they lived on the leg, and it is NOT
+  // a proof that a sign fits its road. Nothing mechanical can check that — a
+  // pinewood sign sat on a way described as "out of the trees entirely" and no
+  // test noticed. Read them.
+  it("uses no wording that speaks for the way not taken", () => {
     for (const leg of journey.legs) {
-      for (const line of Object.values(leg.signs)) {
-        expect(line.toLowerCase()).not.toMatch(/\bboth\b|\beither\b/);
+      for (const route of leg.routes) {
+        for (const line of Object.values(route.signs)) {
+          expect(line.toLowerCase()).not.toMatch(/\bboth\b|\beither\b/);
+        }
       }
     }
   });
 
-  it("gives every leg all three signs, and no two legs the same one", () => {
+  it("gives every road all three signs, and no two roads the same one", () => {
     const seen = new Set<string>();
 
     for (const leg of journey.legs) {
-      for (const key of ["animal", "place", "quiet"] as const) {
-        const line = leg.signs[key];
-        expect(line.length).toBeGreaterThan(0);
-        expect(seen.has(line)).toBe(false);
-        seen.add(line);
+      for (const route of leg.routes) {
+        for (const key of ["animal", "place", "quiet"] as const) {
+          const line = route.signs[key];
+          expect(line.length).toBeGreaterThan(0);
+          expect(seen.has(line)).toBe(false);
+          seen.add(line);
+        }
       }
     }
   });

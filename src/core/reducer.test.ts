@@ -578,6 +578,43 @@ describe("route branches", () => {
     expect(forks).toBeGreaterThan(0);
   });
 
+  // Regression: caught by the golden trace, not by a reviewer, and then very
+  // nearly lost — an unrelated edit swallowed this test whole and a reviewer
+  // caught THAT. Before the reducer clamped hp at the top, an hp-greedy line
+  // took the lean-to every time it appeared and arrived with 18 of a starting
+  // 14, which also moves every arrival threshold, since those are fractions of
+  // the starting pool. The harness missed it too, because the model shared the
+  // same omission.
+  it("never lets rest carry the traveler past the pool they set out with", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "old-camp",
+      hp: journey.start.hp,
+      food: 2,
+      legIndex: 1,
+    });
+    const rest = roadEvents
+      .find((event) => event.id === "old-camp")!
+      .options.find((option) => option.hpDelta > 0)!;
+
+    expect(
+      reduce(state, { type: "CHOOSE_ENCOUNTER_OPTION", optionId: rest.id }).hp,
+    ).toBe(journey.start.hp);
+
+    // And it still heals from below, by whatever the option is AUTHORED to
+    // give — this file's job is that the reducer applies the delta, not what
+    // the delta is. The figure itself is pinned by name in encounters.test.ts,
+    // which is the only thing that pins it: the golden trace meets this place
+    // and takes this option, but always at full hp, where the clamp above
+    // swallows the number entirely.
+    expect(
+      reduce(
+        { ...state, hp: journey.start.hp - 5 },
+        { type: "CHOOSE_ENCOUNTER_OPTION", optionId: rest.id },
+      ).hp,
+    ).toBe(journey.start.hp - 5 + rest.hpDelta);
+  });
+
   it("turns up a place on the band above the animals", () => {
     const state = makeTravelingState({ rngState: findEventRngState("quiet", true) });
     const next = reduce(state, travel(state, "quiet"));

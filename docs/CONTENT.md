@@ -113,12 +113,14 @@ About three legs in eight fork. The rest run on one way.
 
 Every leg forking was a rhythm, not an event, and a playtester stopped reading the road by their eighth turn because of it.
 
-Each leg carries three signs — what an animal ahead looks like there, what a stopped traveler looks like there, what empty looks like there — in that leg's own terrain.
+Each ROAD carries three signs — what an animal ahead looks like on it, what a stopped traveler looks like on it, what empty looks like on it.
+
+On the road, not the leg. Held at the leg, one line had to fit both ways and kept not fitting: a pinewood sign sat on a way described as "out of the trees entirely", and two audits missed it. Per road, the mismatch cannot be written.
 
 A sign names a KIND, never a species. Naming the creature was measured and it does not hurt the codex — the repeat rate holds. It simply buys almost nothing: the kind is worth 48.3% of seeds against 51.7% for the species, and a print in the mud does not tell you what to call the animal.
 
 A sign must be true. It is computed from the same band the road then walks, so it cannot promise something the leg does not deliver.
 
-A sign speaks only for the way it is printed on. It sits inside that road's own button, beside a road that may be showing something else — so "empty both ways" is a contradiction waiting to happen, and a test refuses the words.
+A sign speaks only for the road it is printed on. It sits inside that road's own button, beside a road that may be showing something else. A test refuses the words "both" and "either", but that is a backstop for one failure mode, not a proof that a sign fits its road — nothing mechanical can check that. Read them.
 
 A leg only forks when the two ways lead somewhere DIFFERENT. Below both roads' odds the same roll picks the scene, so both would turn up the same animal and land in an identical state. `FORK_CHANCE` is therefore the chance of a fork WHERE ONE IS POSSIBLE, and the realized rate is about half of it.
