@@ -4,6 +4,8 @@ import {
   canChooseOption,
   findScene,
   offeredOptions,
+  offeredRoutes,
+  peekRoad,
   reduce,
 } from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
@@ -11,7 +13,7 @@ import { arrivalEnding } from "../core/arrival";
 import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
-import type { JourneyLeg, LegRoute } from "../content/journey";
+import type { LegRoute } from "../content/journey";
 import { encounters } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 
@@ -152,9 +154,18 @@ export function leavesNoFood(
 // distinct odds, asserted in reducer.test.ts. There is deliberately no branch
 // for equal odds or for a middle route in some future three-way leg — that
 // would be flexibility for content this game does not have.
-export function trafficHint(leg: JourneyLeg, route: LegRoute): string {
+// Takes the ways ACTUALLY OFFERED rather than the leg's whole list: on a leg
+// that does not fork there is nothing to be likelier than, and a comparison
+// against a road the traveler cannot take is noise.
+export function trafficHint(
+  routes: readonly LegRoute[],
+  route: LegRoute,
+): string {
+  if (routes.length < 2) {
+    return "";
+  }
   const busiest = Math.max(
-    ...leg.routes.map((candidate) => candidate.encounterChance),
+    ...routes.map((candidate) => candidate.encounterChance),
   );
 
   return route.encounterChance === busiest
@@ -231,6 +242,7 @@ function TravelScreen({
   // routes are the only way forward, so a screen rendered without them would
   // soft-lock the journey.
   const leg = journey.legs[state.legIndex]!;
+  const routes = offeredRoutes(state);
 
   return (
     <div className="screen">
@@ -256,16 +268,29 @@ function TravelScreen({
       )}
       <FieldNotes state={state} />
       <div className="route-options">
-        {leg.routes.map((route) => (
+        {routes.map((route) => (
           <button
             key={route.id}
             onClick={() => dispatch({ type: "TRAVEL", routeId: route.id })}
           >
             <span className="route-label">
               {route.label}
-              {trafficHint(leg, route)}
+              {trafficHint(routes, route)}
             </span>
             <span className="route-description">{route.description}</span>
+            {/* Only where there is a choice to make. On a leg that runs on one
+                way, reading the ground would tell the traveler something they
+                cannot act on, which is the definition of noise. */}
+            {routes.length > 1 && (
+              <span className="route-sign">
+                {/* Asserted, not defaulted. A road is authored with exactly the
+                    signs it can show, and `reducer.test.ts` derives that set
+                    from the shipped code — so a miss here is a broken invariant
+                    rather than a state the player can reach, and a silent blank
+                    would hide it. */}
+                {route.signs[peekRoad(state, route)]!}
+              </span>
+            )}
           </button>
         ))}
       </div>

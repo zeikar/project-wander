@@ -2,7 +2,8 @@ import type { GameState } from "./game-state";
 import type { GameAction } from "./actions";
 import { HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
 import { rollRandom } from "./rng";
-import { journey } from "../content/journey";
+import { FORK_CHANCE, journey } from "../content/journey";
+import type { LegRoute } from "../content/journey";
 import { encounters } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
@@ -26,6 +27,65 @@ export function findScene(id: string | null): Scene | undefined {
     encounters.find((candidate) => candidate.id === id) ??
     roadEvents.find((candidate) => candidate.id === id)
   );
+}
+
+// Salts that let a leg's SHAPE be read off the same seeded source WITHOUT
+// consuming a roll. That restraint is the point: whether a leg forks is a
+// question about how the journey is presented, and a seed's encounter script
+// must not move because the answer changed.
+const FORK_SALT = 0x5bf03635;
+const LONE_ROUTE_SALT = 0x27d4eb2f;
+
+// Which ways out of this leg the traveler actually has. Most legs have one:
+// every leg forking was a rhythm rather than an event, and a playtester
+// stopped reading the road by their eighth turn because of it.
+export function offeredRoutes(state: GameState): readonly LegRoute[] {
+  const leg = journey.legs[state.legIndex];
+  if (!leg) {
+    return [];
+  }
+
+  // Two ways are only two ways if they lead somewhere different. Below both
+  // roads' odds the SAME roll picks the scene, so both would turn up the same
+  // animal, charge the same toll, and land in an identical state — two buttons
+  // doing one thing, which is the fake choice this milestone exists to remove
+  // rather than reproduce. Roughly half of all rolls fall there, so this is not
+  // an edge case.
+  const distinct =
+    new Set(leg.routes.map((route) => peekRoad(state, route))).size > 1;
+
+  if (
+    distinct &&
+    rollRandom((state.rngState ^ FORK_SALT) >>> 0).value < FORK_CHANCE
+  ) {
+    return leg.routes;
+  }
+
+  // No fork: the road simply runs on one way, and which of the two it is is
+  // still the leg's own character rather than a coin the player flips.
+  const index = Math.floor(
+    rollRandom((state.rngState ^ LONE_ROUTE_SALT) >>> 0).value * leg.routes.length,
+  );
+  return [leg.routes[index]!];
+}
+
+// What a traveler standing at the fork can read off the ground about one of
+// the ways. A CATEGORY and never a species: naming the kind recovers almost all
+// the value of naming the creature (48.3% of seeds against 51.7%), and a print
+// in the mud tells you something came through, not what to call it. Dodging a
+// species was the feared cost of going further and it was measured away — the
+// codex repeat rate did not move — so this is a trade, not a guard.
+export type RoadSign = "animal" | "place" | "quiet";
+
+export function peekRoad(state: GameState, route: LegRoute): RoadSign {
+  const trigger = rollRandom(state.rngState);
+  if (trigger.value < route.encounterChance) {
+    return "animal";
+  }
+  if (trigger.value < route.encounterChance + EVENT_CHANCE) {
+    return "place";
+  }
+  return "quiet";
 }
 
 // Which options this encounter puts on the table right now. A "teaches" option
@@ -147,7 +207,10 @@ export function reduce(state: GameState, action: GameAction): GameState {
       // up. It is deliberately NOT remembered — because both ways charge the
       // same toll, nothing downstream needs to know which was walked, so the
       // branch costs the game state nothing.
-      const route = journey.legs[state.legIndex]?.routes.find(
+      // Checked against what this leg actually OFFERS, not against its whole
+      // route list: on a leg that does not fork, the way not taken is not a way
+      // at all, and naming it must be ignored like any other invalid action.
+      const route = offeredRoutes(state).find(
         (candidate) => candidate.id === action.routeId,
       );
       if (!route) {
@@ -161,9 +224,12 @@ export function reduce(state: GameState, action: GameAction): GameState {
       // left is an uneventful day. Places fill the stretch that used to turn up
       // nothing rather than sharing the animals' band, which is what keeps the
       // species repeat rate the codex depends on.
+      // The bands are read through `peekRoad` rather than computed again here,
+      // so the sign shown at the fork and the thing that actually happens can
+      // never drift apart. That is the whole promise the sign makes.
+      const sign = peekRoad(state, route);
       const trigger = rollRandom(state.rngState);
-      const eventCeiling = route.encounterChance + EVENT_CHANCE;
-      if (trigger.value >= eventCeiling) {
+      if (sign === "quiet") {
         return completeLeg({
           ...state,
           lastEncounterResult: null,
@@ -177,7 +243,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
       // allowed; the road does not promise you something new every time.
       const selection = rollRandom(trigger.nextState);
       const scene =
-        trigger.value < route.encounterChance
+        sign === "animal"
           ? encounters[Math.floor(selection.value * encounters.length)]!
           : roadEvents[Math.floor(selection.value * roadEvents.length)]!;
 

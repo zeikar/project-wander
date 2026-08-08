@@ -5,6 +5,8 @@ import {
   canChooseOption,
   findScene,
   offeredOptions,
+  offeredRoutes,
+  peekRoad,
   reduce,
 } from "./reducer";
 import type { GameAction } from "./actions";
@@ -54,10 +56,23 @@ function routeFor(legIndex: number, which: Which) {
   );
 }
 
-// Tests that are not about the branch walk the quiet way; the branch's own
-// tests name both.
+// Tests that are not about the branch walk the quiet way where there IS a
+// choice, and the only way where there is not — most legs no longer fork.
 function travel(state: GameState, which: Which = "quiet"): GameAction {
-  return { type: "TRAVEL", routeId: routeFor(state.legIndex, which).id };
+  const routes = offeredRoutes(state);
+  if (routes.length < 2) {
+    return { type: "TRAVEL", routeId: routes[0]!.id };
+  }
+  const chosen = routes.reduce((best, route) =>
+    which === "quiet"
+      ? route.encounterChance < best.encounterChance
+        ? route
+        : best
+      : route.encounterChance > best.encounterChance
+        ? route
+        : best,
+  );
+  return { type: "TRAVEL", routeId: chosen.id };
 }
 
 // One roll now decides three outcomes in bands — an animal below the route's
@@ -65,32 +80,55 @@ function travel(state: GameState, which: Which = "quiet"): GameAction {
 // these three helpers find a state landing in each band. Derived rather than
 // hardcoded, so retuning a route's odds or the event band does not silently
 // invalidate every test that needs a particular kind of leg.
-function findRngStateIn(lo: number, hi: number, what: string): number {
+// `mustFork` matters because most legs no longer offer a choice: a test about
+// what the two ways do needs a state where there ARE two ways.
+function findRngStateIn(
+  lo: number,
+  hi: number,
+  what: string,
+  mustFork = false,
+): number {
   for (let state = 1; state <= 100000; state++) {
     const value = rollRandom(state).value;
-    if (value >= lo && value < hi) {
-      return state;
+    if (value < lo || value >= hi) {
+      continue;
     }
+    if (
+      mustFork &&
+      offeredRoutes(makeTravelingState({ rngState: state })).length < 2
+    ) {
+      continue;
+    }
+    return state;
   }
   throw new Error(`no rng state in 1..100000 lands on ${what}`);
 }
 
 // An ANIMAL on the given way.
-function findRngState(triggersEncounter: boolean, which: Which = "quiet"): number {
+function findRngState(
+  triggersEncounter: boolean,
+  which: Which = "quiet",
+  mustFork = false,
+): number {
   const chance = routeFor(0, which).encounterChance;
   return triggersEncounter
-    ? findRngStateIn(0, chance, `an animal on the ${which} way`)
+    ? findRngStateIn(0, chance, `an animal on the ${which} way`, mustFork)
     : // An empty leg. Note the busy way plus the event band reaches 1.0, so a
       // bare leg only exists on the quiet way — callers wanting one must not
       // ask for "busy", and this throws loudly rather than quietly returning a
       // state that turns up a place instead.
-      findRngStateIn(chance + EVENT_CHANCE, 1, `an empty ${which} leg`);
+      findRngStateIn(chance + EVENT_CHANCE, 1, `an empty ${which} leg`, mustFork);
 }
 
 // A PLACE on the given way.
-function findEventRngState(which: Which = "quiet"): number {
+function findEventRngState(which: Which = "quiet", mustFork = false): number {
   const chance = routeFor(0, which).encounterChance;
-  return findRngStateIn(chance, chance + EVENT_CHANCE, `a place on the ${which} way`);
+  return findRngStateIn(
+    chance,
+    chance + EVENT_CHANCE,
+    `a place on the ${which} way`,
+    mustFork,
+  );
 }
 
 type OptionPolicy = (state: GameState) => string;
@@ -440,13 +478,7 @@ describe("travel encounters", () => {
 function findSplittingRngState(): number {
   const quiet = routeFor(0, "quiet").encounterChance;
   const busy = routeFor(0, "busy").encounterChance;
-  for (let state = 1; state <= 10000; state++) {
-    const value = rollRandom(state).value;
-    if (value >= quiet && value < busy) {
-      return state;
-    }
-  }
-  throw new Error("no rng state in 1..10000 falls between the two ways");
+  return findRngStateIn(quiet, busy, "between the two ways", true);
 }
 
 describe("route branches", () => {
@@ -480,20 +512,27 @@ describe("route branches", () => {
   // The whole shape of a leg, band by band. Below a route's own odds an animal
   // turns up; the next EVENT_CHANCE is a place; above that the leg passes
   // uneventfully. Because the two routes sit at different odds, the same roll
-  // means different things on each, which is the decision.
-  it("reads one roll as three bands, and the bands differ between the ways", () => {
+  // means different things on each — and where it does NOT, the leg does not
+  // fork at all.
+  it("reads one roll as three bands, and only forks where the bands differ", () => {
+    // Below both ways' odds: the same animal either way, so there is nothing to
+    // choose between and the leg runs on one road.
     const animalOnBoth = makeTravelingState({ rngState: findRngState(true) });
+    expect(offeredRoutes(animalOnBoth)).toHaveLength(1);
     expect(
       encounters.some(
-        (e) => e.id === reduce(animalOnBoth, travel(animalOnBoth, "quiet")).activeEncounterId,
+        (e) =>
+          e.id === reduce(animalOnBoth, travel(animalOnBoth)).activeEncounterId,
       ),
     ).toBe(true);
 
-    // Between the two ways' odds: a place on the quiet way, an animal on the busy one.
+    // Between the two ways' odds: a place one way, an animal the other.
     const split = makeTravelingState({ rngState: findSplittingRngState() });
-    expect(reduce(split, travel(split, "quiet")).activeEncounterId).toBe(
-      roadEvents[0]!.id,
-    );
+    expect(
+      roadEvents.some(
+        (e) => e.id === reduce(split, travel(split, "quiet")).activeEncounterId,
+      ),
+    ).toBe(true);
     expect(
       encounters.some(
         (e) => e.id === reduce(split, travel(split, "busy")).activeEncounterId,
@@ -501,20 +540,51 @@ describe("route branches", () => {
     ).toBe(true);
 
     // Above the quiet way's event band: an empty leg one way, a place the other.
-    const emptyOnQuiet = makeTravelingState({ rngState: findRngState(false) });
+    const emptyOnQuiet = makeTravelingState({
+      rngState: findRngState(false, "quiet", true),
+    });
     expect(reduce(emptyOnQuiet, travel(emptyOnQuiet, "quiet")).phase).toBe(
       "traveling",
     );
     expect(
-      reduce(emptyOnQuiet, travel(emptyOnQuiet, "busy")).activeEncounterId,
-    ).toBe(roadEvents[0]!.id);
+      roadEvents.some(
+        (e) =>
+          e.id ===
+          reduce(emptyOnQuiet, travel(emptyOnQuiet, "busy")).activeEncounterId,
+      ),
+    ).toBe(true);
   });
 
-  // Regression: caught by the golden trace, not by a reviewer. Before the
-  // reducer clamped hp at the top, an hp-greedy line took the lean-to every
-  // time it appeared and arrived with 18 of a starting 14 — which also moves
-  // every arrival threshold, since those are fractions of the starting pool.
-  // The harness missed it too, because the model shared the same omission.
+  // The promise a fork makes. Two buttons that land in the same state are the
+  // fake choice this milestone removes, not one it may reintroduce: below both
+  // roads' odds the SAME roll picks the scene, so both ways would turn up the
+  // same animal. Roughly half of all rolls fall there.
+  it("never offers two ways that lead to the same place", () => {
+    let forks = 0;
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      const state = makeTravelingState({ rngState });
+      const routes = offeredRoutes(state);
+      if (routes.length < 2) {
+        continue;
+      }
+      forks += 1;
+      const [first, second] = routes.map((route) =>
+        reduce(state, { type: "TRAVEL", routeId: route.id }),
+      );
+      expect(first!.activeEncounterId).not.toBe(second!.activeEncounterId);
+      expect(peekRoad(state, routes[0]!)).not.toBe(peekRoad(state, routes[1]!));
+    }
+
+    expect(forks).toBeGreaterThan(0);
+  });
+
+  // Regression: caught by the golden trace, not by a reviewer, and then very
+  // nearly lost — an unrelated edit swallowed this test whole and a reviewer
+  // caught THAT. Before the reducer clamped hp at the top, an hp-greedy line
+  // took the lean-to every time it appeared and arrived with 18 of a starting
+  // 14, which also moves every arrival threshold, since those are fractions of
+  // the starting pool. The harness missed it too, because the model shared the
+  // same omission.
   it("never lets rest carry the traveler past the pool they set out with", () => {
     const state = makeTravelingState({
       phase: "encounter",
@@ -523,16 +593,13 @@ describe("route branches", () => {
       food: 2,
       legIndex: 1,
     });
-    const rest = roadEvents[0]!.options.find(
-      (option) => option.hpDelta > 0,
-    )!;
+    const rest = roadEvents
+      .find((event) => event.id === "old-camp")!
+      .options.find((option) => option.hpDelta > 0)!;
 
-    const next = reduce(state, {
-      type: "CHOOSE_ENCOUNTER_OPTION",
-      optionId: rest.id,
-    });
-
-    expect(next.hp).toBe(journey.start.hp);
+    expect(
+      reduce(state, { type: "CHOOSE_ENCOUNTER_OPTION", optionId: rest.id }).hp,
+    ).toBe(journey.start.hp);
 
     // And it still heals from below, by whatever the option is AUTHORED to
     // give — this file's job is that the reducer applies the delta, not what
@@ -541,26 +608,112 @@ describe("route branches", () => {
     // and takes this option, but always at full hp, where the clamp above
     // swallows the number entirely.
     expect(
-      reduce({ ...state, hp: journey.start.hp - 5 }, {
-        type: "CHOOSE_ENCOUNTER_OPTION",
-        optionId: rest.id,
-      }).hp,
+      reduce(
+        { ...state, hp: journey.start.hp - 5 },
+        { type: "CHOOSE_ENCOUNTER_OPTION", optionId: rest.id },
+      ).hp,
     ).toBe(journey.start.hp - 5 + rest.hpDelta);
   });
 
   it("turns up a place on the band above the animals", () => {
-    const state = makeTravelingState({ rngState: findEventRngState() });
+    const state = makeTravelingState({ rngState: findEventRngState("quiet", true) });
     const next = reduce(state, travel(state, "quiet"));
 
     expect(next.phase).toBe("encounter");
-    expect(next.activeEncounterId).toBe(roadEvents[0]!.id);
+    const place = roadEvents.find((e) => e.id === next.activeEncounterId);
+    expect(place).toBeDefined();
     // A place teaches nothing: the codex is per species.
     expect(
       reduce(next, {
         type: "CHOOSE_ENCOUNTER_OPTION",
-        optionId: roadEvents[0]!.options[0]!.id,
+        optionId: place!.options[0]!.id,
       }).known,
     ).toEqual([]);
+  });
+
+  // The promise the sign makes. A traveler reads the ground, picks a way on
+  // what they read, and the road has to then do that — so the sign and the
+  // transition are computed from one place. This walks a wide cohort and
+  // demands they never disagree.
+  it("never shows a sign the road then contradicts", () => {
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      const state = makeTravelingState({ rngState });
+      for (const route of offeredRoutes(state)) {
+        const sign = peekRoad(state, route);
+        const next = reduce(state, { type: "TRAVEL", routeId: route.id });
+
+        if (sign === "quiet") {
+          expect(next.phase).not.toBe("encounter");
+        } else {
+          expect(next.phase).toBe("encounter");
+          const isAnimal = encounters.some(
+            (candidate) => candidate.id === next.activeEncounterId,
+          );
+          expect(isAnimal).toBe(sign === "animal");
+        }
+      }
+    }
+  });
+
+  // A fork is meant to be an event rather than a rhythm. Both shapes have to
+  // actually occur, or the constant is doing nothing.
+  it("offers a fork on some legs and a single way on others", () => {
+    const shapes = new Set<number>();
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      shapes.add(offeredRoutes(makeTravelingState({ rngState })).length);
+    }
+
+    expect([...shapes].sort()).toEqual([1, 2]);
+  });
+
+  // Whether a leg forks is read off the seeded source WITHOUT consuming a
+  // roll, so presentation cannot move a seed's encounter script.
+  it("does not spend a roll deciding whether the leg forks", () => {
+    const state = makeTravelingState({ rngState: findRngState(true) });
+    const routes = offeredRoutes(state);
+
+    expect(reduce(state, travel(state)).rngState).toBe(
+      rollRandom(rollRandom(state.rngState).nextState).nextState,
+    );
+    // And asking twice is the same question.
+    expect(offeredRoutes(state).map((r) => r.id)).toEqual(
+      routes.map((r) => r.id),
+    );
+  });
+
+  // Content and code have to agree about which signs exist. A road is authored
+  // with exactly the outcomes it can show — the quieter way never shows an
+  // animal, the busier way never shows an empty road, because a fork only
+  // exists where the two read differently. Derived here from the shipped code
+  // rather than restated, so retuning a route's odds or the event band fails
+  // this test instead of blanking a button.
+  it("authors exactly the signs the roads can actually show", () => {
+    const reachable = new Map<string, Set<string>>();
+    for (let rngState = 1; rngState <= 3000; rngState++) {
+      for (let legIndex = 0; legIndex < journey.legs.length; legIndex++) {
+        const state = makeTravelingState({ rngState, legIndex });
+        const routes = offeredRoutes(state);
+        if (routes.length < 2) {
+          continue;
+        }
+        for (const route of routes) {
+          const set = reachable.get(route.id) ?? new Set<string>();
+          set.add(peekRoad(state, route));
+          reachable.set(route.id, set);
+        }
+      }
+    }
+
+    expect(reachable.size).toBe(
+      journey.legs.reduce((n, leg) => n + leg.routes.length, 0),
+    );
+    for (const leg of journey.legs) {
+      for (const route of leg.routes) {
+        expect([...reachable.get(route.id)!].sort()).toEqual(
+          Object.keys(route.signs).sort(),
+        );
+      }
+    }
   });
 
   it("ignores a routeId this leg does not offer, returning the same state reference", () => {
@@ -578,18 +731,36 @@ describe("route branches", () => {
   // to remember which was walked.
   // Which way was walked is deliberately NOT remembered, and it can afford not
   // to be: both ways charge the same toll, so nothing downstream needs to know.
-  // Below both routes' odds the same roll turns up the same animal, and the two
-  // resulting states have to be indistinguishable.
-  it("does not carry the road it was walked down into the state", () => {
-    const state = makeTravelingState({
-      rngState: findRngState(true, "quiet"),
+  // It used to be shown by walking both ways onto the same animal and comparing
+  // the states, which a fork can no longer produce — a leg only forks when the
+  // ways lead somewhere DIFFERENT. What survives is the toll itself: the leg's
+  // charge is the road's, identical whichever way carried the traveler into it.
+  it("charges the leg's toll the same whichever way was walked", () => {
+    const fed = makeTravelingState({
+      rngState: findRngState(false, "quiet", true),
       food: 2,
       hp: 12,
     });
+    const routes = offeredRoutes(fed);
+    expect(routes).toHaveLength(2);
 
-    expect(reduce(state, travel(state, "busy"))).toEqual(
-      reduce(state, travel(state, "quiet")),
-    );
+    // The quiet way passes empty and pays the toll on the spot.
+    const viaQuiet = reduce(fed, travel(fed, "quiet"));
+    expect(viaQuiet.food).toBe(fed.food - 1);
+    expect(viaQuiet.hp).toBe(fed.hp);
+
+    // The busy way turns up a place; answering it pays the same toll, and the
+    // option's own deltas are the only other thing that moved.
+    const atPlace = reduce(fed, travel(fed, "busy"));
+    const option = findScene(atPlace.activeEncounterId)!.options.find((o) =>
+      canChooseOption(atPlace, o),
+    )!;
+    const viaBusy = reduce(atPlace, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: option.id,
+    });
+    expect(viaBusy.food).toBe(fed.food + option.foodDelta - 1);
+    expect(viaBusy.lastRoadToll).toBe(viaQuiet.lastRoadToll);
   });
 
   it("reaches a different outcome down the two ways on most seeds", () => {
@@ -1179,9 +1350,12 @@ describe("full journeys", () => {
         case "arrived":
           return arrivalEnding(state) === "travelOn";
         case "traveling":
-          // Every line of play now includes which way was walked, so both have
-          // to be tried before a seed can be called locked out.
-          return journey.legs[state.legIndex]!.routes.some((route) =>
+          // Every line of play now includes which way was walked, so every way
+          // ON OFFER has to be tried before a seed can be called locked out.
+          // The leg's full route list would include ways this leg does not
+          // fork into, and naming one of those returns the same state — which
+          // recurses forever.
+          return offeredRoutes(state).some((route) =>
             canReachTravelOn(
               reduce(state, { type: "TRAVEL", routeId: route.id }),
             ),

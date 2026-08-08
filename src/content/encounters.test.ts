@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encounters } from "./encounters";
 import { roadEvents } from "./events";
+import { journey } from "./journey";
 
 describe("encounters content", () => {
   // The reducer selects an encounter with a non-null assertion, which is only
@@ -108,6 +109,39 @@ describe("encounters content", () => {
       ).toBe(true);
     },
   );
+});
+
+describe("road signs", () => {
+  // A sign is printed inside ONE road's button, beside a road that may be
+  // showing something else entirely, so it may only speak for the way it is on.
+  // Signs live on the route for exactly that reason; this is a lexical backstop
+  // for the wording that gave it away when they lived on the leg, and it is NOT
+  // a proof that a sign fits its road. Nothing mechanical can check that — a
+  // pinewood sign sat on a way described as "out of the trees entirely" and no
+  // test noticed. Read them.
+  it("uses no wording that speaks for the way not taken", () => {
+    for (const leg of journey.legs) {
+      for (const route of leg.routes) {
+        for (const line of Object.values(route.signs)) {
+          expect(line.toLowerCase()).not.toMatch(/\bboth\b|\beither\b/);
+        }
+      }
+    }
+  });
+
+  it("gives no two roads the same line", () => {
+    const seen = new Set<string>();
+
+    for (const leg of journey.legs) {
+      for (const route of leg.routes) {
+        for (const line of Object.values(route.signs)) {
+          expect(line.length).toBeGreaterThan(0);
+          expect(seen.has(line)).toBe(false);
+          seen.add(line);
+        }
+      }
+    }
+  });
 });
 
 describe("road events content", () => {

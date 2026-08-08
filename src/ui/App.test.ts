@@ -382,10 +382,10 @@ describe("trafficHint", () => {
         (a, b) => a.encounterChance - b.encounterChance,
       );
 
-      expect(trafficHint(leg, byOdds[0]!)).toBe(
+      expect(trafficHint(leg.routes, byOdds[0]!)).toBe(
         " — less likely to turn something up",
       );
-      expect(trafficHint(leg, byOdds.at(-1)!)).toBe(
+      expect(trafficHint(leg.routes, byOdds.at(-1)!)).toBe(
         " — more likely to turn something up",
       );
     }
@@ -394,10 +394,18 @@ describe("trafficHint", () => {
   // The same contract costHint keeps for hp: say which way the bet leans, never
   // what the odds are. A player should be able to make the choice without being
   // handed the arithmetic.
+  // A lone way is not likelier than anything, and comparing it to a road the
+  // traveler cannot take would be noise.
+  it("says nothing when there is only one way out of the leg", () => {
+    const leg = journey.legs[0]!;
+
+    expect(trafficHint([leg.routes[0]!], leg.routes[0]!)).toBe("");
+  });
+
   it("never states a number", () => {
     for (const leg of journey.legs) {
       for (const route of leg.routes) {
-        expect(trafficHint(leg, route)).not.toMatch(/\d/);
+        expect(trafficHint(leg.routes, route)).not.toMatch(/\d/);
       }
     }
   });

@@ -13,6 +13,39 @@ export interface LegRoute {
   label: string;
   description: string;
   encounterChance: number;
+  signs: RoadSigns;
+}
+
+// What the traveler can read off the ground about ONE road before choosing.
+// A fork the player cannot read is not a decision: measured blind, choosing
+// between two roads was worth 2.7 points when they said only what they were
+// LIKE, and 17.3 when they said what was on them today.
+//
+// A CATEGORY and never a species, and NOT because naming the creature would
+// break anything — that was the hypothesis, and it was measured and wrong: the
+// codex repeat rate held at 71-74% even when the sign named the animal. The
+// reason is a plain trade. The kind recovers almost all the value (48.3%
+// against 51.7% for the species), and a traveler reading a print in the mud
+// knows something came through, not what to call it.
+//
+// Two of the three per road, not all three. A fork exists only where the two
+// ways read differently, so below both roads' odds they agree and the leg does
+// not fork — which leaves the quieter way never showing an animal and the
+// busier way never showing an empty road. Writing the other sixteen lines would
+// be writing content the game cannot reach. `reducer.test.ts` derives the
+// reachable set from the shipped code and fails if this drifts from it,
+// including when a retuned constant makes a missing one reachable.
+//
+// Stored per road rather than per leg because a line held at the leg had to fit
+// both ways and kept not fitting: "Empty both ways" contradicted the other
+// button outright, and the pinewood's signs spoke of trunks while sitting on a
+// way described as "out of the trees entirely". Storing them here puts each
+// line next to the road it describes, which makes the mismatch easy to SEE.
+// It does not make it impossible to write — no test reads prose. Read them.
+export interface RoadSigns {
+  animal?: string;
+  place?: string;
+  quiet?: string;
 }
 
 export interface JourneyLeg {
@@ -20,6 +53,19 @@ export interface JourneyLeg {
   description: string;
   routes: readonly LegRoute[];
 }
+
+// How often a leg offers a fork WHERE ONE IS POSSIBLE. Roughly half of all
+// rolls land below both roads' odds, where the two ways would turn up the same
+// animal and land in an identical state; `offeredRoutes` refuses to call that a
+// fork, so the realized rate is about half of this. 0.75 therefore puts about
+// three real forks in an eight-leg journey.
+// Every leg forking was the shipped shape, and a playtester stopped reading by
+// the eighth turn of their first journey because "the fork resolved to
+// 'headland vs hedge-line' with the same safe/risky framing every time" — a
+// rhythm, not an event. It costs reach: with readable forks the best blind line
+// arrives well on 48.3% of seeds at eight forks and 36.3% at three, against
+// 31.0% for the shipped eight unreadable ones.
+export const FORK_CHANCE = 0.75;
 
 // The in-world rule behind both numbers, kept identical on every leg so it is
 // learnable: open ground turns up less than thick cover.
@@ -98,6 +144,12 @@ export const journey: Journey = {
           description:
             "Flat and open, walked bare by the mill's own carts. You would see anything coming a long way off.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "There is a cold fire-ring on the bank further along.",
+            quiet:
+              "Bare the whole way along it, and the heron does not even look up.",
+          },
         },
         {
           id: "reed-beds",
@@ -105,6 +157,12 @@ export const journey: Journey = {
           description:
             "Green and close, and loud with things you cannot see. The heron came here for a reason.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "The reeds are pushed flat in a line going in, and nothing has come back out.",
+            place:
+              "Somebody trod a hollow in the reeds and left it behind them.",
+          },
         },
       ],
     },
@@ -119,6 +177,12 @@ export const journey: Journey = {
           description:
             "Rutted and open to the sky. Whatever else it is, it is used.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "Somebody has stopped on the verge and left a mark on it.",
+            quiet:
+              "Empty ruts as far as the next rise.",
+          },
         },
         {
           id: "drovers-track",
@@ -126,6 +190,12 @@ export const journey: Journey = {
           description:
             "Half grown over. Nobody has driven cattle up it in years, which does not mean nothing uses it.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "The grass down the middle is pressed over, all one way.",
+            place:
+              "Something is dumped where the track bends, half under the grass.",
+          },
         },
       ],
     },
@@ -140,6 +210,12 @@ export const journey: Journey = {
           description:
             "Bare ploughed earth along the field's edge, with the whole furlong open beside you.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "There is a heap at the field corner that nobody grew.",
+            quiet:
+              "Nothing on the bare earth but the woman and her bean row.",
+          },
         },
         {
           id: "hedge-line",
@@ -147,6 +223,12 @@ export const journey: Journey = {
           description:
             "Blackthorn and hazel grown together into a wall, with a green tunnel running along the foot of it.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "A gap has been pushed through the blackthorn, with hair caught on it.",
+            place:
+              "There is something under the thorn further along that is not thorn.",
+          },
         },
       ],
     },
@@ -161,6 +243,12 @@ export const journey: Journey = {
           description:
             "Open water and a bored old man. Out there you are in plain sight, and so is everything else.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "There is a bundle roped to the landing stage that is not the ferryman's.",
+            quiet:
+              "Flat water, and the ferryman has nothing to say about it.",
+          },
         },
         {
           id: "shallows",
@@ -168,6 +256,12 @@ export const journey: Journey = {
           description:
             "Willow scrub the whole way, close enough to touch on both sides. It comes out at the same bank by the same evening, and the scrub is not empty.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "The willows are moving down there where there is no wind.",
+            place:
+              "There is something on the shingle that people put there.",
+          },
         },
       ],
     },
@@ -182,6 +276,12 @@ export const journey: Journey = {
           description:
             "Cropped grass and burnt gorse stumps, and nothing taller than your knee for half a mile.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "Turf has been cut out of the bank in squares, and stacked.",
+            quiet:
+              "Short grass and burnt stumps, and nothing standing on it.",
+          },
         },
         {
           id: "gorse-brakes",
@@ -189,6 +289,12 @@ export const journey: Journey = {
           description:
             "The gorse has gone unburned for years and stands over head height. There are runs through it that you did not make.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "One of the runs through the gorse has been opened wider than a sheep.",
+            place:
+              "There is a trampled space back in the gorse with ash in the middle of it.",
+          },
         },
       ],
     },
@@ -203,6 +309,12 @@ export const journey: Journey = {
           description:
             "Flat swept circles of black ground, open to the sky and joined end to end.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "One of the stack rings has been used since it went cold.",
+            quiet:
+              "The ash lies unmarked from one ring to the next.",
+          },
         },
         {
           id: "coppice-path",
@@ -210,6 +322,12 @@ export const journey: Journey = {
           description:
             "Hazel cut and regrown a dozen times into a thicket of poles, close enough that you go through it sideways.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "Poles are snapped off at chest height where something went through.",
+            place:
+              "There is a lean of cut poles that did not fall that way on its own.",
+          },
         },
       ],
     },
@@ -224,6 +342,12 @@ export const journey: Journey = {
           description:
             "Out of the trees entirely, and no steeper for it. Nothing up there has anywhere to stand out of sight.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "There is a wind-shelter of piled stones on the crest.",
+            quiet:
+              "Bare rock the whole way up, and nothing standing on it.",
+          },
         },
         {
           id: "pines",
@@ -231,6 +355,12 @@ export const journey: Journey = {
           description:
             "Sheltered and close, and quiet the way a room is quiet when someone else is in it.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "Bark has been stripped off a pine at shoulder height.",
+            place:
+              "There is something built between two of the trunks, still standing.",
+          },
         },
       ],
     },
@@ -245,6 +375,12 @@ export const journey: Journey = {
           description:
             "Wide, stony and walled on both sides, dropping the whole way with the valley open below you.",
           encounterChance: QUIET_ROUTE_CHANCE,
+          signs: {
+            place:
+              "There is a shelter built into the wall where it turns.",
+            quiet:
+              "You can see a long way down it, and there is nothing on it.",
+          },
         },
         {
           id: "hanging-wood",
@@ -252,6 +388,12 @@ export const journey: Journey = {
           description:
             "Old oak on a steep slope, holding the mist under it long after the road above has cleared.",
           encounterChance: BUSY_ROUTE_CHANCE,
+          signs: {
+            animal:
+              "Leaf-mould is torn up in a line straight down the slope.",
+            place:
+              "There is something under the oaks that did not grow there.",
+          },
         },
       ],
     },
