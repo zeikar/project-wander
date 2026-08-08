@@ -30,6 +30,15 @@ body {
   font-style: italic;
 }
 
+/* The two standing rules. Deliberately quieter than `.warning` and upright
+   rather than italic: these are not events and not flavour, they are the terms
+   of the road, and they are on screen every leg. `.warning` is the same
+   sentence with its voice raised, so the two must not look alike. */
+.road-rule,
+.departure {
+  color: #9a9a9a;
+}
+
 /* What the journey has learned: the same quiet register as a result line, in a
    colour that separates a standing fact from what just happened. */
 .field-note {

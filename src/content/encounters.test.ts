@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { encounters } from "./encounters";
 import { roadEvents } from "./events";
 import { journey } from "./journey";
+// The one core import in this folder, and only from a test. The rule that
+// content imports nothing from core is about what ships: the content modules
+// themselves stay standalone. Restating the toll as a literal 3 here would put
+// the same number in two places, which is the failure this project has already
+// written down elsewhere.
+import { HUNGRY_TRAVEL_HP_LOSS } from "../core/game-state";
 
 describe("encounters content", () => {
   // The reducer selects an encounter with a non-null assertion, which is only
@@ -251,4 +257,84 @@ describe("road events content", () => {
       expect(free.length).toBeGreaterThan(0);
     }
   });
+
+  // The same guarantee, for the half of the content where it was never checked.
+  // The loop above covers `roadEvents` only — the list where it was already
+  // satisfied — and a playtest found the animals had quietly broken it: at food
+  // 0 and preparation 0 the boar, the wolves and the stag each offered exactly
+  // ONE answer, and it was the biggest wound that animal had. Measured over 300
+  // seeds, those three options were 54.1% of every death in the game.
+  //
+  // Something to click is not enough here, because an animal can charge hp and
+  // a place cannot. So this asserts the PRICE of being cornered: whatever the
+  // destitute traveler is forced to take, plus the hungry leg's own toll that
+  // lands on the same click, must not cost more than half of a full pool. A
+  // screen nobody chose must not take more than half of what you set out with.
+  //
+  // Deliberately checked with hp at full and both other resources at zero — the
+  // ratio is what is being pinned, not any particular traveler's survival.
+  it("never corners a destitute traveler for more than half a full pool", () => {
+    const worstAffordable = Math.max(
+      ...encounters.flatMap((encounter) =>
+        // Known and unknown both: the codex swaps one option for another, so a
+        // species can be generous to a traveler who studied it and brutal to
+        // one who has not. Both travelers are real.
+        [false, true].map((known) => {
+          const affordable = encounter.options.filter(
+            (option) =>
+              option.foodDelta >= 0 &&
+              option.preparationDelta >= 0 &&
+              (option.requiresPreparation ?? 0) === 0 &&
+              (option.codex !== "teaches" || !known) &&
+              (option.codex !== "requires" || known),
+          );
+
+          expect(affordable.length).toBeGreaterThan(0);
+
+          // The best they can do is the least blood on offer.
+          return -Math.max(...affordable.map((option) => option.hpDelta));
+        }),
+      ),
+    );
+
+    expect(worstAffordable + HUNGRY_TRAVEL_HP_LOSS).toBeLessThanOrEqual(
+      journey.start.hp / 2,
+    );
+  });
+
+  // The blood-only answer at each animal that wounds — what a traveler with an
+  // empty pack is left holding. Pinned in the same shape as NIGHTS above,
+  // because these numbers carry design claims and the invariant overhead cannot
+  // see them: it bounds the WORST case across all animals, so it stays green
+  // while any individual wound drifts under that bound.
+  //
+  // Both claims below were written into comments beside the values and checked
+  // by nothing, which is the specific way this project has been wrong before.
+  const FORCED_WOUNDS = [
+    { encounter: "ford-boar", option: "wade-past", hpDelta: -4 },
+    { encounter: "pine-shadows", option: "walk-on", hpDelta: -3 },
+    { encounter: "rut-stag", option: "push-past", hpDelta: -4 },
+  ] as const;
+
+  it.each(FORCED_WOUNDS)(
+    "$encounter/$option keeps its price and stays reachable with an empty pack",
+    ({ encounter: encounterId, option: optionId, hpDelta }) => {
+      const encounter = encounters.find((c) => c.id === encounterId)!;
+      const forced = encounter.options.find((o) => o.id === optionId)!;
+
+      expect(forced.hpDelta).toBe(hpDelta);
+
+      // Reachable with nothing in the pack — that is what makes its price the
+      // price of being cornered. Deliberately NOT "the only such option" and
+      // deliberately NOT "the worst option here": pinning either would freeze
+      // the defect this change exists to soften. A second affordable answer, or
+      // a differently-priced one that trades a deeper wound for food, is an
+      // improvement rather than a break, and the aggregate invariant above
+      // already stops the case that actually hurts — being cornered for more
+      // than half a pool.
+      expect(forced.foodDelta).toBeGreaterThanOrEqual(0);
+      expect(forced.preparationDelta).toBeGreaterThanOrEqual(0);
+      expect(forced.requiresPreparation ?? 0).toBe(0);
+    },
+  );
 });

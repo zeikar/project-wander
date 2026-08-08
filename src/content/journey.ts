@@ -98,6 +98,16 @@ export interface Journey {
   road: { fed: string; hungry: string };
   arrival: {
     name: string;
+    // What the gate actually weighs, said once at departure. Both axes named,
+    // NEITHER priced — the thresholds stay unstated, the same contract costHint
+    // keeps for a wound.
+    // Added because four simulated travelers were graded on `arrivalEnding` and
+    // not one of them noticed there were tiers: two reached the best ending and
+    // neither could have said what earned it, and one cleared the supplies axis
+    // holding exactly the minimum with no sign it knew an axis was there.
+    // Naming the two spoils nothing that was deliberately hidden. It was never
+    // decided that these should be secret; they simply were never said.
+    departure: string;
     endings: Record<ArrivalEndingId, ArrivalEnding>;
   };
 }
@@ -400,10 +410,18 @@ export const journey: Journey = {
   ],
   road: {
     fed: "A day's walking, and a meal gone from the pack.",
-    hungry: "Nothing left in the pack. The miles take it out of you instead.",
+    // "Nothing left to eat" rather than the older "Nothing left in the pack":
+    // the best ending's own text says "There is weight in your pack yet", and a
+    // traveler can reach it holding preparation at food 0 — so both lines fired
+    // in one run, one claiming the pack was empty and the other that it was
+    // not. They were using "the pack" for two different things. This line is
+    // about FOOD, and now says so.
+    hungry: "Nothing left to eat. The miles take it out of you instead.",
   },
   arrival: {
     name: "Alderbrook",
+    departure:
+      "However you get there, Alderbrook will take you in. What it makes of you comes down to two things: what is left in your pack when you arrive, and what is left of you.",
     endings: {
       travelOn: {
         label: "You arrive with road still left in you",

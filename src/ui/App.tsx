@@ -255,17 +255,37 @@ function TravelScreen({
       {state.lastRoadToll && (
         <p className="result-line">{state.lastRoadToll}</p>
       )}
+      {/* The terms of the road, up with the stats they govern rather than down
+          by the buttons. Stated on EVERY leg, not only when it is about to
+          bite: this rule fires eight times a run and is the only cost the
+          screen never numbered — four playtesters in a row failed to induce it
+          from watching it happen. One concluded the game was non-deterministic;
+          another wrote the rule down twice and still mispredicted it on the
+          final turn of their third journey. What they were missing is a rate,
+          and no amount of watching a rate get charged supplies the rate.
+          It replaces the old food-only warning rather than sitting next to it:
+          two lines saying the same thing at food 0 was the reason this was
+          worded conditionally in the first place. At 0 the same sentence simply
+          raises its voice.
+          Below the two result lines, not above them: those explain the change
+          the player just watched happen to the numbers above, and a standing
+          rule wedged between a number and its explanation separates the pair
+          that has to be read together. */}
+      <p className={state.food === 0 ? "warning" : "road-rule"}>
+        The road takes a meal at the end of every leg. With nothing left to eat,
+        it takes {HUNGRY_TRAVEL_HP_LOSS} HP instead.
+      </p>
+      {/* Departure only. The traveler needs to know what the gate weighs BEFORE
+          they start spending; repeating it every leg would be nagging about
+          something eight legs away. */}
+      {state.legIndex === 0 && (
+        <p className="departure">{journey.arrival.departure}</p>
+      )}
       <p className="leg-progress">
         Leg {state.legIndex + 1} of {journey.legs.length}
       </p>
       <h2>{leg.name}</h2>
       <p>{leg.description}</p>
-      {state.food === 0 && (
-        <p className="warning">
-          Finishing the leg without food will cost you {HUNGRY_TRAVEL_HP_LOSS}{" "}
-          HP.
-        </p>
-      )}
       <FieldNotes state={state} />
       <div className="route-options">
         {routes.map((route) => (

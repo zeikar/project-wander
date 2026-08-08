@@ -197,9 +197,9 @@ describe("costHint", () => {
   it("names an hp cost without pricing it", () => {
     const state = makeEncounterState();
 
-    // wade-past is hpDelta -6 and spends nothing else.
+    // wade-past is hpDelta -4 and spends nothing else.
     expect(costHint(state, wadePast)).toBe(" — costs a lot of blood");
-    expect(costHint(state, wadePast)).not.toContain("6");
+    expect(costHint(state, wadePast)).not.toContain("4");
     // reach-in is hpDelta -3 AND foodDelta +2: both sides show, neither number
     // for the wound.
     expect(costHint(state, reachIn)).toBe(" — costs blood, gains 2 food");

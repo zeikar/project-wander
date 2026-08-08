@@ -46,7 +46,18 @@ export const encounters: readonly Encounter[] = [
       {
         id: "wade-past",
         label: "Wade past it, slow and steady",
-        hpDelta: -6,
+        // Lowered from -6. This is the option a traveler with nothing left is
+        // FORCED to take: at food 0 and preparation 0 the ford offers exactly
+        // one answer, known or not, and `completeLeg` then charges the hungry
+        // leg's 3 on top. At -6 that was 9 of a 14-hp pool on a single click
+        // nobody chose. Measured over 300 seeds, this option and the stag's and
+        // the wolves' were 54.1% of ALL deaths between them, and all three wore
+        // the same label — the band cannot separate -4 from -6.
+        // Not lowered further, because the bait and the wait cost real
+        // resources: this has to stay dear enough that paying them is worth it.
+        // That is the reasoning, not a guarantee — no test pins the ordering,
+        // so re-measure the two paid answers if this moves again.
+        hpDelta: -4,
         foodDelta: 0,
         preparationDelta: 0,
         resultText:
@@ -104,7 +115,15 @@ export const encounters: readonly Encounter[] = [
       {
         id: "walk-on",
         label: "Keep walking and do not run",
-        hpDelta: -4,
+        // Lowered from -4, for the reason given on the boar's `wade-past`: with
+        // nothing in the pack this is the wolves' only answer. At the toll's
+        // current value of 3 it lands exactly on `HUNGRY_TRAVEL_HP_LOSS` and so
+        // reads as the middle band, plain "blood" — which is why it is worth
+        // knowing that retuning the toll alone would move this wound into a
+        // different band without touching its number. It shares that band with
+        // the hollow's `reach-in`; the band is a reference point, not a
+        // fingerprint.
+        hpDelta: -3,
         foodDelta: 0,
         preparationDelta: 0,
         resultText:
@@ -306,7 +325,10 @@ export const encounters: readonly Encounter[] = [
       {
         id: "push-past",
         label: "Walk straight through and do not look at him",
-        hpDelta: -5,
+        // Lowered from -5, for the reason given on the boar's `wade-past`: a
+        // destitute traveler who has not learned the stag is offered this and
+        // nothing else, so it is a toll rather than a choice.
+        hpDelta: -4,
         foodDelta: 0,
         preparationDelta: 0,
         resultText:
