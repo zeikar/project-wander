@@ -181,7 +181,10 @@ export const encounters: readonly Encounter[] = [
       {
         id: "root-where-it-rooted",
         label: "Go down and take what it has turned up",
-hpDelta: -2,
+        // Deepened from -2 for the reason given on the rowan's
+        // `shake-the-bough`: `wait-downwind` has to be readably cheaper than
+        // forcing it, and one band has to separate them for that to show.
+        hpDelta: -3,
         foodDelta: 2,
         preparationDelta: 0,
         resultText:
@@ -218,12 +221,14 @@ hpDelta: -2,
       {
         id: "wait-downwind",
         label: "Work the hollow from downwind while it sleeps",
-hpDelta: 0,
+        // Priced from 0 on the same measurement as the other two: knowledge
+        // must buy an edge, not a free win.
+        hpDelta: -1,
         foodDelta: 2,
         preparationDelta: 0,
         codex: "requires",
         resultText:
-          "You come at the hollow from below the wind, which is the one direction it has no way of checking. You are ten feet from it, filling your pockets, and it sleeps through all of it.",
+          "You come at the hollow from below the wind, which is the one direction it has no way of checking. You are ten feet from it, filling your pockets, and it sleeps through all of it — until it does not, and you leave the hollow faster than you entered it.",
       },
     ],
   },
@@ -274,12 +279,13 @@ hpDelta: 0,
       {
         id: "step-off-the-piglets-line",
         label: "Move away from the litter, not away from her",
-hpDelta: 0,
+        // Priced from 0, as above.
+        hpDelta: -1,
         foodDelta: 0,
         preparationDelta: 0,
         codex: "requires",
         resultText:
-          "Knowing what she is actually guarding, you do not back down the path — you step wide, uphill, away from the piglets and not from her. She turns to keep herself between them and you, which walks her off the path, and the path is all you wanted.",
+          "Knowing what she is actually guarding, you do not back down the path — you step wide, uphill, away from the piglets and not from her. She turns to keep herself between them and you, which walks her off the path. You take the holly brake on the way through, and the path is all you wanted.",
       },
     ],
   },
@@ -442,7 +448,12 @@ hpDelta: 0,
       {
         id: "shake-the-bough",
         label: "Climb up and shake the laden bough",
-hpDelta: -2,
+        // Deepened from -2 so that the knowledge answer beside it is VISIBLY
+        // cheaper. At -2 both wore "a little blood" — the band covers 1 and 2
+        // alike — so `work-the-shaded-side` at -1 read as the same price for
+        // the same food and was taken 0.0% of the time. A discount the label
+        // cannot show is not a discount.
+        hpDelta: -3,
         foodDelta: 2,
         preparationDelta: 0,
         resultText:
@@ -479,12 +490,15 @@ hpDelta: -2,
       {
         id: "work-the-shaded-side",
         label: "Go round to the shaded side and pick there",
-hpDelta: 0,
+        // Priced from 0, same reason as the stag's `step-uphill`: 100.0% of its
+        // offers while free. Now it trades a scratch against `take-the-windfall`
+        // costing nothing for less, and against `net-the-fall` paying in kit.
+        hpDelta: -1,
         foodDelta: 2,
         preparationDelta: 0,
         codex: "requires",
         resultText:
-          "You walk round to the north face, where the flock has not started and will not for days, and pick standing up with both hands. Nothing shaken, nothing spread, nothing torn.",
+          "You walk round to the north face, where the flock has not started and will not for days, and pick standing up with both hands. Nothing shaken and nothing spread — only the thorns of the hedge you pushed through to reach it.",
       },
     ],
   },
@@ -540,12 +554,19 @@ hpDelta: 0,
       {
         id: "step-uphill",
         label: "Step uphill and let him keep the hollow",
-hpDelta: 0,
+        // Priced from 0. Measured at 100.0% of its offers while free: it beat
+        // every other answer on every axis at once, so knowing the stag was not
+        // an edge, it was an answer key — and that is the thing that collapsed
+        // cross-run knowledge to one fixed table matching 300/300 seeds.
+        // A scratch is enough. It does not have to be dear, only to cost a
+        // DIFFERENT currency from the answers beside it, so that a traveler low
+        // on blood and a traveler low on food want different things.
+        hpDelta: -1,
         foodDelta: 0,
         preparationDelta: 0,
         codex: "requires",
         resultText:
-          "You go up the bank instead of back down the path, which is the one direction he has no argument with. He watches you climb out of his hollow and loses interest somewhere around the third step.",
+          "You go up the bank instead of back down the path, which is the one direction he has no argument with. The thorn on the bank takes its own small toll on your hands, and he watches you climb out of his hollow and loses interest somewhere around the third step.",
       },
     ],
   },
