@@ -33,10 +33,18 @@ export interface LegRoute {
 // reason is a plain trade. The kind recovers almost all the value (48.3%
 // against 51.7% for the species), and a traveler reading a print in the mud
 // knows something came through, not what to call it.
+// Only the outcomes a given road can actually show are authored. A fork exists
+// only where the two ways read differently, which pins each road to two of the
+// three: below both roads' odds they agree and the leg does not fork, so the
+// quieter way never shows an animal and the busier way never shows an empty
+// road. Writing the other sixteen would be writing content the game cannot
+// reach. `reducer.test.ts` derives the reachable set from the shipped code and
+// fails if this list drifts from it — including if a retuned constant makes a
+// missing one reachable.
 export interface LegSigns {
-  animal: string;
-  place: string;
-  quiet: string;
+  animal?: string;
+  place?: string;
+  quiet?: string;
 }
 
 export interface JourneyLeg {
@@ -136,8 +144,6 @@ export const journey: Journey = {
             "Flat and open, walked bare by the mill's own carts. You would see anything coming a long way off.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "Something has come up out of the pond and crossed the path, and not long ago.",
             place:
               "There is a cold fire-ring on the bank further along.",
             quiet:
@@ -155,8 +161,6 @@ export const journey: Journey = {
               "The reeds are pushed flat in a line going in, and nothing has come back out.",
             place:
               "Somebody trod a hollow in the reeds and left it behind them.",
-            quiet:
-              "Nothing in them but reeds, moving with the water.",
           },
         },
       ],
@@ -173,8 +177,6 @@ export const journey: Journey = {
             "Rutted and open to the sky. Whatever else it is, it is used.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "There is fresh dung in the ruts, still dark.",
             place:
               "Somebody has stopped on the verge and left a mark on it.",
             quiet:
@@ -192,8 +194,6 @@ export const journey: Journey = {
               "The grass down the middle is pressed over, all one way.",
             place:
               "Something is dumped where the track bends, half under the grass.",
-            quiet:
-              "The grass down the middle stands up unbroken.",
           },
         },
       ],
@@ -210,8 +210,6 @@ export const journey: Journey = {
             "Bare ploughed earth along the field's edge, with the whole furlong open beside you.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "There are slots pressed into the wet plough ahead.",
             place:
               "There is a heap at the field corner that nobody grew.",
             quiet:
@@ -229,8 +227,6 @@ export const journey: Journey = {
               "A gap has been pushed through the blackthorn, with hair caught on it.",
             place:
               "There is something under the thorn further along that is not thorn.",
-            quiet:
-              "The tunnel runs on empty, and the thorn is unbroken.",
           },
         },
       ],
@@ -247,8 +243,6 @@ export const journey: Journey = {
             "Open water and a bored old man. Out there you are in plain sight, and so is everything else.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "Something is swimming the channel, and the ferryman has stopped to watch it.",
             place:
               "There is a bundle roped to the landing stage that is not the ferryman's.",
             quiet:
@@ -266,8 +260,6 @@ export const journey: Journey = {
               "The willows are moving down there where there is no wind.",
             place:
               "There is something on the shingle that people put there.",
-            quiet:
-              "No tracks in the mud at all, the whole way down.",
           },
         },
       ],
@@ -284,8 +276,6 @@ export const journey: Journey = {
             "Cropped grass and burnt gorse stumps, and nothing taller than your knee for half a mile.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "The sheep have all moved off the short grass to the far side.",
             place:
               "Turf has been cut out of the bank in squares, and stacked.",
             quiet:
@@ -303,8 +293,6 @@ export const journey: Journey = {
               "One of the runs through the gorse has been opened wider than a sheep.",
             place:
               "There is a trampled space back in the gorse with ash in the middle of it.",
-            quiet:
-              "The runs are all closed over, and nothing has been through them.",
           },
         },
       ],
@@ -321,8 +309,6 @@ export const journey: Journey = {
             "Flat swept circles of black ground, open to the sky and joined end to end.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "There are prints crossing the ash, deeper than a man's.",
             place:
               "One of the stack rings has been used since it went cold.",
             quiet:
@@ -340,8 +326,6 @@ export const journey: Journey = {
               "Poles are snapped off at chest height where something went through.",
             place:
               "There is a lean of cut poles that did not fall that way on its own.",
-            quiet:
-              "The poles stand close, and not one of them is broken.",
           },
         },
       ],
@@ -358,8 +342,6 @@ export const journey: Journey = {
             "Out of the trees entirely, and no steeper for it. Nothing up there has anywhere to stand out of sight.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "There is something on the skyline up there that is not a rock.",
             place:
               "There is a wind-shelter of piled stones on the crest.",
             quiet:
@@ -377,8 +359,6 @@ export const journey: Journey = {
               "Bark has been stripped off a pine at shoulder height.",
             place:
               "There is something built between two of the trunks, still standing.",
-            quiet:
-              "Only the wind, doing what it does in pines.",
           },
         },
       ],
@@ -395,8 +375,6 @@ export const journey: Journey = {
             "Wide, stony and walled on both sides, dropping the whole way with the valley open below you.",
           encounterChance: QUIET_ROUTE_CHANCE,
           signs: {
-            animal:
-              "Stones have been knocked off the wall further down, and recently.",
             place:
               "There is a shelter built into the wall where it turns.",
             quiet:
@@ -414,8 +392,6 @@ export const journey: Journey = {
               "Leaf-mould is torn up in a line straight down the slope.",
             place:
               "There is something under the oaks that did not grow there.",
-            quiet:
-              "Nothing but mist, moving between the trunks.",
           },
         },
       ],

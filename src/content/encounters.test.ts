@@ -129,13 +129,12 @@ describe("road signs", () => {
     }
   });
 
-  it("gives every road all three signs, and no two roads the same one", () => {
+  it("gives no two roads the same line", () => {
     const seen = new Set<string>();
 
     for (const leg of journey.legs) {
       for (const route of leg.routes) {
-        for (const key of ["animal", "place", "quiet"] as const) {
-          const line = route.signs[key];
+        for (const line of Object.values(route.signs)) {
           expect(line.length).toBeGreaterThan(0);
           expect(seen.has(line)).toBe(false);
           seen.add(line);

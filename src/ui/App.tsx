@@ -283,7 +283,12 @@ function TravelScreen({
                 cannot act on, which is the definition of noise. */}
             {routes.length > 1 && (
               <span className="route-sign">
-                {route.signs[peekRoad(state, route)]}
+                {/* Asserted, not defaulted. A road is authored with exactly the
+                    signs it can show, and `reducer.test.ts` derives that set
+                    from the shipped code — so a miss here is a broken invariant
+                    rather than a state the player can reach, and a silent blank
+                    would hide it. */}
+                {route.signs[peekRoad(state, route)]!}
               </span>
             )}
           </button>

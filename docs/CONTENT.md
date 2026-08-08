@@ -113,9 +113,11 @@ About three legs in eight fork. The rest run on one way.
 
 Every leg forking was a rhythm, not an event, and a playtester stopped reading the road by their eighth turn because of it.
 
-Each ROAD carries three signs — what an animal ahead looks like on it, what a stopped traveler looks like on it, what empty looks like on it.
+Each ROAD carries a sign for each outcome it can show.
 
 On the road, not the leg. Held at the leg, one line had to fit both ways and kept not fitting: a pinewood sign sat on a way described as "out of the trees entirely", and two audits missed it. Per road, the mismatch cannot be written.
+
+Each road can show two of the three, not all three. A fork only exists where the two ways read differently, so the quieter way never shows an animal and the busier way never shows an empty road. Writing the other sixteen lines would be writing content the game cannot reach — a test derives the reachable set from the shipped code and fails if the two drift apart, including when a retuned constant makes a missing one reachable.
 
 A sign names a KIND, never a species. Naming the creature was measured and it does not hurt the codex — the repeat rate holds. It simply buys almost nothing: the kind is worth 48.3% of seeds against 51.7% for the species, and a print in the mud does not tell you what to call the animal.
 

@@ -681,6 +681,41 @@ describe("route branches", () => {
     );
   });
 
+  // Content and code have to agree about which signs exist. A road is authored
+  // with exactly the outcomes it can show — the quieter way never shows an
+  // animal, the busier way never shows an empty road, because a fork only
+  // exists where the two read differently. Derived here from the shipped code
+  // rather than restated, so retuning a route's odds or the event band fails
+  // this test instead of blanking a button.
+  it("authors exactly the signs the roads can actually show", () => {
+    const reachable = new Map<string, Set<string>>();
+    for (let rngState = 1; rngState <= 3000; rngState++) {
+      for (let legIndex = 0; legIndex < journey.legs.length; legIndex++) {
+        const state = makeTravelingState({ rngState, legIndex });
+        const routes = offeredRoutes(state);
+        if (routes.length < 2) {
+          continue;
+        }
+        for (const route of routes) {
+          const set = reachable.get(route.id) ?? new Set<string>();
+          set.add(peekRoad(state, route));
+          reachable.set(route.id, set);
+        }
+      }
+    }
+
+    expect(reachable.size).toBe(
+      journey.legs.reduce((n, leg) => n + leg.routes.length, 0),
+    );
+    for (const leg of journey.legs) {
+      for (const route of leg.routes) {
+        expect([...reachable.get(route.id)!].sort()).toEqual(
+          Object.keys(route.signs).sort(),
+        );
+      }
+    }
+  });
+
   it("ignores a routeId this leg does not offer, returning the same state reference", () => {
     const state = makeTravelingState();
 
