@@ -13,35 +13,36 @@ export interface LegRoute {
   label: string;
   description: string;
   encounterChance: number;
-  signs: LegSigns;
+  signs: RoadSigns;
 }
 
-// What the traveler can read off the ground before choosing. Three signs per
-// leg, in that leg's own terrain, because a fork the player cannot read is not
-// a decision: measured blind, choosing between two roads was worth 2.7 points
-// when the roads said only what they were LIKE, and 17.3 when they said what
-// was on them today.
-// A sign lives on the ROUTE, not the leg, and that is the second attempt. Held
-// at the leg, one line had to fit both ways, and it kept not fitting: "Empty
-// both ways" contradicted the other button outright, and the pinewood's signs
-// spoke of trunks and pines while sitting on a way described as "Out of the
-// trees entirely". Two audits missed cases a reviewer then found. Per route,
-// the mismatch cannot be written.
+// What the traveler can read off the ground about ONE road before choosing.
+// A fork the player cannot read is not a decision: measured blind, choosing
+// between two roads was worth 2.7 points when they said only what they were
+// LIKE, and 17.3 when they said what was on them today.
+//
 // A CATEGORY and never a species, and NOT because naming the creature would
 // break anything — that was the hypothesis, and it was measured and wrong: the
 // codex repeat rate held at 71-74% even when the sign named the animal. The
 // reason is a plain trade. The kind recovers almost all the value (48.3%
 // against 51.7% for the species), and a traveler reading a print in the mud
 // knows something came through, not what to call it.
-// Only the outcomes a given road can actually show are authored. A fork exists
-// only where the two ways read differently, which pins each road to two of the
-// three: below both roads' odds they agree and the leg does not fork, so the
-// quieter way never shows an animal and the busier way never shows an empty
-// road. Writing the other sixteen would be writing content the game cannot
-// reach. `reducer.test.ts` derives the reachable set from the shipped code and
-// fails if this list drifts from it — including if a retuned constant makes a
-// missing one reachable.
-export interface LegSigns {
+//
+// Two of the three per road, not all three. A fork exists only where the two
+// ways read differently, so below both roads' odds they agree and the leg does
+// not fork — which leaves the quieter way never showing an animal and the
+// busier way never showing an empty road. Writing the other sixteen lines would
+// be writing content the game cannot reach. `reducer.test.ts` derives the
+// reachable set from the shipped code and fails if this drifts from it,
+// including when a retuned constant makes a missing one reachable.
+//
+// Stored per road rather than per leg because a line held at the leg had to fit
+// both ways and kept not fitting: "Empty both ways" contradicted the other
+// button outright, and the pinewood's signs spoke of trunks while sitting on a
+// way described as "out of the trees entirely". Storing them here puts each
+// line next to the road it describes, which makes the mismatch easy to SEE.
+// It does not make it impossible to write — no test reads prose. Read them.
+export interface RoadSigns {
   animal?: string;
   place?: string;
   quiet?: string;
