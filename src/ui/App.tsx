@@ -7,6 +7,7 @@ import {
   offeredRoutes,
   peekRoad,
   reduce,
+  speciesOf,
 } from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
 import { arrivalEnding } from "../core/arrival";
@@ -14,7 +15,7 @@ import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
 import type { LegRoute } from "../content/journey";
-import { encounters } from "../content/encounters";
+import { speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 
 // The UI boundary is the only place `Math.random` is allowed (CLAUDE.md §7):
@@ -198,12 +199,12 @@ function FieldNotes({ state }: { state: GameState }) {
   return (
     <div>
       {state.known.map((id) => {
-        const encounter = encounters.find(
-          (candidate) => candidate.id === id,
-        )!;
+        // Keyed on the species, which is what the codex learns — the notebook
+        // names the animal, not the afternoon it was watched.
+        const species = speciesList.find((candidate) => candidate.id === id)!;
         return (
           <p key={id} className="field-note">
-            {encounter.title}: {encounter.fieldNote}
+            {species.name}: {species.fieldNote}
           </p>
         );
       })}
@@ -331,11 +332,12 @@ function EncounterScreen({
   // options would soft-lock the journey.
   const scene = findScene(state.activeEncounterId)!;
   // Only an animal has anything to know about it, and only once it is known.
-  // A place is just a place.
-  const fieldNote = encounters.find(
-    (candidate) =>
-      candidate.id === scene.id && state.known.includes(candidate.id),
-  )?.fieldNote;
+  // A place is just a place, and `speciesOf` returns undefined for one.
+  const speciesId = speciesOf(scene.id);
+  const fieldNote =
+    speciesId !== undefined && state.known.includes(speciesId)
+      ? speciesList.find((candidate) => candidate.id === speciesId)!.fieldNote
+      : undefined;
 
   return (
     <div className="screen">

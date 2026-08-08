@@ -20,28 +20,77 @@ export interface EncounterOption {
   resultText: string;
 }
 
+// An ANIMAL, as the codex knows it. Split out from the encounter because a
+// species can be met in more than one situation and what you learned about it
+// does not reset when the situation changes.
+// Measured reason: 76.3% of runs meet a species twice, and before this the
+// second meeting was byte-identical to the first — same options, same numbers,
+// same prose. The road was drawing which SKIN you saw rather than which problem
+// you solved. One species carries variants now, as a trial.
+export interface Species {
+  id: string;
+  // What the codex calls it, which is not any one situation's title.
+  name: string;
+  // What watching this animal taught, in the traveler's own words. One per
+  // SPECIES: the lesson is about the animal, so meeting it in a new situation
+  // must not offer to teach it again.
+  fieldNote: string;
+}
+
+export const speciesList: readonly Species[] = [
+  {
+    id: "boar",
+    name: "Marsh Boar",
+    fieldNote:
+      "A marsh boar goes where its nose goes, and it never looks up. Give it something better to smell and it takes itself off the road.",
+  },
+  {
+    id: "wolves",
+    name: "Gray Wolves",
+    fieldNote:
+      "Wolves are not weighing whether they can take you. They are weighing whether you are worth an evening, and they read what you carry to decide it. Look equipped and they will usually go and be hungry somewhere else.",
+  },
+  {
+    id: "bees",
+    name: "Wild Bees",
+    fieldNote:
+      "The pale comb at a hollow's mouth is this season's, and heavily guarded. The dark comb sits deep, capped and finished, and barely watched at all.",
+  },
+  {
+    id: "waxwings",
+    name: "Waxwing Flock",
+    fieldNote:
+      "A flock strips a rowan from the sunlit side, where the fruit reddens first. Whatever hangs in the shade ripens later and is still hanging when they have finished, with nobody left to argue about it.",
+  },
+  {
+    id: "red-deer",
+    name: "Red Stag",
+    fieldNote:
+      "A stag in the rut is not hunting you, he is moving you. He drives downhill, away from the ground he is holding. Step up rather than back and you stop being a rival at all.",
+  },
+];
+
+// A SITUATION the road can put in front of the traveler. Several may belong to
+// one species; the reducer picks the species first and the situation second, so
+// adding variants to one animal does not make that animal commoner.
 export interface Encounter {
   id: string;
+  // Which animal this is. The codex is keyed on THIS, not on `id`.
+  speciesId: string;
   title: string;
   description: string;
-  // What watching this animal taught, in the traveler's own words. Shown on the
-  // encounter screen once it is known, and carried in the run's field notes.
-  // One per encounter, because knowledge is tracked per encounter id.
-  fieldNote: string;
   options: readonly EncounterOption[];
 }
 
-// Three road encounters for the prototype. The animals are animals: they are
-// hungry, territorial or busy, never villains, and every one of them can be
-// answered without a fight.
+// The animals are animals: they are hungry, territorial or busy, never
+// villains, and every one of them can be answered without a fight.
 export const encounters: readonly Encounter[] = [
   {
     id: "ford-boar",
+    speciesId: "boar",
     title: "A Boar in the Ford",
     description:
       "Where the road crosses the stream, a marsh boar stands mid-current ripping at reed roots. Mud steams on its shoulders, and there is no way across that does not pass within arm's reach of it.",
-    fieldNote:
-      "A marsh boar goes where its nose goes, and it never looks up. Give it something better to smell and it takes itself off the road.",
     options: [
       {
         id: "wade-past",
@@ -104,13 +153,142 @@ export const encounters: readonly Encounter[] = [
       },
     ],
   },
+  // Two more ways to meet the same animal. The trial this exists to run: a
+  // second meeting used to be the first one again, and 76.3% of runs have one.
+  //
+  // These are not the ford with different words. The ford CORNERS you — with an
+  // empty pack it offers one answer and that answer is the worst it has. The
+  // wallow does the opposite and asks whether a risk is worth taking at all,
+  // since walking on costs nothing. The sow corners you like the ford but
+  // closes the trick that works there: she will not follow her nose off the
+  // road, because what she is guarding is behind her.
+  {
+    id: "wallow-boar",
+    speciesId: "boar",
+    title: "A Boar in the Wallow",
+    description:
+      "Off the road, down in a churned black hollow, a marsh boar lies on its side in the mud with its eyes shut. It has been rooting: the ground for ten yards around is turned over as though somebody had put a plough through it badly. Nothing here is in your way.",
+    options: [
+      {
+        id: "keep-to-the-road",
+        label: "Leave it sleeping and keep to the road",
+        hpDelta: 0,
+        foodDelta: 0,
+        preparationDelta: 0,
+        resultText:
+          "You go by on the far side of the road, putting your feet down carefully, and it does not so much as open an eye. An hour later you are still listening for it behind you.",
+      },
+      {
+        id: "root-where-it-rooted",
+        label: "Go down and take what it has turned up",
+hpDelta: -2,
+        foodDelta: 2,
+        preparationDelta: 0,
+        resultText:
+          "The turned ground is thick with mast and pignut, and you fill both pockets before it comes awake and up the bank at you. You are over the fence before it reaches you, but not before the thorn hedge has its share of your arms.",
+      },
+      {
+        id: "smoke-it-out-of-the-hollow",
+        label: "Use your tinder to smoke it off the wallow",
+        hpDelta: 0,
+        foodDelta: 2,
+        preparationDelta: -1,
+        resultText:
+          "A damp handful of your tinder on the windward lip is enough. It gets up grumbling and goes, and you have the whole turned hollow to yourself and all the time you want in it.",
+      },
+      {
+        id: "watch-it-work-the-mud",
+        label: "Sit on the bank and watch it sleep",
+        // CHEAPER to learn than the ford, which charges a meal AND a scratch
+        // for the same lesson — a playtest found the three animals that wound
+        // you are exactly the three that charge food to study, so curiosity is
+        // priced out precisely when the traveler is poorest, and a safe
+        // situation is where an animal should be cheap to learn.
+        // Not free, though: `encounters.test.ts` requires some always-offered
+        // answer to strictly beat the observation, or knowledge costs nothing
+        // and stops being worth having. That rule predates this trial and is
+        // measured; `keep-to-the-road` is what it is priced against here.
+        hpDelta: 0,
+        foodDelta: -1,
+        preparationDelta: 0,
+        codex: "teaches",
+        resultText:
+          "You sit on the bank with your arms on your knees and give it an hour. It wakes, roots, moves four feet, roots again — and never once lifts its head to look at anything. It is not watching the world. It is smelling its way across it.",
+      },
+      {
+        id: "wait-downwind",
+        label: "Work the hollow from downwind while it sleeps",
+hpDelta: 0,
+        foodDelta: 2,
+        preparationDelta: 0,
+        codex: "requires",
+        resultText:
+          "You come at the hollow from below the wind, which is the one direction it has no way of checking. You are ten feet from it, filling your pockets, and it sleeps through all of it.",
+      },
+    ],
+  },
+  {
+    id: "sow-and-litter",
+    speciesId: "boar",
+    title: "A Sow Across the Path",
+    description:
+      "The sow is standing in the middle of the path and she has seen you first. Behind her, six striped piglets are working the leaf litter, paying attention to nothing. She does not root, and she does not look away.",
+    options: [
+      {
+        id: "push-through-the-thicket",
+        label: "Put your head down and go through",
+        hpDelta: -4,
+        foodDelta: 0,
+        preparationDelta: 0,
+        resultText:
+          "She comes the moment you commit, and she does not bluff the way the boars do. You get through it, and past her, and some way up the path before you sit down to see how bad your leg is.",
+      },
+      {
+        id: "back-out-the-way-you-came",
+        label: "Give her the path and go the long way",
+        hpDelta: 0,
+        foodDelta: -1,
+        preparationDelta: 0,
+        resultText:
+          "You walk backwards until the bend takes her out of sight, then go round by the top of the wood. It costs you the rest of the afternoon and a meal eaten on your feet.",
+      },
+      {
+        id: "thorn-brake-between-you",
+        label: "Put your cut brush between you and her",
+        hpDelta: 0,
+        foodDelta: 0,
+        preparationDelta: -1,
+        resultText:
+          "You drag your bundle of thorn across the path and edge round the outside of it. She watches the brush and not you, which is the whole of the trick, and the bundle stays where it falls.",
+      },
+      {
+        id: "count-the-litter-from-cover",
+        label: "Get into cover and watch what she does",
+        hpDelta: -1,
+        foodDelta: -1,
+        preparationDelta: 0,
+        codex: "teaches",
+        resultText:
+          "You spend the afternoon in a holly brake, eating cold, and she opens your hand on the way in when you are slower than she likes. But you see it: she never once puts her nose up to find you. She keeps her body between the path and the litter, and everything she does is downwind of them.",
+      },
+      {
+        id: "step-off-the-piglets-line",
+        label: "Move away from the litter, not away from her",
+hpDelta: 0,
+        foodDelta: 0,
+        preparationDelta: 0,
+        codex: "requires",
+        resultText:
+          "Knowing what she is actually guarding, you do not back down the path — you step wide, uphill, away from the piglets and not from her. She turns to keep herself between them and you, which walks her off the path, and the path is all you wanted.",
+      },
+    ],
+  },
   {
     id: "pine-shadows",
+    speciesId: "wolves",
     title: "Gray Shapes Between the Pines",
     description:
       "Two lean gray shapes keep pace with you just off the road. When you stop, they stop. One lifts its nose and tests the air for a long moment.",
-    fieldNote:
-      "Wolves are not weighing whether they can take you. They are weighing whether you are worth an evening, and they read what you carry to decide it. Look equipped and they will usually go and be hungry somewhere else.",
     options: [
       {
         id: "walk-on",
@@ -196,11 +374,10 @@ export const encounters: readonly Encounter[] = [
   },
   {
     id: "bee-hollow",
+    speciesId: "bees",
     title: "A Humming Hollow",
     description:
       "A split oak beside the road hums like a struck fence post. Dark comb glistens in the crack, and the air around it is thick with slow, heavy bees.",
-    fieldNote:
-      "The pale comb at a hollow's mouth is this season's, and heavily guarded. The dark comb sits deep, capped and finished, and barely watched at all.",
     options: [
       {
         id: "reach-in",
@@ -257,16 +434,15 @@ export const encounters: readonly Encounter[] = [
   // 2.7% to 8.0%. A longer road needs another way to eat.
   {
     id: "rowan-flock",
+    speciesId: "waxwings",
     title: "A Flock in the Rowan",
     description:
       "A rowan by the road is loud with waxwings, forty or fifty of them working the berries in a rolling scrum. They take no notice of you at all. The ground underneath is scattered with what they have dropped.",
-    fieldNote:
-      "A flock strips a rowan from the sunlit side, where the fruit reddens first. Whatever hangs in the shade ripens later and is still hanging when they have finished, with nobody left to argue about it.",
     options: [
       {
         id: "shake-the-bough",
         label: "Climb up and shake the laden bough",
-        hpDelta: -2,
+hpDelta: -2,
         foodDelta: 2,
         preparationDelta: 0,
         resultText:
@@ -303,7 +479,7 @@ export const encounters: readonly Encounter[] = [
       {
         id: "work-the-shaded-side",
         label: "Go round to the shaded side and pick there",
-        hpDelta: 0,
+hpDelta: 0,
         foodDelta: 2,
         preparationDelta: 0,
         codex: "requires",
@@ -316,11 +492,10 @@ export const encounters: readonly Encounter[] = [
   // the boar goes where its nose goes and the wolves read what you carry.
   {
     id: "rut-stag",
+    speciesId: "red-deer",
     title: "A Stag Holding the Hollow",
     description:
       "A red stag stands square in the low ground where the path runs, head up, breathing hard through a throat gone thick with the season. He has not been startled by you. He has been waiting for something to argue with, and you will do.",
-    fieldNote:
-      "A stag in the rut is not hunting you, he is moving you. He drives downhill, away from the ground he is holding. Step up rather than back and you stop being a rival at all.",
     options: [
       {
         id: "push-past",
@@ -365,7 +540,7 @@ export const encounters: readonly Encounter[] = [
       {
         id: "step-uphill",
         label: "Step uphill and let him keep the hollow",
-        hpDelta: 0,
+hpDelta: 0,
         foodDelta: 0,
         preparationDelta: 0,
         codex: "requires",

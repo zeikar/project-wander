@@ -4,7 +4,7 @@ import { HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
 import { rollRandom } from "./rng";
 import { FORK_CHANCE, journey } from "../content/journey";
 import type { LegRoute } from "../content/journey";
-import { encounters } from "../content/encounters";
+import { encounters, speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
 
@@ -29,12 +29,43 @@ export function findScene(id: string | null): Scene | undefined {
   );
 }
 
+// Which animal a situation is, or undefined for a place. The codex is keyed on
+// the SPECIES rather than the situation: one animal can be met in more than one
+// place, and meeting it somewhere new must not offer to teach it over again.
+export function speciesOf(sceneId: string | null): string | undefined {
+  return encounters.find((candidate) => candidate.id === sceneId)?.speciesId;
+}
+
+// Places return undefined here and so are never "known" — which is right: a
+// place has no species to learn, and carries no `codex` option to ask.
+function isKnown(state: GameState, sceneId: string | null): boolean {
+  const speciesId = speciesOf(sceneId);
+  return speciesId !== undefined && state.known.includes(speciesId);
+}
+
 // Salts that let a leg's SHAPE be read off the same seeded source WITHOUT
 // consuming a roll. That restraint is the point: whether a leg forks is a
 // question about how the journey is presented, and a seed's encounter script
 // must not move because the answer changed.
 const FORK_SALT = 0x5bf03635;
 const LONE_ROUTE_SALT = 0x27d4eb2f;
+// Which SITUATION a drawn species turns up in, read off the same seeded source
+// without consuming a roll — the same restraint the two salts above keep, and
+// here it buys something specific: the species a seed draws on every leg is
+// bit-for-bit what it drew before situations existed, so the tuning measured
+// against the old content still describes this one.
+const SITUATION_SALT = 0x165667b1;
+
+// The authored ways one species can be met, in list order. Never empty: every
+// species in `speciesList` has at least one situation, pinned in
+// encounters.test.ts, so the caller's non-null assertion is sound.
+function pickSituation(speciesId: string, rngState: number) {
+  const situations = encounters.filter(
+    (candidate) => candidate.speciesId === speciesId,
+  );
+  const roll = rollRandom((rngState ^ SITUATION_SALT) >>> 0);
+  return situations[Math.floor(roll.value * situations.length)]!;
+}
 
 // Which ways out of this leg the traveler actually has. Most legs have one:
 // every leg forking was a rhythm rather than an event, and a playtester
@@ -98,7 +129,7 @@ export function offeredOptions(
   state: GameState,
   encounter: Scene,
 ): readonly EncounterOption[] {
-  const known = state.known.includes(encounter.id);
+  const known = isKnown(state, encounter.id);
   return encounter.options.filter(
     (option) =>
       (option.codex !== "teaches" || !known) &&
@@ -126,9 +157,7 @@ export function canChooseOption(
   state: GameState,
   option: EncounterOption,
 ): boolean {
-  const known =
-    state.activeEncounterId !== null &&
-    state.known.includes(state.activeEncounterId);
+  const known = isKnown(state, state.activeEncounterId);
   return (
     state.food + option.foodDelta >= 0 &&
     state.preparation + option.preparationDelta >= 0 &&
@@ -241,10 +270,19 @@ export function reduce(state: GameState, action: GameAction): GameState {
       // in [0, 1) and both lists are non-empty (asserted in encounters.test.ts),
       // so the index is always in range. Repeats within one journey are
       // allowed; the road does not promise you something new every time.
+      // For animals the pick is over SPECIES, not over situations. That is what
+      // stops an animal becoming commoner just because it was given more ways
+      // to be met: the boar has three situations and is still drawn one time in
+      // five, exactly as it was when it had one.
       const selection = rollRandom(trigger.nextState);
       const scene =
         sign === "animal"
-          ? encounters[Math.floor(selection.value * encounters.length)]!
+          ? pickSituation(
+              speciesList[
+                Math.floor(selection.value * speciesList.length)
+              ]!.id,
+              selection.nextState,
+            )
           : roadEvents[Math.floor(selection.value * roadEvents.length)]!;
 
       return {
@@ -291,13 +329,16 @@ export function reduce(state: GameState, action: GameAction): GameState {
         preparation: state.preparation + option.preparationDelta,
         activeEncounterId: null,
         lastEncounterResult: option.resultText,
-        // Watching the animal is what teaches you about it. No dedupe is needed:
-        // a "teaches" option stops being choosable the moment its encounter is
-        // known, so this can never append the same id twice. A place carries no
-        // `codex` on any option, so this branch never fires for one.
+        // Watching the animal is what teaches you about it — and what is
+        // learned is the SPECIES, so meeting it in another situation later
+        // offers what the knowledge buys rather than the lesson again. No
+        // dedupe is needed: a "teaches" option stops being choosable the moment
+        // the species is known, so this can never append the same id twice. A
+        // place carries no `codex` on any option, so this branch never fires for
+        // one, which is why the non-null assertion is sound.
         known:
           option.codex === "teaches"
-            ? [...state.known, scene.id]
+            ? [...state.known, speciesOf(scene.id)!]
             : state.known,
         log: [...state.log, `${scene.title} — ${option.label}`],
       };

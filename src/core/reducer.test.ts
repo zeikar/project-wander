@@ -8,12 +8,13 @@ import {
   offeredRoutes,
   peekRoad,
   reduce,
+  speciesOf,
 } from "./reducer";
 import type { GameAction } from "./actions";
 import { arrivalEnding } from "./arrival";
 import { rollRandom } from "./rng";
 import { journey } from "../content/journey";
-import { encounters } from "../content/encounters";
+import { encounters, speciesList } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
 import type { EncounterOption } from "../content/encounters";
 
@@ -336,9 +337,16 @@ describe("travel encounters", () => {
     const state = makeTravelingState({ rngState: findRngState(true) });
     const trigger = rollRandom(state.rngState);
     const selection = rollRandom(trigger.nextState);
-    // Mirrors the reducer's uniform pick over the non-empty authored list.
+    // Mirrors the reducer's pick: uniform over SPECIES, then over that
+    // species' situations off a salt that consumes no roll.
+    const species =
+      speciesList[Math.floor(selection.value * speciesList.length)]!;
+    const situations = encounters.filter(
+      (candidate) => candidate.speciesId === species.id,
+    );
+    const situationRoll = rollRandom((selection.nextState ^ 0x165667b1) >>> 0);
     const expected =
-      encounters[Math.floor(selection.value * encounters.length)]!;
+      situations[Math.floor(situationRoll.value * situations.length)]!;
 
     const next = reduce(state, travel(state));
 
@@ -912,6 +920,42 @@ describe("encounter choices", () => {
     expect(next.legIndex).toBe(2);
   });
 
+  // The whole point of giving one species several situations: what you learned
+  // watching it in one place is knowledge about the ANIMAL, so it travels. Meet
+  // the boar at the ford, study it there, and the wallow greets you with what
+  // that knowledge buys rather than offering to teach it over again.
+  it("carries what was learned in one situation into another of the same species", () => {
+    const atTheFord = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "ford-boar",
+      hp: 10,
+      food: 2,
+      preparation: 1,
+      legIndex: 1,
+    });
+
+    const taught = reduce(atTheFord, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "watch-from-the-reeds",
+    });
+
+    expect(taught.known).toEqual(["boar"]);
+
+    // Now the same animal, a different situation.
+    const atTheWallow = { ...taught, phase: "encounter" as const, activeEncounterId: "wallow-boar" };
+    const wallow = findScene("wallow-boar")!;
+    const offered = offeredOptions(atTheWallow, wallow).map((option) => option.id);
+
+    // The lesson is spent — this situation's observation is gone...
+    expect(offered).not.toContain("watch-it-work-the-mud");
+    // ...and what knowing the boar buys HERE is on the table instead.
+    expect(offered).toContain("wait-downwind");
+
+    // And it is a different situation, not the ford repainted: the ford's own
+    // answers are not what the wallow offers.
+    expect(offered).not.toContain("wade-past");
+  });
+
   it("an option requiring preparation in hand is closed one short of the threshold", () => {
     const showYourKit = encounters
       .find((encounter) => encounter.id === "pine-shadows")!
@@ -922,7 +966,7 @@ describe("encounter choices", () => {
       activeEncounterId: "pine-shadows",
       // Milestone 5 put this option behind the codex too. Knowing the wolves
       // already keeps this test on the preparation gate it was written for.
-      known: ["pine-shadows"],
+      known: ["wolves"],
     });
 
     expect(
@@ -946,7 +990,7 @@ describe("encounter choices", () => {
       preparation: carried,
       legIndex: 1,
       // As above: isolates the requirement from the codex gate.
-      known: ["pine-shadows"],
+      known: ["wolves"],
     });
 
     const next = reduce(state, {
@@ -970,7 +1014,7 @@ describe("encounter choices", () => {
       preparation: showYourKit.requiresPreparation! - 1,
       // As above: without this the option would be refused for being unknown,
       // and this test would stop saying anything about preparation.
-      known: ["pine-shadows"],
+      known: ["wolves"],
     });
 
     expect(
@@ -1026,7 +1070,7 @@ describe("codex knowledge", () => {
 
     expect(canChooseOption(base, showYourKit)).toBe(false);
     expect(
-      canChooseOption({ ...base, known: ["pine-shadows"] }, showYourKit),
+      canChooseOption({ ...base, known: ["wolves"] }, showYourKit),
     ).toBe(true);
   });
 
@@ -1039,7 +1083,7 @@ describe("codex knowledge", () => {
 
     expect(canChooseOption(base, readThePack)).toBe(true);
     expect(
-      canChooseOption({ ...base, known: ["pine-shadows"] }, readThePack),
+      canChooseOption({ ...base, known: ["wolves"] }, readThePack),
     ).toBe(false);
   });
 
@@ -1057,7 +1101,7 @@ describe("codex knowledge", () => {
       optionId: "read-the-pack",
     });
 
-    expect(next.known).toEqual(["pine-shadows"]);
+    expect(next.known).toEqual(["wolves"]);
     // One hp, not two: `read-the-pack` was cheapened when the road went to
     // eight legs and five species made a second wolf meeting rarer. See the
     // note at the option itself.
@@ -1098,7 +1142,7 @@ describe("codex knowledge", () => {
         (option) => option.id,
       );
       const known = offeredOptions(
-        { ...base, known: [encounter.id] },
+        { ...base, known: [encounter.speciesId] },
         encounter,
       ).map((option) => option.id);
 
@@ -1114,7 +1158,7 @@ describe("codex knowledge", () => {
   it("a new journey starts ignorant", () => {
     const state = makeTravelingState({
       phase: "arrived",
-      known: ["pine-shadows", "bee-hollow"],
+      known: ["wolves", "bees"],
     });
 
     expect(reduce(state, { type: "START_JOURNEY", seed: 5 }).known).toEqual([]);
@@ -1134,7 +1178,7 @@ describe("codex knowledge", () => {
         hp: 10,
         food: 2,
         preparation: carried,
-        known: [encounterId],
+        known: [speciesOf(encounterId)!],
         legIndex: 1,
       });
 

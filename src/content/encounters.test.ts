@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encounters } from "./encounters";
+import { encounters, speciesList } from "./encounters";
 import { roadEvents } from "./events";
 import { journey } from "./journey";
 // The one core import in this folder, and only from a test. The rule that
@@ -20,6 +20,40 @@ describe("encounters content", () => {
     const ids = encounters.map((encounter) => encounter.id);
 
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("has unique species ids", () => {
+    const ids = speciesList.map((species) => species.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  // `pickSituation` draws a species first and then indexes into that species'
+  // situations with a non-null assertion. A species authored with no situation
+  // would make the road able to draw an animal it cannot show.
+  it("gives every species at least one situation to be met in", () => {
+    for (const species of speciesList) {
+      const situations = encounters.filter(
+        (encounter) => encounter.speciesId === species.id,
+      );
+
+      expect(situations.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  // The species pick is uniform over `speciesList`, so giving one animal more
+  // situations must not make that animal commoner — it splits its own share.
+  // This is what lets the boar carry three situations without moving any of the
+  // tuning measured when it had one.
+  it("keeps every species equally likely however many situations it has", () => {
+    const boar = encounters.filter(
+      (encounter) => encounter.speciesId === "boar",
+    );
+
+    expect(boar.length).toBeGreaterThan(1);
+    expect(speciesList.length).toBe(
+      new Set(encounters.map((encounter) => encounter.speciesId)).size,
+    );
   });
 
   it.each(encounters.map((encounter) => [encounter.id, encounter] as const))(
@@ -96,8 +130,15 @@ describe("encounters content", () => {
         ),
       ).toBe(true);
 
-      // The unlocked answer is worth nothing if the knowledge behind it is blank.
-      expect(encounter.fieldNote.length).toBeGreaterThan(0);
+      // The unlocked answer is worth nothing if the knowledge behind it is
+      // blank — and the knowledge now lives on the species, so every situation
+      // has to resolve to one that exists and says something.
+      const species = speciesList.find(
+        (candidate) => candidate.id === encounter.speciesId,
+      );
+      expect(species).toBeDefined();
+      expect(species!.fieldNote.length).toBeGreaterThan(0);
+      expect(species!.name.length).toBeGreaterThan(0);
 
       // A requirement is not a second cost: it gates on what is carried and
       // spends none of it. Without this, `requiresPreparation` could quietly

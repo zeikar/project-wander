@@ -181,7 +181,7 @@ describe("costHint", () => {
       // `show-your-kit` now also needs the wolves to be known. Without this the
       // option would be refused for being UNKNOWN and the test would pass while
       // saying nothing about a short kit.
-      known: ["pine-shadows"],
+      known: ["wolves"],
     });
 
     expect(canChooseOption(state, showYourKit)).toBe(false);
@@ -339,13 +339,13 @@ describe("costHint", () => {
       preparation: 2,
       food: 2,
       activeEncounterId: "bee-hollow",
-      known: ["bee-hollow"],
+      known: ["bees"],
     });
     const atBoar = makeEncounterState({
       preparation: 2,
       food: 2,
       activeEncounterId: "ford-boar",
-      known: ["ford-boar"],
+      known: ["boar"],
     });
     const atWolves = makeEncounterState({
       preparation: 2,
