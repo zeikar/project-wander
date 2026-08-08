@@ -118,3 +118,7 @@ Each leg carries three signs — what an animal ahead looks like there, what a s
 A sign names a KIND, never a species. Naming the creature was measured and it does not hurt the codex — the repeat rate holds. It simply buys almost nothing: the kind is worth 48.3% of seeds against 51.7% for the species, and a print in the mud does not tell you what to call the animal.
 
 A sign must be true. It is computed from the same band the road then walks, so it cannot promise something the leg does not deliver.
+
+A sign speaks only for the way it is printed on. It sits inside that road's own button, beside a road that may be showing something else — so "empty both ways" is a contradiction waiting to happen, and a test refuses the words.
+
+A leg only forks when the two ways lead somewhere DIFFERENT. Below both roads' odds the same roll picks the scene, so both would turn up the same animal and land in an identical state. `FORK_CHANCE` is therefore the chance of a fork WHERE ONE IS POSSIBLE, and the realized rate is about half of it.

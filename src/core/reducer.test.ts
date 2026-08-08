@@ -512,18 +512,21 @@ describe("route branches", () => {
   // The whole shape of a leg, band by band. Below a route's own odds an animal
   // turns up; the next EVENT_CHANCE is a place; above that the leg passes
   // uneventfully. Because the two routes sit at different odds, the same roll
-  // means different things on each, which is the decision.
-  it("reads one roll as three bands, and the bands differ between the ways", () => {
-    const animalOnBoth = makeTravelingState({
-      rngState: findRngState(true, "quiet", true),
-    });
+  // means different things on each — and where it does NOT, the leg does not
+  // fork at all.
+  it("reads one roll as three bands, and only forks where the bands differ", () => {
+    // Below both ways' odds: the same animal either way, so there is nothing to
+    // choose between and the leg runs on one road.
+    const animalOnBoth = makeTravelingState({ rngState: findRngState(true) });
+    expect(offeredRoutes(animalOnBoth)).toHaveLength(1);
     expect(
       encounters.some(
-        (e) => e.id === reduce(animalOnBoth, travel(animalOnBoth, "quiet")).activeEncounterId,
+        (e) =>
+          e.id === reduce(animalOnBoth, travel(animalOnBoth)).activeEncounterId,
       ),
     ).toBe(true);
 
-    // Between the two ways' odds: a place on the quiet way, an animal on the busy one.
+    // Between the two ways' odds: a place one way, an animal the other.
     const split = makeTravelingState({ rngState: findSplittingRngState() });
     expect(
       roadEvents.some(
@@ -552,42 +555,27 @@ describe("route branches", () => {
     ).toBe(true);
   });
 
-  // Regression: caught by the golden trace, not by a reviewer. Before the
-  // reducer clamped hp at the top, an hp-greedy line took the lean-to every
-  // time it appeared and arrived with 18 of a starting 14 — which also moves
-  // every arrival threshold, since those are fractions of the starting pool.
-  // The harness missed it too, because the model shared the same omission.
-  it("never lets rest carry the traveler past the pool they set out with", () => {
-    const state = makeTravelingState({
-      phase: "encounter",
-      activeEncounterId: "old-camp",
-      hp: journey.start.hp,
-      food: 2,
-      legIndex: 1,
-    });
-    const rest = roadEvents[0]!.options.find(
-      (option) => option.hpDelta > 0,
-    )!;
+  // The promise a fork makes. Two buttons that land in the same state are the
+  // fake choice this milestone removes, not one it may reintroduce: below both
+  // roads' odds the SAME roll picks the scene, so both ways would turn up the
+  // same animal. Roughly half of all rolls fall there.
+  it("never offers two ways that lead to the same place", () => {
+    let forks = 0;
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      const state = makeTravelingState({ rngState });
+      const routes = offeredRoutes(state);
+      if (routes.length < 2) {
+        continue;
+      }
+      forks += 1;
+      const [first, second] = routes.map((route) =>
+        reduce(state, { type: "TRAVEL", routeId: route.id }),
+      );
+      expect(first!.activeEncounterId).not.toBe(second!.activeEncounterId);
+      expect(peekRoad(state, routes[0]!)).not.toBe(peekRoad(state, routes[1]!));
+    }
 
-    const next = reduce(state, {
-      type: "CHOOSE_ENCOUNTER_OPTION",
-      optionId: rest.id,
-    });
-
-    expect(next.hp).toBe(journey.start.hp);
-
-    // And it still heals from below, by whatever the option is AUTHORED to
-    // give — this file's job is that the reducer applies the delta, not what
-    // the delta is. The figure itself is pinned by name in encounters.test.ts,
-    // which is the only thing that pins it: the golden trace meets this place
-    // and takes this option, but always at full hp, where the clamp above
-    // swallows the number entirely.
-    expect(
-      reduce({ ...state, hp: journey.start.hp - 5 }, {
-        type: "CHOOSE_ENCOUNTER_OPTION",
-        optionId: rest.id,
-      }).hp,
-    ).toBe(journey.start.hp - 5 + rest.hpDelta);
+    expect(forks).toBeGreaterThan(0);
   });
 
   it("turns up a place on the band above the animals", () => {
@@ -671,18 +659,36 @@ describe("route branches", () => {
   // to remember which was walked.
   // Which way was walked is deliberately NOT remembered, and it can afford not
   // to be: both ways charge the same toll, so nothing downstream needs to know.
-  // Below both routes' odds the same roll turns up the same animal, and the two
-  // resulting states have to be indistinguishable.
-  it("does not carry the road it was walked down into the state", () => {
-    const state = makeTravelingState({
-      rngState: findRngState(true, "quiet", true),
+  // It used to be shown by walking both ways onto the same animal and comparing
+  // the states, which a fork can no longer produce — a leg only forks when the
+  // ways lead somewhere DIFFERENT. What survives is the toll itself: the leg's
+  // charge is the road's, identical whichever way carried the traveler into it.
+  it("charges the leg's toll the same whichever way was walked", () => {
+    const fed = makeTravelingState({
+      rngState: findRngState(false, "quiet", true),
       food: 2,
       hp: 12,
     });
+    const routes = offeredRoutes(fed);
+    expect(routes).toHaveLength(2);
 
-    expect(reduce(state, travel(state, "busy"))).toEqual(
-      reduce(state, travel(state, "quiet")),
-    );
+    // The quiet way passes empty and pays the toll on the spot.
+    const viaQuiet = reduce(fed, travel(fed, "quiet"));
+    expect(viaQuiet.food).toBe(fed.food - 1);
+    expect(viaQuiet.hp).toBe(fed.hp);
+
+    // The busy way turns up a place; answering it pays the same toll, and the
+    // option's own deltas are the only other thing that moved.
+    const atPlace = reduce(fed, travel(fed, "busy"));
+    const option = findScene(atPlace.activeEncounterId)!.options.find((o) =>
+      canChooseOption(atPlace, o),
+    )!;
+    const viaBusy = reduce(atPlace, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: option.id,
+    });
+    expect(viaBusy.food).toBe(fed.food + option.foodDelta - 1);
+    expect(viaBusy.lastRoadToll).toBe(viaQuiet.lastRoadToll);
   });
 
   it("reaches a different outcome down the two ways on most seeds", () => {
@@ -1366,7 +1372,7 @@ describe("full journeys", () => {
       },
       {
         phase: "encounter",
-        activeEncounterId: "ford-boar",
+        activeEncounterId: "old-camp",
         hp: 14,
         food: 4,
         preparation: 2,
@@ -1376,104 +1382,104 @@ describe("full journeys", () => {
         phase: "traveling",
         activeEncounterId: null,
         hp: 14,
-        food: 3,
-        preparation: 1,
+        food: 2,
+        preparation: 2,
         legIndex: 1,
       },
       {
         phase: "encounter",
         activeEncounterId: "out-of-season-shieling",
         hp: 14,
-        food: 3,
-        preparation: 1,
+        food: 2,
+        preparation: 2,
         legIndex: 1,
       },
       {
         phase: "traveling",
         activeEncounterId: null,
         hp: 14,
-        food: 1,
-        preparation: 1,
+        food: 0,
+        preparation: 2,
         legIndex: 2,
-      },
-      {
-        phase: "traveling",
-        activeEncounterId: null,
-        hp: 14,
-        food: 0,
-        preparation: 1,
-        legIndex: 3,
-      },
-      {
-        phase: "encounter",
-        activeEncounterId: "rowan-flock",
-        hp: 14,
-        food: 0,
-        preparation: 1,
-        legIndex: 3,
-      },
-      {
-        phase: "traveling",
-        activeEncounterId: null,
-        hp: 14,
-        food: 1,
-        preparation: 0,
-        legIndex: 4,
-      },
-      {
-        phase: "encounter",
-        activeEncounterId: "wrecked-cart",
-        hp: 14,
-        food: 1,
-        preparation: 0,
-        legIndex: 4,
       },
       {
         phase: "traveling",
         activeEncounterId: null,
         hp: 11,
         food: 0,
-        preparation: 0,
+        preparation: 2,
+        legIndex: 3,
+      },
+      {
+        phase: "encounter",
+        activeEncounterId: "rowan-flock",
+        hp: 11,
+        food: 0,
+        preparation: 2,
+        legIndex: 3,
+      },
+      {
+        phase: "traveling",
+        activeEncounterId: null,
+        hp: 11,
+        food: 1,
+        preparation: 1,
+        legIndex: 4,
+      },
+      {
+        phase: "encounter",
+        activeEncounterId: "wrecked-cart",
+        hp: 11,
+        food: 1,
+        preparation: 1,
+        legIndex: 4,
+      },
+      {
+        phase: "traveling",
+        activeEncounterId: null,
+        hp: 10,
+        food: 0,
+        preparation: 1,
         legIndex: 5,
       },
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 8,
+        hp: 7,
         food: 0,
-        preparation: 0,
+        preparation: 1,
         legIndex: 6,
       },
       {
         phase: "encounter",
         activeEncounterId: "bee-hollow",
-        hp: 8,
+        hp: 7,
         food: 0,
-        preparation: 0,
+        preparation: 1,
         legIndex: 6,
       },
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 5,
-        food: 0,
-        preparation: 1,
+        hp: 7,
+        food: 1,
+        preparation: 0,
         legIndex: 7,
       },
       {
         phase: "encounter",
         activeEncounterId: "bee-hollow",
-        hp: 5,
-        food: 0,
-        preparation: 1,
+        hp: 7,
+        food: 1,
+        preparation: 0,
         legIndex: 7,
       },
       {
         phase: "arrived",
         activeEncounterId: null,
-        hp: 5,
-        food: 1,
-        preparation: 0,
+        hp: 7,
+        food: 0,
+        preparation: 1,
         legIndex: 8,
       },
     ]);

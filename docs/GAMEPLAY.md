@@ -36,7 +36,7 @@ The two ways still meet the same animals in the same proportion, and charge the 
 
 Open ground turns up less than thick cover. The rule never changes, so it can be learned.
 
-When both ways read the same, the road says so once. That is not a choice, and it is not dressed as one.
+If two ways would lead to the same thing, the road does not fork at all. Two buttons that do one thing are not a choice.
 
 ---
 

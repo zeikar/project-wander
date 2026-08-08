@@ -20,6 +20,10 @@ export interface LegRoute {
 // a decision: measured blind, choosing between two roads was worth 2.7 points
 // when the roads said only what they were LIKE, and 17.3 when they said what
 // was on them today.
+// A sign speaks for the ONE way it is shown on, and never for the other: it is
+// printed inside that road's own button, beside a road that may be showing
+// something else entirely. "Empty both ways" was written here and was a direct
+// contradiction whenever the other way held something.
 // A CATEGORY and never a species, and NOT because naming the creature would
 // break anything — that was the hypothesis, and it was measured and wrong: the
 // codex repeat rate held at 71-74% even when the sign named the animal. The
@@ -39,15 +43,18 @@ export interface JourneyLeg {
   routes: readonly LegRoute[];
 }
 
-// How often a leg offers a fork at all. Every leg forking was the shipped
-// shape, and a playtester stopped reading by the eighth turn of their first
-// journey because "the fork resolved to 'headland vs hedge-line' with the same
-// safe/risky framing every time" — a rhythm, not an event. At 0.375 a journey
-// carries about three, so a fork is something that happens rather than
-// something that always happens. It costs reach: with readable forks the best
-// blind line arrives well on 48.3% of seeds at eight forks and 36.3% at three,
-// against 31.0% for the shipped eight unreadable ones.
-export const FORK_CHANCE = 0.375;
+// How often a leg offers a fork WHERE ONE IS POSSIBLE. Roughly half of all
+// rolls land below both roads' odds, where the two ways would turn up the same
+// animal and land in an identical state; `offeredRoutes` refuses to call that a
+// fork, so the realized rate is about half of this. 0.75 therefore puts about
+// three real forks in an eight-leg journey.
+// Every leg forking was the shipped shape, and a playtester stopped reading by
+// the eighth turn of their first journey because "the fork resolved to
+// 'headland vs hedge-line' with the same safe/risky framing every time" — a
+// rhythm, not an event. It costs reach: with readable forks the best blind line
+// arrives well on 48.3% of seeds at eight forks and 36.3% at three, against
+// 31.0% for the shipped eight unreadable ones.
+export const FORK_CHANCE = 0.75;
 
 // The in-world rule behind both numbers, kept identical on every leg so it is
 // learnable: open ground turns up less than thick cover.
@@ -150,11 +157,11 @@ export const journey: Journey = {
         "A wooden waymarker leans hard to one side, its painted letters faded to guesses. Someone has tied a strip of cloth to it, for luck or for grief.",
       signs: {
         animal:
-          "There is dung on the ruts ahead, still dark.",
+          "There is fresh dung on the ground ahead, still dark.",
         place:
           "Somebody stopped at the turning long enough to leave a mark on it.",
         quiet:
-          "Empty both ways, as far as the next rise.",
+          "Nothing on it at all, as far as the next rise.",
       },
       routes: [
         {
@@ -183,7 +190,7 @@ export const journey: Journey = {
         place:
           "There is something under the hedge further along that is not hedge.",
         quiet:
-          "Nothing in the furlong but the woman and her bean row.",
+          "Nothing along it but the woman and her bean row.",
       },
       routes: [
         {
@@ -241,7 +248,7 @@ export const journey: Journey = {
         place:
           "Turf has been cut out of the bank in squares, and stacked.",
         quiet:
-          "Gorse and thin grass, and nothing moving in either.",
+          "Thin grass and burnt stumps, and nothing moving on it.",
       },
       routes: [
         {
@@ -328,7 +335,7 @@ export const journey: Journey = {
         place:
           "Something is off the road at the bend, and it did not walk there.",
         quiet:
-          "The whole descent is visible from up here, and it is empty.",
+          "You can see a long way down it from here, and there is nothing on it.",
       },
       routes: [
         {

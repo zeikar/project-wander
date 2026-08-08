@@ -44,9 +44,23 @@ export function offeredRoutes(state: GameState): readonly LegRoute[] {
   if (!leg) {
     return [];
   }
-  if (rollRandom((state.rngState ^ FORK_SALT) >>> 0).value < FORK_CHANCE) {
+
+  // Two ways are only two ways if they lead somewhere different. Below both
+  // roads' odds the SAME roll picks the scene, so both would turn up the same
+  // animal, charge the same toll, and land in an identical state — two buttons
+  // doing one thing, which is the fake choice this milestone exists to remove
+  // rather than reproduce. Roughly half of all rolls fall there, so this is not
+  // an edge case.
+  const distinct =
+    new Set(leg.routes.map((route) => peekRoad(state, route))).size > 1;
+
+  if (
+    distinct &&
+    rollRandom((state.rngState ^ FORK_SALT) >>> 0).value < FORK_CHANCE
+  ) {
     return leg.routes;
   }
+
   // No fork: the road simply runs on one way, and which of the two it is is
   // still the leg's own character rather than a coin the player flips.
   const index = Math.floor(

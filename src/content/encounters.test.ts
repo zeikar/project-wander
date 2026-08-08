@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encounters } from "./encounters";
 import { roadEvents } from "./events";
+import { journey } from "./journey";
 
 describe("encounters content", () => {
   // The reducer selects an encounter with a non-null assertion, which is only
@@ -108,6 +109,33 @@ describe("encounters content", () => {
       ).toBe(true);
     },
   );
+});
+
+describe("leg signs", () => {
+  // A sign is printed inside ONE road's button, beside a road that may be
+  // showing something else entirely, so it may only speak for the way it is on.
+  // "Empty both ways" and "nothing moving in either" were both written here and
+  // both contradicted the other button whenever it held something.
+  it("never speaks for the way the traveler did not take", () => {
+    for (const leg of journey.legs) {
+      for (const line of Object.values(leg.signs)) {
+        expect(line.toLowerCase()).not.toMatch(/\bboth\b|\beither\b/);
+      }
+    }
+  });
+
+  it("gives every leg all three signs, and no two legs the same one", () => {
+    const seen = new Set<string>();
+
+    for (const leg of journey.legs) {
+      for (const key of ["animal", "place", "quiet"] as const) {
+        const line = leg.signs[key];
+        expect(line.length).toBeGreaterThan(0);
+        expect(seen.has(line)).toBe(false);
+        seen.add(line);
+      }
+    }
+  });
 });
 
 describe("road events content", () => {

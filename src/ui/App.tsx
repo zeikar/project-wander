@@ -243,15 +243,6 @@ function TravelScreen({
   // soft-lock the journey.
   const leg = journey.legs[state.legIndex]!;
   const routes = offeredRoutes(state);
-  // Both ways can read the same, and often do. Printing one sentence twice is
-  // noise, and worse than noise: it dresses a leg where the ways AGREE as
-  // though it were a choice between them. Said once, above, it reads as what it
-  // is — a fact about the road rather than an argument for either way.
-  const signs = routes.map((route) => peekRoad(state, route));
-  const sharedSign =
-    routes.length > 1 && signs.every((sign) => sign === signs[0])
-      ? leg.signs[signs[0]!]
-      : null;
 
   return (
     <div className="screen">
@@ -275,7 +266,6 @@ function TravelScreen({
           HP.
         </p>
       )}
-      {sharedSign && <p className="route-sign shared-sign">{sharedSign}</p>}
       <FieldNotes state={state} />
       <div className="route-options">
         {routes.map((route) => (
@@ -291,7 +281,7 @@ function TravelScreen({
             {/* Only where there is a choice to make. On a leg that runs on one
                 way, reading the ground would tell the traveler something they
                 cannot act on, which is the definition of noise. */}
-            {routes.length > 1 && sharedSign === null && (
+            {routes.length > 1 && (
               <span className="route-sign">
                 {leg.signs[peekRoad(state, route)]}
               </span>

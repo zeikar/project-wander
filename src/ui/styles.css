@@ -78,11 +78,6 @@ body {
   font-style: italic;
 }
 
-/* The same sign on both ways is a fact about the leg, not about either road. */
-.shared-sign {
-  margin-top: 0.5rem;
-}
-
 .route-description {
   display: block;
   margin-top: 0.25rem;
