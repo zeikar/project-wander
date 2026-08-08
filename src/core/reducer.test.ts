@@ -1155,13 +1155,39 @@ describe("codex knowledge", () => {
     }
   });
 
-  it("a new journey starts ignorant", () => {
+  // Reversed deliberately. This test used to assert the opposite — that a new
+  // journey forgets — and that was the design until the reason behind it was
+  // re-measured: knowledge collapsed the game because what it bought cost
+  // nothing and beat everything, not because knowledge itself was too strong.
+  // Priced, the knowledge answers run 20-60% of their offers and no situation
+  // resolves to one option even when every animal is known.
+  it("carries what was learned into the next journey", () => {
     const state = makeTravelingState({
       phase: "arrived",
       known: ["wolves", "bees"],
     });
 
-    expect(reduce(state, { type: "START_JOURNEY", seed: 5 }).known).toEqual([]);
+    const next = reduce(state, { type: "START_JOURNEY", seed: 5 });
+
+    expect(next.known).toEqual(["wolves", "bees"]);
+    // Everything else still resets, which is what makes this a new journey
+    // rather than a continued one.
+    expect(next.hp).toBe(journey.start.hp);
+    expect(next.food).toBe(journey.start.food);
+    expect(next.preparation).toBe(journey.start.preparation);
+    expect(next.legIndex).toBe(0);
+    expect(next.log).toEqual([]);
+  });
+
+  // The reset point moved rather than disappearing: it is now the initial
+  // state, so the first journey after the page loads still starts ignorant.
+  it("still starts the first journey of all knowing nothing", () => {
+    const first = reduce(createInitialState(), {
+      type: "START_JOURNEY",
+      seed: 5,
+    });
+
+    expect(first.known).toEqual([]);
   });
 
   // Knowledge opens a door; it does not pay for what is behind it. Both unlocked

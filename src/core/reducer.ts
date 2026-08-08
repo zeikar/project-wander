@@ -220,9 +220,19 @@ export function reduce(state: GameState, action: GameAction): GameState {
         activeEncounterId: null,
         lastEncounterResult: null,
         lastRoadToll: null,
-        // Every journey starts ignorant. See game-state.ts for why knowledge
-        // deliberately does not survive a run.
-        known: [],
+        // Knowledge SURVIVES the journey that earned it. Everything else in
+        // this object resets; a field note does not, because the traveler who
+        // walks back out of Alderbrook is the same person who sat in the reeds.
+        // This was refused for a long time on a measurement — carrying it made
+        // one fixed table of answers match 300/300 seeds — and what actually
+        // caused that has since been fixed: the answers knowledge bought cost
+        // nothing and beat every alternative on every axis, so knowing an
+        // animal ended its encounter rather than informing it. Priced, they run
+        // 20-60% of their offers, and with every animal known no situation is
+        // settled by one option (measured 0 of 10, modal share 34-68%).
+        // Reset happens where it should: `createInitialState` is ignorant, so
+        // the first journey after the page loads starts with nothing.
+        known: state.known,
         log: [],
       };
     }
