@@ -16,6 +16,7 @@ import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
 import type { LegRoute } from "../content/journey";
+import { weatherProse } from "../content/weather";
 import { speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 
@@ -259,6 +260,7 @@ function TravelScreen({
   // soft-lock the journey.
   const leg = journey.legs[state.legIndex]!;
   const routes = offeredRoutes(state);
+  const weather = weatherAt(state.seed, state.legIndex);
 
   return (
     <div className="screen">
@@ -271,6 +273,17 @@ function TravelScreen({
       {state.lastRoadToll && (
         <p className="result-line">{state.lastRoadToll}</p>
       )}
+      {/* The sky is a standing fact about this leg, not something that just
+          happened, so it sits with the road-rule line below rather than the
+          two result lines above. All three skies render — including clear,
+          whose line is short — for the same reason the road-rule line is
+          shown every leg rather than only when it bites: a slot that only
+          appears for rain and wind is harder to learn than one that is
+          always there. The signal is deliberately not rendered here — see
+          content/weather.ts: its rates are unmeasured placeholders that the
+          sweep selects and a later task locks, and nothing may show "likely"
+          on a rate the game does not yet keep. */}
+      <p className="weather-line">{weatherProse[weather].line}</p>
       {/* The terms of the road, up with the stats they govern rather than down
           by the buttons. Stated on EVERY leg, not only when it is about to
           bite: this rule fires eight times a run and is the only cost the
@@ -361,6 +374,12 @@ function EncounterScreen({
       <p className="leg-progress">
         Leg {state.legIndex + 1} of {journey.legs.length}
       </p>
+      {/* Above the scene, not below: the disabled reasons on the buttons
+          further down name what the sky is doing ("the rain has killed every
+          scent"), so their context has to be on screen before the buttons
+          are reached, the same standing-fact placement as the travel
+          screen's weather line. */}
+      <p className="weather-line">{weatherProse[weather].line}</p>
       <h2>{scene.title}</h2>
       <p>{scene.description}</p>
       {/* The single entry for the animal in front of you, not the whole

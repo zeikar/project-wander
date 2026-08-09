@@ -30,12 +30,16 @@ body {
   font-style: italic;
 }
 
-/* The two standing rules. Deliberately quieter than `.warning` and upright
-   rather than italic: these are not events and not flavour, they are the terms
-   of the road, and they are on screen every leg. `.warning` is the same
-   sentence with its voice raised, so the two must not look alike. */
+/* The standing facts — the terms of the road and the sky over it. Deliberately
+   quieter than `.warning` and upright rather than italic: these are not events
+   and not flavour, and they are on screen every leg. `.warning` is the same
+   sentence with its voice raised, so the two must not look alike.
+   One rule rather than three, because they share a register by design: if the
+   sky ever needs to read differently from the road's terms, that is a decision
+   worth making on purpose, and splitting the selector is where it would show. */
 .road-rule,
-.departure {
+.departure,
+.weather-line {
   color: #9a9a9a;
 }
 
