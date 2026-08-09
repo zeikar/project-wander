@@ -7,7 +7,9 @@ import type { LegRoute } from "../content/journey";
 import { encounters, speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
-import { effectiveOption, weatherAt } from "./weather";
+import { skyRumor, village } from "../content/village";
+import type { VillageOption } from "../content/village";
+import { effectiveOption, skyAhead, weatherAt } from "./weather";
 
 // What the core needs from whatever the road just put in front of the traveler,
 // whether that is an animal or a place. `EventOption` carries every required
@@ -56,6 +58,12 @@ const LONE_ROUTE_SALT = 0x27d4eb2f;
 // bit-for-bit what it drew before situations existed, so the tuning measured
 // against the old content still describes this one.
 const SITUATION_SALT = 0x165667b1;
+// WHICH animal the trapper talks about, read off the same seeded source
+// without consuming a roll — the same restraint the three salts above keep.
+// Keyed on `state.seed` rather than `rngState`, for the reason weather is:
+// the morning is a property of the JOURNEY, so the answer has to be the same
+// however many times the screen asks it.
+const VILLAGE_SALT = 0x85ebca6b;
 
 // The authored ways one species can be met, in list order. Never empty: every
 // species in `speciesList` has at least one situation, pinned in
@@ -96,7 +104,8 @@ export function offeredRoutes(state: GameState): readonly LegRoute[] {
   // No fork: the road simply runs on one way, and which of the two it is is
   // still the leg's own character rather than a coin the player flips.
   const index = Math.floor(
-    rollRandom((state.rngState ^ LONE_ROUTE_SALT) >>> 0).value * leg.routes.length,
+    rollRandom((state.rngState ^ LONE_ROUTE_SALT) >>> 0).value *
+      leg.routes.length,
   );
   return [leg.routes[index]!];
 }
@@ -135,6 +144,41 @@ export function offeredOptions(
     (option) =>
       (option.codex !== "teaches" || !known) &&
       (option.codex !== "requires" || known),
+  );
+}
+
+// Which villagers the departure morning actually puts in front of the
+// traveler, and — for the trapper — WHICH animal he talks about. The single
+// place that pick is made: `teachesSpecies` exists only on the option this
+// function returns, so the button the player reads and the id the reducer
+// appends are one field rather than two computations that could drift.
+// Never consumes a roll (VILLAGE_SALT), so the screen can ask as often as it
+// likes without moving the seed's road script.
+export function offeredVillageOptions(
+  state: GameState,
+): readonly VillageOption[] {
+  const teachable = speciesList.filter(
+    (species) => !state.known.includes(species.id),
+  );
+
+  // Nothing left to learn: the trapper is simply not on the menu, the same
+  // idiom a spent `teaches` option follows at an encounter. Withdrawing the
+  // option is also what keeps the transition free of any dedupe code — the
+  // button that would teach a known species does not exist.
+  if (teachable.length === 0) {
+    return village.options.filter((option) => option.gives !== "knowledge");
+  }
+
+  // The pool shrinks as `known` grows across journeys, so the same seed teaches
+  // a different animal in a later run — variation driven by what the traveler
+  // has done, not by a second source of randomness.
+  const roll = rollRandom((state.seed ^ VILLAGE_SALT) >>> 0);
+  const picked = teachable[Math.floor(roll.value * teachable.length)]!;
+
+  return village.options.map((option) =>
+    option.gives === "knowledge"
+      ? { ...option, teachesSpecies: picked.id }
+      : option,
   );
 }
 
@@ -221,7 +265,8 @@ export function reduce(state: GameState, action: GameAction): GameState {
         return state;
       }
       return {
-        phase: "traveling",
+        // The morning in Ashfold comes first; the road starts after it.
+        phase: "village",
         hp: journey.start.hp,
         food: journey.start.food,
         preparation: journey.start.preparation,
@@ -249,6 +294,59 @@ export function reduce(state: GameState, action: GameAction): GameState {
         // the first journey after the page loads starts with nothing.
         known: state.known,
         log: [],
+      };
+    }
+
+    case "CHOOSE_VILLAGE_OPTION": {
+      if (state.phase !== "village") {
+        return state;
+      }
+
+      // Resolved out of what the morning ACTUALLY offered, not out of
+      // `village.options`: the withheld trapper has to be refused like any
+      // other id the screen never showed.
+      const option = offeredVillageOptions(state).find(
+        (candidate) => candidate.id === action.optionId,
+      );
+      if (!option) {
+        return state;
+      }
+
+      // The shepherd reads out the journey's own weather script — the same
+      // block walk `weatherAt` shows on the road, so the forecast cannot be
+      // wrong about a sky the player is about to stand under.
+      const { first, holds, then } = skyAhead(state.seed);
+
+      // hp is deliberately not touched. No villager carries an hpDelta (pinned
+      // on all four in content.test.ts), so there is no clamp here and no
+      // branch that cannot fire. A villager who draws blood is a design change
+      // that comes back through review, not through a latent code path.
+      return {
+        ...state,
+        food: state.food + option.foodDelta,
+        preparation: state.preparation + option.preparationDelta,
+        // Exactly the field the button named. The pick lives on the offered
+        // option and nowhere else, so the screen and the rule cannot learn two
+        // different animals — and no dedupe is needed, because a known species
+        // is never in the pool `offeredVillageOptions` picks from.
+        known:
+          option.teachesSpecies !== undefined
+            ? [...state.known, option.teachesSpecies]
+            : state.known,
+        lastEncounterResult:
+          option.gives === "sky"
+            ? `${option.resultText} ${skyRumor(first, holds, then)}`
+            : option.resultText,
+        // Clears nothing: `village` is only ever reached from START_JOURNEY,
+        // which already left this null, so this line restates an invariant
+        // rather than paying off a charge. Written out anyway because the
+        // no-toll contract is the entire reason this phase exists instead of
+        // the morning running through CHOOSE_ENCOUNTER_OPTION, which always
+        // ends in `completeLeg` — the transition out of the village should say
+        // out loud that no leg was walked here.
+        lastRoadToll: null,
+        log: [...state.log, `${village.name} — ${option.label}`],
+        phase: "traveling",
       };
     }
 
@@ -303,9 +401,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
       const scene =
         sign === "animal"
           ? pickSituation(
-              speciesList[
-                Math.floor(selection.value * speciesList.length)
-              ]!.id,
+              speciesList[Math.floor(selection.value * speciesList.length)]!.id,
               selection.nextState,
             )
           : roadEvents[Math.floor(selection.value * roadEvents.length)]!;

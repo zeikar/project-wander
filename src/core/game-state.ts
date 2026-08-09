@@ -2,6 +2,11 @@
 
 export type GamePhase =
   | "title"
+  // The departure-day morning, between START_JOURNEY and the first leg. A
+  // phase of its own rather than an encounter standing on leg 0, because
+  // CHOOSE_ENCOUNTER_OPTION always ends in `completeLeg` — and the road's toll
+  // is a charge the village must not make. Nobody has walked anywhere yet.
+  | "village"
   | "traveling"
   | "encounter"
   | "arrived"

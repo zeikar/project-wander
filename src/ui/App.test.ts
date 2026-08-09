@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../core/game-state";
-import { encounters } from "../content/encounters";
+import { encounters, speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 import { roadEvents } from "../content/events";
 import { canChooseOption } from "../core/reducer";
 import { weatherAt } from "../core/weather";
 import { HUNGRY_TRAVEL_HP_LOSS } from "../core/game-state";
-import { costHint, leavesNoFood, trafficHint } from "./App";
+import { costHint, knowledgeHint, leavesNoFood, trafficHint } from "./App";
 import { journey } from "../content/journey";
+import { village } from "../content/village";
+import type { VillageOption } from "../content/village";
 import type { Weather } from "../content/weather";
 
 // A journey seed whose weather at leg 0 is `weather` — every fixture below
@@ -61,18 +63,12 @@ const beeHollow = encounters.find(
 const waitItOut = fordBoar.options.find(
   (option) => option.id === "wait-it-out",
 )!; // foodDelta -1
-const wadePast = fordBoar.options.find(
-  (option) => option.id === "wade-past",
-)!; // foodDelta 0
-const reachIn = beeHollow.options.find(
-  (option) => option.id === "reach-in",
-)!; // hpDelta -3, foodDelta +2
+const wadePast = fordBoar.options.find((option) => option.id === "wade-past")!; // foodDelta 0
+const reachIn = beeHollow.options.find((option) => option.id === "reach-in")!; // hpDelta -3, foodDelta +2
 const smokeThem = beeHollow.options.find(
   (option) => option.id === "smoke-them",
 )!; // preparationDelta -1, foodDelta +2
-const leaveIt = beeHollow.options.find(
-  (option) => option.id === "leave-it",
-)!; // preparationDelta +1
+const leaveIt = beeHollow.options.find((option) => option.id === "leave-it")!; // preparationDelta +1
 const pineShadows = encounters.find(
   (encounter) => encounter.id === "pine-shadows",
 )!;
@@ -490,6 +486,66 @@ describe("weather repricing on the label", () => {
 
     expect(leavesNoFood(clear, syntheticOption)).toBe(true);
     expect(leavesNoFood(rain, syntheticOption)).toBe(false);
+  });
+});
+
+// The one string the village screen adds that no other screen has: what the
+// trapper's button promises to teach. Resolved from `teachesSpecies` — the very
+// field the reducer appends to `known` — so a hint naming the wrong animal is a
+// screen promising what the rules will not do.
+describe("knowledgeHint", () => {
+  // Resolved by what a villager GIVES rather than by id, the same way the
+  // reducer's own village tests find them.
+  const villagerWho = (matches: (option: VillageOption) => boolean) =>
+    village.options.find(matches)!;
+  const trapper = villagerWho((option) => option.gives === "knowledge");
+
+  it("names the very animal the offer carries, whichever one it is", () => {
+    // Every species, so a lookup that reached for a FIXED entry — the first in
+    // the list, say — passes on one animal and fails on the other four.
+    for (const species of speciesList) {
+      expect(knowledgeHint({ ...trapper, teachesSpecies: species.id })).toBe(
+        ` — what he knows about the ${species.name}`,
+      );
+    }
+  });
+
+  // The wording itself, written out rather than derived. The sentence above
+  // interpolates the name it looks up, so it cannot see a CONTENT rename —
+  // change "Marsh Boar" to anything else and only this test goes red. (It does
+  // catch a phrasing change; both spell the clause out.)
+  it("reads as a clause on the end of the villager's own label", () => {
+    expect(knowledgeHint({ ...trapper, teachesSpecies: "boar" })).toBe(
+      " — what he knows about the Marsh Boar",
+    );
+  });
+
+  // Authored content never carries `teachesSpecies` (pinned in content.test.ts)
+  // — only the offered copy does — so every villager as written is silent here,
+  // and a hint that appeared before the pick was made would be a claim about an
+  // animal nobody chose.
+  it("says nothing for a villager who teaches nothing", () => {
+    for (const option of village.options) {
+      expect(knowledgeHint(option)).toBe("");
+    }
+  });
+});
+
+// The village screen labels its villagers with the SAME `costHint` the
+// encounter screen uses, on the same option shape — so the exact-number
+// contract for food and preparation holds across the module boundary between
+// `VillageOption` and `EncounterOption`, without a line of new label code.
+describe("costHint on the village screen", () => {
+  it("names what a villager gives, exactly", () => {
+    const villageState = makeEncounterState({
+      phase: "village",
+      activeEncounterId: null,
+    });
+    const smith = village.options.find(
+      (option) => option.preparationDelta > 0,
+    )!;
+
+    expect(costHint(villageState, smith)).toBe(" — gains 1 preparation");
   });
 });
 

@@ -1,8 +1,10 @@
 // The sky over one leg of the road. Like journey.ts and encounters.ts this
 // owns its own types and imports nothing: content is the bottom of the
 // dependency chain. `core/weather.ts` reads this module to derive a script,
-// but neither the reducer nor the UI reads either of them yet, so game
-// behavior is unchanged by this module's existence.
+// and both the reducer and the UI read that script — the sky reprices and
+// closes encounter options, and the three screens a traveler passes through
+// on the road (the village morning, the leg, the encounter) each state the
+// line below.
 export type Weather = "clear" | "rain" | "wind";
 
 // How many legs one weather holds before the sky changes. Long enough to be
@@ -27,7 +29,11 @@ export interface WeatherProse {
 // encounters and changed the pick on 44 of 300 journeys, and none of those
 // changes moved an outcome — worth at most +0.3pp against a declared +3pp
 // bar. Measured worthless, not merely unlocked, so it was removed rather
-// than shipped as decoration nobody's choice depended on.
+// than shipped as decoration nobody's choice depended on. The shepherd in
+// Ashfold (content/village.ts) is NOT that cue coming back: this one names
+// the opening sky, how many legs it holds and what replaces it, and it is
+// bought with the morning's only choice — a whole-block forecast paid for
+// against a loaf and a mended strap, not a free per-leg hint about tomorrow.
 //
 // AUTHORING RULE: a line may state only physics true of every option in the
 // shipped pairing (encounters.ts AND events.ts — both feed `findScene` in

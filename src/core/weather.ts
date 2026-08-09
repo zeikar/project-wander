@@ -70,6 +70,31 @@ export function weatherAt(seed: number, legIndex: number): Weather {
   return blockAt(seed >>> 0, legIndex).weather;
 }
 
+// The first turn of the sky, read off the same block chain the road will
+// actually walk: what hangs over the departure, how many legs it holds, and
+// what replaces it. Built on `blockAt` rather than on a second derivation, so
+// a forecast can never name a sky the road does not then show.
+// Consumes no roll — the salted side-stream `weatherAt` already reads — so
+// asking about the morning cannot move a seed's own encounter script.
+// The road is 8 legs (journey.ts) and a block holds at most WEATHER_MAX_LEGS =
+// 4, so `then` always lands on a leg that exists. Asserted in the test rather
+// than clamped here: a clamp would quietly paper over a content change that
+// shortened the road below the longest block.
+export interface SkyAhead {
+  first: Weather;
+  holds: number;
+  then: Weather;
+}
+
+export function skyAhead(seed: number): SkyAhead {
+  const opening = blockAt(seed >>> 0, 0);
+  return {
+    first: opening.weather,
+    holds: opening.length,
+    then: blockAt(seed >>> 0, opening.length).weather,
+  };
+}
+
 // What an option's `closedIn`/`weatherDeltas` actually mean under one sky —
 // the ONE place either is read. `canChooseOption`, `CHOOSE_ENCOUNTER_OPTION`
 // (both in reducer.ts) and the encounter button's label (App.tsx) all call
