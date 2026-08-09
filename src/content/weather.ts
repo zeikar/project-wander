@@ -37,15 +37,16 @@ export interface WeatherProse {
 // breaks.
 //
 // rain closes: `scatter-bait`, `bait-a-trace` (both read a SCENT) and
-// `smoke-them`, `smoke-it-out-of-the-hollow`, `smoke-them-off-the-kill` (all
-// three spend TINDER) — EXCEPT `light-torch`, a pitch torch, named outright
-// rather than left for the closure to imply away, because that one option
-// stays open under rain.
+// `smoke-them`, `smoke-it-out-of-the-hollow`, `smoke-them-off-the-kill`,
+// `smoke-a-path`, `smoke-the-skep` (all five spend TINDER) — EXCEPT
+// `light-torch`, a pitch torch, named outright rather than left for the
+// closure to imply away, because that one option stays open under rain.
 // wind closes: `net-the-fall` (spreads a groundsheet to catch what falls),
-// `wave-your-kit` (spreads the same groundsheet to look large) and
-// `sheet-over-the-coping` (spreads it over a wall top to climb) — all three
-// keep something spread out — and `wait-downwind` (the traveler working FROM
-// downwind). It also adds one thing rain does not: it can work loose
+// `wave-your-kit` (spreads the same groundsheet to look large),
+// `sheet-over-the-coping` (spreads it over a wall top to climb) and
+// `beat-the-hedge-over-your-sheet` (spreads it at a hedge foot to catch) — all
+// four keep something spread out — and `wait-downwind` (the traveler working
+// FROM downwind). It also adds one thing rain does not: it can work loose
 // whatever is hung, which is what `cut-down-the-hang` at the old camp
 // already depends on finding hanging in the first place.
 //

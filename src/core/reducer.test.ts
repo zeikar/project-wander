@@ -1634,6 +1634,16 @@ describe("full journeys", () => {
   // toll in hp instead. Only the last three rows move. `reach-in`'s own rain
   // reprice (-3 to -1) plays no part in the divergence: repriced or not, it is
   // still the worst hpDelta on offer, so `prudent` never picks it either way.
+  // Re-recorded when the waxwings gained a second situation: the species pick
+  // on leg 3 is unchanged, but there are now two ways to meet it and this seed
+  // draws the hedge. ONE FIELD MOVED — the `activeEncounterId` — and not a
+  // single resource column, because the hedge's `beat-the-hedge-over-your-sheet`
+  // carries the same deltas as the rowan's `net-the-fall`. That is the evidence
+  // that the situation split changed which scene a seed meets and nothing about
+  // what the leg costs. The bees gained two situations in the same change and
+  // this line still draws `bee-hollow` on both of its bee legs, so their
+  // re-recording is a no-op here — which is a coincidence of this seed, not a
+  // guarantee about the split.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
@@ -1686,7 +1696,7 @@ describe("full journeys", () => {
       },
       {
         phase: "encounter",
-        activeEncounterId: "rowan-flock",
+        activeEncounterId: "thorn-hedge-flock",
         hp: 11,
         food: 0,
         preparation: 2,

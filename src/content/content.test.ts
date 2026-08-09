@@ -85,10 +85,49 @@ describe("encounters content", () => {
       "pine-shadows",
       "wolves-at-a-kill",
       "bee-hollow",
+      "robbed-hollow",
+      "old-skep",
       "rowan-flock",
+      "thorn-hedge-flock",
       "rut-stag",
       "walled-lane-stag",
     ]);
+  });
+
+  // How often the road can feed a traveler is an average of PER-SPECIES ratios,
+  // because a species is drawn first and one of its situations second. That
+  // makes the number of situations authored for an animal that always feeds you
+  // — the bees and the waxwings — the largest food lever in the game, and it
+  // only pulls down. The counts here were chosen to land the share on a declared
+  // target before the scenes were written, and until this test the target lived
+  // only in a comment: no other invariant can see whether a situation feeds at
+  // all, so an edit could quietly move the whole road's difficulty and keep
+  // every other test green.
+  it("keeps the feeding ratio each species was authored to", () => {
+    const FEEDING_SITUATIONS: Record<string, number> = {
+      boar: 1, // the wallow only
+      wolves: 1, // the kill only
+      bees: 2, // not the robbed hollow
+      waxwings: 2, // both — this is the second food source
+      "red-deer": 0, // a cost animal in both of his situations
+    };
+
+    let share = 0;
+    for (const species of speciesList) {
+      const situations = encounters.filter(
+        (encounter) => encounter.speciesId === species.id,
+      );
+      const feeding = situations.filter((encounter) =>
+        encounter.options.some((option) => option.foodDelta > 0),
+      );
+
+      expect(feeding.length).toBe(FEEDING_SITUATIONS[species.id]);
+      share += feeding.length / situations.length;
+    }
+
+    // 50.0%, which is where the road sat before the wolves and the bees gained
+    // situations. Moving this is a difficulty decision, not a content one.
+    expect(share / speciesList.length).toBeCloseTo(0.5, 5);
   });
 
   // `wolves-at-a-kill` is the one scene authored so that arriving destitute is
@@ -458,6 +497,9 @@ describe("road events content", () => {
     // `wolves-at-a-kill` has no entry here on purpose — its free answer pays
     // food, so nothing in that scene is forced.
     { encounter: "walled-lane-stag", option: "press-along-the-wall", hpDelta: -4 },
+    // A band under the ford and the lane, because a colony that has already
+    // been robbed has nothing left to hold a line over.
+    { encounter: "robbed-hollow", option: "push-through-the-homeless", hpDelta: -3 },
   ] as const;
 
   it.each(FORCED_WOUNDS)(
@@ -511,6 +553,13 @@ describe("road events content", () => {
       option: "sheet-over-the-coping",
       weather: "wind",
     },
+    { encounter: "robbed-hollow", option: "smoke-a-path", weather: "rain" },
+    { encounter: "old-skep", option: "smoke-the-skep", weather: "rain" },
+    {
+      encounter: "thorn-hedge-flock",
+      option: "beat-the-hedge-over-your-sheet",
+      weather: "wind",
+    },
   ] as const;
 
   // The shipped reprice set, same shape again. `hpDelta`/`foodDelta` are the
@@ -526,6 +575,12 @@ describe("road events content", () => {
     {
       encounter: "rowan-flock",
       option: "take-the-windfall",
+      weather: "wind",
+      foodDelta: 2,
+    },
+    {
+      encounter: "thorn-hedge-flock",
+      option: "take-what-drops-below",
       weather: "wind",
       foodDelta: 2,
     },

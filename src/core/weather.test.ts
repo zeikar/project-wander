@@ -136,6 +136,8 @@ describe("weatherProse", () => {
         "bee-hollow/smoke-them",
         "wallow-boar/smoke-it-out-of-the-hollow",
         "wolves-at-a-kill/smoke-them-off-the-kill",
+        "robbed-hollow/smoke-a-path",
+        "old-skep/smoke-the-skep",
       ],
     },
     {
@@ -150,6 +152,7 @@ describe("weatherProse", () => {
         "rowan-flock/net-the-fall",
         "rut-stag/wave-your-kit",
         "walled-lane-stag/sheet-over-the-coping",
+        "thorn-hedge-flock/beat-the-hedge-over-your-sheet",
       ],
     },
   ];
