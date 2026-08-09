@@ -1,5 +1,9 @@
 // Authored encounter content. Like journey.ts, this owns its own types and
 // imports nothing from the core: content is the bottom of the dependency chain.
+// `Weather` is the one exception — imported from `./weather`, another content
+// module, so this stays a content-to-content edge rather than reaching into
+// core.
+import type { Weather } from "./weather";
 
 export interface EncounterOption {
   id: string;
@@ -18,6 +22,23 @@ export interface EncounterOption {
   // than lengthening the list. Absent means the option is always offered.
   codex?: "teaches" | "requires";
   resultText: string;
+  // Rain or wind can close an option outright — its physics simply do not work
+  // under that sky. The set here has to match the AUTHORING RULE comment in
+  // content/weather.ts exactly: that comment is what the sky's own prose line
+  // promises the player, and a mismatch would make the line lie. `reason` is
+  // the prose the closed button itself shows.
+  closedIn?: { weather: Exclude<Weather, "clear">; reason: string };
+  // Rain or wind can reprice an option instead of closing it outright. `hpDelta`
+  // and `foodDelta` here REPLACE the clear-sky figure — they are not added to
+  // it — and `resultText` must be overridden whenever the clear-sky prose would
+  // contradict the new number (see `reach-in`: a "constellation of stings"
+  // cannot survive becoming a single sting).
+  weatherDeltas?: {
+    weather: Exclude<Weather, "clear">;
+    hpDelta?: number;
+    foodDelta?: number;
+    resultText?: string;
+  };
 }
 
 // An ANIMAL, as the codex knows it. Split out from the encounter because a
@@ -120,6 +141,9 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: -1,
         resultText:
           "It follows the smell downstream, unhurried. You cross with dry ankles and a hammering heart.",
+        // Named in the AUTHORING RULE comment in content/weather.ts: rain closes
+        // every SCENT option, this one included.
+        closedIn: { weather: "rain", reason: "the rain has killed every scent" },
       },
       {
         id: "wait-it-out",
@@ -150,6 +174,9 @@ export const encounters: readonly Encounter[] = [
         codex: "requires",
         resultText:
           "Knowing what leads it, you do not have to spend the bundle — a smear on a reed stem upwind is enough to turn it. It follows its nose off the crossing without hurrying, and you walk through behind it with your kit still full.",
+        // Same physics as `scatter-bait`: this is a scent trick too, and rain
+        // kills a scent whether or not the traveler knows to lay one.
+        closedIn: { weather: "rain", reason: "the rain has killed every scent" },
       },
     ],
   },
@@ -198,6 +225,9 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: -1,
         resultText:
           "A damp handful of your tinder on the windward lip is enough. It gets up grumbling and goes, and you have the whole turned hollow to yourself and all the time you want in it.",
+        // Named in the AUTHORING RULE comment in content/weather.ts: rain closes
+        // every TINDER option, this one included — everything but a pitch torch.
+        closedIn: { weather: "rain", reason: "no tinder will smoke in this rain" },
       },
       {
         id: "watch-it-work-the-mud",
@@ -229,6 +259,13 @@ export const encounters: readonly Encounter[] = [
         codex: "requires",
         resultText:
           "You come at the hollow from below the wind, which is the one direction it has no way of checking. You are ten feet from it, filling your pockets, and it sleeps through all of it — until it does not, and you leave the hollow faster than you entered it.",
+        // Named in the AUTHORING RULE comment in content/weather.ts: wind closes
+        // this because the trick depends on the traveler working FROM downwind,
+        // which a shifting wind does not leave anywhere to stand.
+        closedIn: {
+          weather: "wind",
+          reason: "no downwind worth working from in this wind",
+        },
       },
     ],
   },
@@ -393,6 +430,17 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: 0,
         resultText:
           "You come away with two fists of dripping comb and a constellation of stings up both arms.",
+        // Repriced rather than closed: rain does not stop a bare hand, it slows
+        // the bees that would otherwise swarm it. The clear-sky "constellation
+        // of stings" would contradict a wound this small, so the line is
+        // overridden along with the number — the two have to change together or
+        // the result text ends up describing a worse wound than the one paid.
+        weatherDeltas: {
+          weather: "rain",
+          hpDelta: -1,
+          resultText:
+            "You come away with a fist of dripping comb and one sting for it — the swarm too wet and sluggish to give chase.",
+        },
       },
       {
         id: "smoke-them",
@@ -402,6 +450,9 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: -1,
         resultText:
           "The hum drops to a murmur. You cut the comb free and leave the bees their half.",
+        // Named in the AUTHORING RULE comment in content/weather.ts: rain closes
+        // every TINDER option, this one included.
+        closedIn: { weather: "rain", reason: "no tinder will smoke in this rain" },
       },
       {
         id: "leave-it",
@@ -467,6 +518,13 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: -1,
         resultText:
           "Your groundsheet catches nearly everything that falls. It does not come out of the business clean, and you leave it behind stained through.",
+        // Named in the AUTHORING RULE comment in content/weather.ts: wind closes
+        // every SPREAD-CLOTH option, this one included — a groundsheet will not
+        // stay put to catch anything.
+        closedIn: {
+          weather: "wind",
+          reason: "nothing spread out would stay put in this wind",
+        },
       },
       {
         id: "take-the-windfall",
@@ -476,6 +534,17 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: 0,
         resultText:
           "Bruised, some of it walked on by the birds, but it is food and it costs you nothing but stooping.",
+        // Repriced rather than closed: the wind that ruins a spread groundsheet
+        // is the same wind that knocks down twice the usual windfall, so the
+        // clear-sky prose ("some of it walked on by the birds") has to change
+        // along with the number, or it would understate what a night of wind
+        // actually leaves on the ground.
+        weatherDeltas: {
+          weather: "wind",
+          foodDelta: 2,
+          resultText:
+            "The wind has stripped the bough bare overnight; there is twice the usual scatter on the ground, and it costs you nothing but stooping.",
+        },
       },
       {
         id: "watch-which-side",
@@ -531,6 +600,13 @@ export const encounters: readonly Encounter[] = [
         preparationDelta: -1,
         resultText:
           "You open your arms with the groundsheet in both hands and become twice your own width. He decides against it. The sheet does not survive the hedge you back into.",
+        // Named in the AUTHORING RULE comment in content/weather.ts: wind closes
+        // every SPREAD-CLOTH option — the same groundsheet trick as
+        // `net-the-fall`, and it will not stay spread out any better here.
+        closedIn: {
+          weather: "wind",
+          reason: "nothing spread out would stay put in this wind",
+        },
       },
       {
         id: "back-off-and-circle",

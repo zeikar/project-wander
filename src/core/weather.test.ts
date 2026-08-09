@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { signalAt, weatherAt } from "./weather";
 import { journey } from "../content/journey";
+import { encounters } from "../content/encounters";
 import {
   WEATHER_MAX_LEGS,
   WEATHER_MIN_LEGS,
@@ -170,6 +171,90 @@ describe("weatherProse", () => {
       expect(prose.line).not.toMatch(/\d/);
       if (prose.signal) {
         expect(prose.signal).not.toMatch(/\d/);
+      }
+    }
+  });
+
+  function optionAt(fullId: string) {
+    const [encounterId, optionId] = fullId.split("/");
+    return encounters
+      .find((encounter) => encounter.id === encounterId)!
+      .options.find((option) => option.id === optionId)!;
+  }
+
+  // The AUTHORING RULE comment above `weatherProse` names a claim in words —
+  // "rain closes every SCENT option", "wind closes every SPREAD-CLOTH option"
+  // — and Task 2's own history is that a line like this can claim a closure an
+  // option quietly keeps open. This table is the check: each row states the
+  // FULL SEMANTIC SCOPE of one clause word — every option whose OWN mechanic
+  // is that physics, read from the content itself — independent of which
+  // options `content/encounters.ts` currently marks `closedIn`. `light-torch`
+  // is a pitch torch, not tinder, so it is correctly outside the "tinder" row
+  // rather than a special case inside it; `count-the-litter-from-cover`
+  // describes the SOW's own position, not a traveler's downwind tactic, so it
+  // is outside the "downwind" row for the same reason the AUTHORING RULE
+  // comment gives.
+  //
+  // A row changes ONLY when the WORDING changes what it claims to cover —
+  // never to match whatever `closedIn` currently ships. Editing a row to fit
+  // the content is exactly the failure this table exists to catch: it would
+  // make the test pass while the prose stayed false.
+  //
+  // A LEXICAL TRIPWIRE, not a proof: it can only compare a claimed scope
+  // against `closedIn`, and it trusts that the scope below was read correctly
+  // from the content by a human. It cannot discover an option this table's
+  // author failed to notice shares the same physics.
+  const PROSE_CLAIMS: ReadonlyArray<{
+    weather: Exclude<Weather, "clear">;
+    clauseWord: string;
+    // Every option the clause word's physics covers, as `encounterId/optionId`.
+    closes: readonly string[];
+  }> = [
+    {
+      weather: "rain",
+      clauseWord: "scent",
+      closes: ["ford-boar/scatter-bait", "ford-boar/bait-a-trace"],
+    },
+    {
+      weather: "rain",
+      clauseWord: "tinder",
+      closes: [
+        "bee-hollow/smoke-them",
+        "wallow-boar/smoke-it-out-of-the-hollow",
+      ],
+    },
+    {
+      weather: "wind",
+      clauseWord: "downwind",
+      closes: ["wallow-boar/wait-downwind"],
+    },
+    {
+      weather: "wind",
+      clauseWord: "spread out",
+      closes: ["rowan-flock/net-the-fall", "rut-stag/wave-your-kit"],
+    },
+  ];
+
+  it.each(PROSE_CLAIMS)(
+    "$weather's '$clauseWord' clause closes every option in its scope",
+    ({ weather, closes }) => {
+      for (const fullId of closes) {
+        expect(optionAt(fullId).closedIn?.weather).toBe(weather);
+      }
+    },
+  );
+
+  it("states a clause word only when its full scope is actually closed", () => {
+    for (const { weather, clauseWord, closes } of PROSE_CLAIMS) {
+      const fullyClosed = closes.every(
+        (fullId) => optionAt(fullId).closedIn?.weather === weather,
+      );
+      const line = weatherProse[weather].line.toLowerCase();
+
+      if (fullyClosed) {
+        expect(line).toContain(clauseWord);
+      } else {
+        expect(line).not.toContain(clauseWord);
       }
     }
   });

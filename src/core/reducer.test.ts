@@ -13,10 +13,12 @@ import {
 import type { GameAction } from "./actions";
 import { arrivalEnding } from "./arrival";
 import { rollRandom } from "./rng";
+import { effectiveOption, weatherAt } from "./weather";
 import { journey } from "../content/journey";
 import { encounters, speciesList } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
 import type { EncounterOption } from "../content/encounters";
+import type { Weather } from "../content/weather";
 
 // hp defaults to the journey's own starting pool. It used to be a flat 20,
 // left over from when the game started there; once resting could give hp back
@@ -120,6 +122,21 @@ function findRngState(
       // ask for "busy", and this throws loudly rather than quietly returning a
       // state that turns up a place instead.
       findRngStateIn(chance + EVENT_CHANCE, 1, `an empty ${which} leg`, mustFork);
+}
+
+// A journey seed whose weather at `legIndex` is `weather` — the weather
+// equivalent of `findRngStateIn` above. A handful of tests below choose one of
+// the options this milestone put behind the sky and were written before
+// weather existed to pin against; those pin their seed to a clear leg with
+// this, the same way tests about a specific rng band find one with
+// `findRngStateIn`.
+function findSeedWith(weather: Weather, legIndex: number): number {
+  for (let seed = 1; seed <= 100000; seed++) {
+    if (weatherAt(seed, legIndex) === weather) {
+      return seed;
+    }
+  }
+  throw new Error(`no seed in 1..100000 gives ${weather} at leg ${legIndex}`);
 }
 
 // A PLACE on the given way.
@@ -799,6 +816,10 @@ describe("encounter choices", () => {
       food: 0,
       preparation: 3,
       legIndex: 1,
+      // reach-in is repriced under rain; pinned clear so this test still pins
+      // the CLEAR-sky figures it was written to check. weather.test.ts covers
+      // the rain reprice.
+      seed: findSeedWith("clear", 1),
     });
     const reachIn = encounters
       .find((encounter) => encounter.id === "bee-hollow")
@@ -1053,6 +1074,94 @@ describe("encounter choices", () => {
   });
 });
 
+describe("weather closes and reprices encounter options", () => {
+  const scatterBait = encounters
+    .find((encounter) => encounter.id === "ford-boar")!
+    .options.find((option) => option.id === "scatter-bait")!;
+  const reachIn = encounters
+    .find((encounter) => encounter.id === "bee-hollow")!
+    .options.find((option) => option.id === "reach-in")!;
+  const takeTheWindfall = encounters
+    .find((encounter) => encounter.id === "rowan-flock")!
+    .options.find((option) => option.id === "take-the-windfall")!;
+
+  // effectiveOption is the one function both canChooseOption and
+  // CHOOSE_ENCOUNTER_OPTION read to learn what the sky did to an option; pinned
+  // here directly, separately from the reducer plumbing exercised below.
+  it("exposes the closure reason exactly when the sky matches, and nothing otherwise", () => {
+    expect(effectiveOption(scatterBait, "rain").closedReason).toBe(
+      scatterBait.closedIn!.reason,
+    );
+    expect(effectiveOption(scatterBait, "clear").closedReason).toBeUndefined();
+    expect(effectiveOption(scatterBait, "wind").closedReason).toBeUndefined();
+  });
+
+  it("refuses a closed option: choosing it is ignored, same state reference", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "ford-boar",
+      preparation: 3,
+      legIndex: 1,
+      seed: findSeedWith("rain", 1),
+    });
+
+    expect(canChooseOption(state, scatterBait)).toBe(false);
+    expect(
+      reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: "scatter-bait",
+      }),
+    ).toBe(state);
+  });
+
+  it("rain reprices reach-in to a single sting and carries the override text", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "bee-hollow",
+      hp: journey.start.hp,
+      food: 0,
+      preparation: 3,
+      legIndex: 1,
+      seed: findSeedWith("rain", 1),
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "reach-in",
+    });
+
+    // -1 from the sting, not the clear-sky -3 — and food still went up 2, so
+    // the traveler is fed and the leg's own toll takes a meal, not hp.
+    expect(next.hp).toBe(journey.start.hp - 1);
+    expect(next.lastEncounterResult).toBe(reachIn.weatherDeltas!.resultText);
+    expect(next.lastEncounterResult).not.toBe(reachIn.resultText);
+  });
+
+  it("wind reprices take-the-windfall to 2 food instead of 1", () => {
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "rowan-flock",
+      hp: journey.start.hp,
+      food: 0,
+      preparation: 3,
+      legIndex: 1,
+      seed: findSeedWith("wind", 1),
+    });
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: "take-the-windfall",
+    });
+
+    // +2 from the option, then the leg's own toll of one meal since the
+    // traveler is fed after gathering.
+    expect(next.food).toBe(2 - 1);
+    expect(next.lastEncounterResult).toBe(
+      takeTheWindfall.weatherDeltas!.resultText,
+    );
+  });
+});
+
 describe("codex knowledge", () => {
   function optionOf(encounterId: string, optionId: string): EncounterOption {
     return encounters
@@ -1211,6 +1320,9 @@ describe("codex knowledge", () => {
         preparation: carried,
         known: [speciesOf(encounterId)!],
         legIndex: 1,
+        // bait-a-trace is rain-closed; pinned clear so the reducer actually
+        // applies it here rather than refusing it and passing vacuously.
+        seed: findSeedWith("clear", 1),
       });
 
       const next = reduce(state, {
@@ -1396,7 +1508,12 @@ describe("full journeys", () => {
   it("leaves the best ending reachable on most seeds", () => {
     // Memoized: an eight-leg road with two ways out of every leg and five
     // options at every scene makes the naive walk exponential, and it timed out
-    // at 5s. The key is every field the rest of the journey can depend on.
+    // at 5s. The key is every field the rest of the journey can depend on —
+    // including `seed` now that `canChooseOption`/`reduce` branch on
+    // `weatherAt(state.seed, ...)`: without it, two states colliding on every
+    // OTHER keyed field but differing in seed (and so in weather) would share
+    // one cached answer that is wrong for whichever of them it was not
+    // computed from.
     const seen = new Map<string, boolean>();
     function canReachTravelOn(state: GameState): boolean {
       const key = [
@@ -1406,6 +1523,7 @@ describe("full journeys", () => {
         state.preparation,
         state.legIndex,
         state.rngState,
+        state.seed,
         state.activeEncounterId,
         [...state.known].sort().join("+"),
       ].join(",");
@@ -1507,6 +1625,15 @@ describe("full journeys", () => {
   // hidden and `read-the-pack` (-1 hp) in its slot. `prudent` keeps the first of
   // equal maximal hpDeltas, so it still spends a torch. Content that swaps a
   // menu slot must not move a journey that never opens it.
+  // Re-recorded when weather arrived: seed 1 is rain on both legs this line
+  // meets `bee-hollow` (legs 6 and 7), and rain closes `smoke-them`. That
+  // option was the first 0-hpDelta answer in the list and so was what
+  // `prudent`'s tie-break picked; with it closed, the tie goes to `leave-it`
+  // instead — +1 preparation rather than +2 food and a smoked comb, both
+  // times, so a leg that used to arrive fed now arrives hungry and pays the
+  // toll in hp instead. Only the last three rows move. `reach-in`'s own rain
+  // reprice (-3 to -1) plays no part in the divergence: repriced or not, it is
+  // still the worst hpDelta on offer, so `prudent` never picks it either way.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
@@ -1608,25 +1735,25 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
-        hp: 7,
-        food: 1,
-        preparation: 0,
+        hp: 4,
+        food: 0,
+        preparation: 2,
         legIndex: 7,
       },
       {
         phase: "encounter",
         activeEncounterId: "bee-hollow",
-        hp: 7,
-        food: 1,
-        preparation: 0,
+        hp: 4,
+        food: 0,
+        preparation: 2,
         legIndex: 7,
       },
       {
         phase: "arrived",
         activeEncounterId: null,
-        hp: 7,
+        hp: 1,
         food: 0,
-        preparation: 1,
+        preparation: 3,
         legIndex: 8,
       },
     ]);

@@ -8,6 +8,13 @@ import { journey } from "./journey";
 // the same number in two places, which is the failure this project has already
 // written down elsewhere.
 import { HUNGRY_TRAVEL_HP_LOSS } from "../core/game-state";
+import { effectiveOption } from "../core/weather";
+
+// Every sky an option's `closedIn`/`weatherDeltas` can name. Iterated by every
+// invariant below that used to check only the implicit clear-sky content —
+// rain and wind can close or reprice an option, so a bound checked once
+// against the authored figures no longer covers what a real journey can meet.
+const WEATHERS = ["clear", "rain", "wind"] as const;
 
 describe("encounters content", () => {
   // The reducer selects an encounter with a non-null assertion, which is only
@@ -85,14 +92,23 @@ describe("encounters content", () => {
         // has all-zero deltas but requires preparation in hand, so it does NOT
         // rescue a player at preparation 0. Availability, not just cost, is what
         // the guarantee is about.
-        expect(
-          menu.some(
-            (option) =>
-              option.foodDelta >= 0 &&
-              option.preparationDelta >= 0 &&
-              (option.requiresPreparation ?? 0) === 0,
-          ),
-        ).toBe(true);
+        // Checked in every sky, not only the implicit clear one: rain and wind
+        // can close the option this used to count as the free rescue, and a
+        // menu with none left open would soft-lock a destitute traveler under
+        // that sky alone.
+        for (const weather of WEATHERS) {
+          expect(
+            menu.some((option) => {
+              const effective = effectiveOption(option, weather);
+              return (
+                effective.closedReason === undefined &&
+                effective.foodDelta >= 0 &&
+                effective.preparationDelta >= 0 &&
+                (option.requiresPreparation ?? 0) === 0
+              );
+            }),
+          ).toBe(true);
+        }
       }
 
       // One observation and one thing it unlocks, sharing a menu slot. Two
@@ -111,6 +127,10 @@ describe("encounters content", () => {
       // grants is free. A comparable answer is one offered in both menus (no
       // codex field), so this does not hardcode which answer each
       // observation is priced against.
+      // Re-run per sky, with effective deltas: no `teaches` option ships
+      // closed or repriced (checked separately below), but a comparable
+      // answer that WAS the dominator can be closed by rain or wind, so the
+      // domination has to still hold among whatever is left open.
       const teaches = encounter.options.find(
         (option) => option.codex === "teaches",
       )!;
@@ -118,17 +138,26 @@ describe("encounters content", () => {
         (option) => option.codex === undefined,
       );
 
-      expect(
-        alwaysOffered.some(
-          (option) =>
-            option.hpDelta >= teaches.hpDelta &&
-            option.foodDelta >= teaches.foodDelta &&
-            option.preparationDelta >= teaches.preparationDelta &&
-            (option.hpDelta > teaches.hpDelta ||
-              option.foodDelta > teaches.foodDelta ||
-              option.preparationDelta > teaches.preparationDelta),
-        ),
-      ).toBe(true);
+      for (const weather of WEATHERS) {
+        const effectiveTeaches = effectiveOption(teaches, weather);
+        const openAlwaysOffered = alwaysOffered.filter(
+          (option) => effectiveOption(option, weather).closedReason === undefined,
+        );
+
+        expect(
+          openAlwaysOffered.some((option) => {
+            const effective = effectiveOption(option, weather);
+            return (
+              effective.hpDelta >= effectiveTeaches.hpDelta &&
+              effective.foodDelta >= effectiveTeaches.foodDelta &&
+              effective.preparationDelta >= effectiveTeaches.preparationDelta &&
+              (effective.hpDelta > effectiveTeaches.hpDelta ||
+                effective.foodDelta > effectiveTeaches.foodDelta ||
+                effective.preparationDelta > effectiveTeaches.preparationDelta)
+            );
+          }),
+        ).toBe(true);
+      }
 
       // The unlocked answer is worth nothing if the knowledge behind it is
       // blank — and the knowledge now lives on the species, so every situation
@@ -314,33 +343,46 @@ describe("road events content", () => {
   //
   // Deliberately checked with hp at full and both other resources at zero — the
   // ratio is what is being pinned, not any particular traveler's survival.
-  it("never corners a destitute traveler for more than half a full pool", () => {
-    const worstAffordable = Math.max(
-      ...encounters.flatMap((encounter) =>
-        // Known and unknown both: the codex swaps one option for another, so a
-        // species can be generous to a traveler who studied it and brutal to
-        // one who has not. Both travelers are real.
-        [false, true].map((known) => {
-          const affordable = encounter.options.filter(
-            (option) =>
-              option.foodDelta >= 0 &&
-              option.preparationDelta >= 0 &&
-              (option.requiresPreparation ?? 0) === 0 &&
-              (option.codex !== "teaches" || !known) &&
-              (option.codex !== "requires" || known),
-          );
+  // Run once per sky, against EFFECTIVE deltas: rain and wind can close the
+  // option that used to be the cheap way out, which can only make the worst
+  // affordable answer worse, never better, so this bound has to hold under
+  // every sky the road can actually show, not only the implicit clear one.
+  it("never corners a destitute traveler for more than half a full pool, in any sky", () => {
+    for (const weather of WEATHERS) {
+      const worstAffordable = Math.max(
+        ...encounters.flatMap((encounter) =>
+          // Known and unknown both: the codex swaps one option for another, so a
+          // species can be generous to a traveler who studied it and brutal to
+          // one who has not. Both travelers are real.
+          [false, true].map((known) => {
+            const affordable = encounter.options.filter((option) => {
+              const effective = effectiveOption(option, weather);
+              return (
+                effective.closedReason === undefined &&
+                effective.foodDelta >= 0 &&
+                effective.preparationDelta >= 0 &&
+                (option.requiresPreparation ?? 0) === 0 &&
+                (option.codex !== "teaches" || !known) &&
+                (option.codex !== "requires" || known)
+              );
+            });
 
-          expect(affordable.length).toBeGreaterThan(0);
+            expect(affordable.length).toBeGreaterThan(0);
 
-          // The best they can do is the least blood on offer.
-          return -Math.max(...affordable.map((option) => option.hpDelta));
-        }),
-      ),
-    );
+            // The best they can do is the least blood on offer.
+            return -Math.max(
+              ...affordable.map(
+                (option) => effectiveOption(option, weather).hpDelta,
+              ),
+            );
+          }),
+        ),
+      );
 
-    expect(worstAffordable + HUNGRY_TRAVEL_HP_LOSS).toBeLessThanOrEqual(
-      journey.start.hp / 2,
-    );
+      expect(worstAffordable + HUNGRY_TRAVEL_HP_LOSS).toBeLessThanOrEqual(
+        journey.start.hp / 2,
+      );
+    }
   });
 
   // The blood-only answer at each animal that wounds — what a traveler with an
@@ -378,4 +420,148 @@ describe("road events content", () => {
       expect(forced.requiresPreparation ?? 0).toBe(0);
     },
   );
+
+  // The shipped closure set, pinned in the same shape as NIGHTS and
+  // FORCED_WOUNDS above: which option closes under which sky is a design
+  // claim, not something the invariants above can see (they only bound
+  // aggregates). Matched 1:1 against the AUTHORING RULE comment in
+  // content/weather.ts, which is the prose these closures have to keep true —
+  // weather.test.ts checks the prose side of that promise; this pins the
+  // content side.
+  const WEATHER_CLOSURES = [
+    { encounter: "ford-boar", option: "scatter-bait", weather: "rain" },
+    { encounter: "ford-boar", option: "bait-a-trace", weather: "rain" },
+    {
+      encounter: "wallow-boar",
+      option: "smoke-it-out-of-the-hollow",
+      weather: "rain",
+    },
+    { encounter: "bee-hollow", option: "smoke-them", weather: "rain" },
+    { encounter: "wallow-boar", option: "wait-downwind", weather: "wind" },
+    { encounter: "rowan-flock", option: "net-the-fall", weather: "wind" },
+    { encounter: "rut-stag", option: "wave-your-kit", weather: "wind" },
+  ] as const;
+
+  // The shipped reprice set, same shape again. `hpDelta`/`foodDelta` are the
+  // EFFECTIVE figures the reprice replaces the clear-sky one with, not an
+  // amount added to it.
+  const WEATHER_REPRICES = [
+    {
+      encounter: "bee-hollow",
+      option: "reach-in",
+      weather: "rain",
+      hpDelta: -1,
+    },
+    {
+      encounter: "rowan-flock",
+      option: "take-the-windfall",
+      weather: "wind",
+      foodDelta: 2,
+    },
+  ] as const;
+
+  it("closes and reprices exactly the shipped set, nothing more and nothing less", () => {
+    const closed = encounters
+      .flatMap((encounter) =>
+        encounter.options
+          .filter((option) => option.closedIn !== undefined)
+          .map((option) => `${encounter.id}/${option.id}`),
+      )
+      .sort();
+    const repriced = encounters
+      .flatMap((encounter) =>
+        encounter.options
+          .filter((option) => option.weatherDeltas !== undefined)
+          .map((option) => `${encounter.id}/${option.id}`),
+      )
+      .sort();
+
+    expect(closed).toEqual(
+      WEATHER_CLOSURES.map((c) => `${c.encounter}/${c.option}`).sort(),
+    );
+    expect(repriced).toEqual(
+      WEATHER_REPRICES.map((c) => `${c.encounter}/${c.option}`).sort(),
+    );
+  });
+
+  it.each(WEATHER_CLOSURES)(
+    "$encounter/$option is closed in $weather, with a real reason on the button",
+    ({ encounter: encounterId, option: optionId, weather }) => {
+      const option = encounters
+        .find((c) => c.id === encounterId)!
+        .options.find((o) => o.id === optionId)!;
+
+      expect(option.closedIn!.weather).toBe(weather);
+      expect(option.closedIn!.reason.length).toBeGreaterThan(0);
+      // Closed in exactly the one sky it names — never the other, and never
+      // clear, which is what would let a closed option keep working on a day
+      // the prose says nothing closed it.
+      expect(effectiveOption(option, weather).closedReason).toBeDefined();
+      const other = weather === "rain" ? "wind" : "rain";
+      expect(effectiveOption(option, other).closedReason).toBeUndefined();
+      expect(effectiveOption(option, "clear").closedReason).toBeUndefined();
+    },
+  );
+
+  it.each(WEATHER_REPRICES)(
+    "$encounter/$option reprices in $weather, with an overridden result",
+    ({ encounter: encounterId, option: optionId, weather, ...expected }) => {
+      const option = encounters
+        .find((c) => c.id === encounterId)!
+        .options.find((o) => o.id === optionId)!;
+      const effective = effectiveOption(option, weather);
+
+      if ("hpDelta" in expected) {
+        expect(effective.hpDelta).toBe(expected.hpDelta);
+      }
+      if ("foodDelta" in expected) {
+        expect(effective.foodDelta).toBe(expected.foodDelta);
+      }
+      // The clear-sky prose has to change along with the number, or the
+      // result line describes a wound or a haul the reducer did not charge.
+      expect(effective.resultText).not.toBe(option.resultText);
+      expect(effective.resultText.length).toBeGreaterThan(0);
+    },
+  );
+
+  // The label contract this whole milestone exists to keep: a repriced number
+  // that the player cannot actually SEE is a discount the screen does not
+  // show. hp is banded (App.tsx `costHint`), so a repriced wound only counts
+  // as visible if it lands in a different band; food is stated exactly, so any
+  // numeric difference is visible on its own.
+  it("makes every reprice visible on the label: a different hp band, or a different food count", () => {
+    const band = (wound: number) =>
+      wound < HUNGRY_TRAVEL_HP_LOSS
+        ? "little"
+        : wound > HUNGRY_TRAVEL_HP_LOSS
+          ? "lot"
+          : "mid";
+
+    for (const row of WEATHER_REPRICES) {
+      const option = encounters
+        .find((c) => c.id === row.encounter)!
+        .options.find((o) => o.id === row.option)!;
+      const effective = effectiveOption(option, row.weather);
+
+      if (effective.hpDelta !== option.hpDelta) {
+        expect(band(-effective.hpDelta)).not.toBe(band(-option.hpDelta));
+      }
+      // Checked against the row's own DECLARED value, not merely "differs
+      // from the authored one": `if (effective.foodDelta !== option.foodDelta)
+      // expect(effective.foodDelta).not.toBe(option.foodDelta)` is a guard
+      // that is also the assertion — for primitive numbers that can never
+      // fail, and it cannot catch a reprice authored equal to the clear-sky
+      // price either. Proven by mutation: silently dropping the wind
+      // foodDelta reprice inside `effectiveOption` left the old version of
+      // this check green while three other tests correctly failed. Pinning
+      // the effective figure against `row.foodDelta` fails when the reprice
+      // stops reaching the label; pinning `row.foodDelta` against the
+      // authored figure fails if a reprice is ever authored equal to the
+      // price it is supposed to replace.
+      if ("foodDelta" in row) {
+        expect(effective.foodDelta).toBe(row.foodDelta);
+        expect(row.foodDelta).not.toBe(option.foodDelta);
+      }
+    }
+  });
 });

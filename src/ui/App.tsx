@@ -11,6 +11,7 @@ import {
 } from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
 import { arrivalEnding } from "../core/arrival";
+import { effectiveOption, weatherAt } from "../core/weather";
 import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
@@ -32,6 +33,14 @@ export function costHint(
   state: GameState,
   option: EncounterOption,
 ): string {
+  // Reads the EFFECTIVE deltas, not the authored ones — the same call
+  // `canChooseOption` and the reducer make — so a repriced option's label
+  // always shows the number the reducer will actually charge, never the
+  // clear-sky figure underneath it.
+  const effective = effectiveOption(
+    option,
+    weatherAt(state.seed, state.legIndex),
+  );
   const costs: string[] = [];
   // The SCALE of an hp cost, never the number. Naming the cost at all came
   // first, because a missing clause read as "harmless" and inverted the real
@@ -44,8 +53,8 @@ export function costHint(
   // Three bands, hinged on the one hp figure the game already states outright —
   // what a leg costs when there is nothing left to eat. Under it, at it, over
   // it. Exactly how much is still found by taking it.
-  if (option.hpDelta < 0) {
-    const wound = -option.hpDelta;
+  if (effective.hpDelta < 0) {
+    const wound = -effective.hpDelta;
     costs.push(
       wound < HUNGRY_TRAVEL_HP_LOSS
         ? "a little blood"
@@ -54,11 +63,11 @@ export function costHint(
           : "blood",
     );
   }
-  if (option.foodDelta < 0) {
-    costs.push(`${-option.foodDelta} food`);
+  if (effective.foodDelta < 0) {
+    costs.push(`${-effective.foodDelta} food`);
   }
-  if (option.preparationDelta < 0) {
-    costs.push(`${-option.preparationDelta} preparation`);
+  if (effective.preparationDelta < 0) {
+    costs.push(`${-effective.preparationDelta} preparation`);
   }
 
   // Gains were unlabelled while costs were spelled out, and nobody had decided
@@ -73,14 +82,14 @@ export function costHint(
   // Conditional because the healing is: hp is clamped at the pool the traveler
   // set out with, so at full health resting costs a meal and returns nothing,
   // and promising otherwise is the same lie in the other direction.
-  if (option.hpDelta > 0 && state.hp < journey.start.hp) {
+  if (effective.hpDelta > 0 && state.hp < journey.start.hp) {
     gains.push("some of yourself back");
   }
-  if (option.foodDelta > 0) {
-    gains.push(`${option.foodDelta} food`);
+  if (effective.foodDelta > 0) {
+    gains.push(`${effective.foodDelta} food`);
   }
-  if (option.preparationDelta > 0) {
-    gains.push(`${option.preparationDelta} preparation`);
+  if (effective.preparationDelta > 0) {
+    gains.push(`${effective.preparationDelta} preparation`);
   }
 
   // Spending preparation is the one cost whose real consequence is invisible at
@@ -99,8 +108,8 @@ export function costHint(
   // reads equally as "you hold 1" and "1 will remain", and the reader could not
   // tell which until a different count disambiguated it.
   const remaining =
-    option.preparationDelta < 0 && canChooseOption(state, option)
-      ? ` (leaves ${state.preparation + option.preparationDelta} in hand)`
+    effective.preparationDelta < 0 && canChooseOption(state, option)
+      ? ` (leaves ${state.preparation + effective.preparationDelta} in hand)`
       : "";
 
   // Costs and gains are the same ledger, so they share one clause; the
@@ -139,10 +148,16 @@ export function leavesNoFood(
   state: GameState,
   option: EncounterOption,
 ): boolean {
+  // Effective deltas again: a repriced option's own warning has to agree with
+  // the number costHint just showed above it, on the same button.
+  const effective = effectiveOption(
+    option,
+    weatherAt(state.seed, state.legIndex),
+  );
   return (
     canChooseOption(state, option) &&
-    state.hp + option.hpDelta > 0 &&
-    state.food + option.foodDelta === 0
+    state.hp + effective.hpDelta > 0 &&
+    state.food + effective.foodDelta === 0
   );
 }
 
@@ -338,6 +353,7 @@ function EncounterScreen({
     speciesId !== undefined && state.known.includes(speciesId)
       ? speciesList.find((candidate) => candidate.id === speciesId)!.fieldNote
       : undefined;
+  const weather = weatherAt(state.seed, state.legIndex);
 
   return (
     <div className="screen">
@@ -351,36 +367,45 @@ function EncounterScreen({
           notebook: what you know is only actionable here. */}
       {fieldNote && <p className="field-note">What you know: {fieldNote}</p>}
       <div className="encounter-options">
-        {offeredOptions(state, scene).map((option) => (
-          <button
-            key={option.id}
-            disabled={!canChooseOption(state, option)}
-            onClick={() =>
-              dispatch({
-                type: "CHOOSE_ENCOUNTER_OPTION",
-                optionId: option.id,
-              })
-            }
-          >
-            {option.label}
-            {costHint(state, option)}
-            {/* "as well" and "then" are load-bearing. A playtester could not
-                tell whether this figure replaced the option's own cost, was
-                added to it, or only applied depending on something later in the
-                leg, and worked the rule out by trial instead: it "fires when
-                food hits/stays at 0 at leg-end, but the game never stated that
-                rule directly on screen." Banding the option's own hp cost put a
-                worded price next to a numbered one, which made saying which is
-                which more urgent, not less. */}
-            {leavesNoFood(state, option) && (
-              <span className="warning">
-                {" "}
-                — and then, with nothing left to eat, finishing the leg will
-                cost you {HUNGRY_TRAVEL_HP_LOSS} HP as well
-              </span>
-            )}
-          </button>
-        ))}
+        {offeredOptions(state, scene).map((option) => {
+          // The one place this component asks what the sky did to an option:
+          // the same rule canChooseOption already refused it by, so a closed
+          // button's own reason can never disagree with why it is disabled.
+          const closedReason = effectiveOption(option, weather).closedReason;
+          return (
+            <button
+              key={option.id}
+              disabled={!canChooseOption(state, option)}
+              onClick={() =>
+                dispatch({
+                  type: "CHOOSE_ENCOUNTER_OPTION",
+                  optionId: option.id,
+                })
+              }
+            >
+              {option.label}
+              {costHint(state, option)}
+              {/* "as well" and "then" are load-bearing. A playtester could not
+                  tell whether this figure replaced the option's own cost, was
+                  added to it, or only applied depending on something later in
+                  the leg, and worked the rule out by trial instead: it "fires
+                  when food hits/stays at 0 at leg-end, but the game never
+                  stated that rule directly on screen." Banding the option's
+                  own hp cost put a worded price next to a numbered one, which
+                  made saying which is which more urgent, not less. */}
+              {leavesNoFood(state, option) && (
+                <span className="warning">
+                  {" "}
+                  — and then, with nothing left to eat, finishing the leg will
+                  cost you {HUNGRY_TRAVEL_HP_LOSS} HP as well
+                </span>
+              )}
+              {closedReason && (
+                <span className="warning"> — {closedReason}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

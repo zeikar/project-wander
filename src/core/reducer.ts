@@ -7,6 +7,7 @@ import type { LegRoute } from "../content/journey";
 import { encounters, speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
+import { effectiveOption, weatherAt } from "./weather";
 
 // What the core needs from whatever the road just put in front of the traveler,
 // whether that is an animal or a place. `EventOption` carries every required
@@ -147,6 +148,10 @@ export function offeredOptions(
 // The codex gates are repeated from `offeredOptions` rather than reused for one
 // reason only: this function takes no `Encounter`, so it has to resolve the
 // species through `state.activeEncounterId`.
+// Affordability is checked against the EFFECTIVE deltas, not the authored
+// ones, and an option the sky has closed is refused outright regardless of
+// what the traveler can pay — both read through `effectiveOption` so this can
+// never disagree with what CHOOSE_ENCOUNTER_OPTION actually charges.
 // PRECONDITION: `option` belongs to the encounter named by
 // `state.activeEncounterId`. Every caller satisfies it by construction — both
 // the reducer and the encounter screen look the option up out of that same
@@ -158,9 +163,14 @@ export function canChooseOption(
   option: EncounterOption,
 ): boolean {
   const known = isKnown(state, state.activeEncounterId);
+  const effective = effectiveOption(
+    option,
+    weatherAt(state.seed, state.legIndex),
+  );
   return (
-    state.food + option.foodDelta >= 0 &&
-    state.preparation + option.preparationDelta >= 0 &&
+    effective.closedReason === undefined &&
+    state.food + effective.foodDelta >= 0 &&
+    state.preparation + effective.preparationDelta >= 0 &&
     state.preparation >= (option.requiresPreparation ?? 0) &&
     (option.codex !== "teaches" || !known) &&
     (option.codex !== "requires" || known)
@@ -327,6 +337,14 @@ export function reduce(state: GameState, action: GameAction): GameState {
         return state;
       }
 
+      // The same call `canChooseOption` just made, on the same weather: what
+      // gets applied below is what the label the player just read promised,
+      // never the authored clear-sky figure underneath it.
+      const effective = effectiveOption(
+        option,
+        weatherAt(state.seed, state.legIndex),
+      );
+
       const resolved: GameState = {
         ...state,
         // Clamped at both ends. The floor has always been here; the ceiling
@@ -338,12 +356,12 @@ export function reduce(state: GameState, action: GameAction): GameState {
         // the starting pool.
         hp: Math.min(
           journey.start.hp,
-          Math.max(0, state.hp + option.hpDelta),
+          Math.max(0, state.hp + effective.hpDelta),
         ),
-        food: state.food + option.foodDelta,
-        preparation: state.preparation + option.preparationDelta,
+        food: state.food + effective.foodDelta,
+        preparation: state.preparation + effective.preparationDelta,
         activeEncounterId: null,
-        lastEncounterResult: option.resultText,
+        lastEncounterResult: effective.resultText,
         // Watching the animal is what teaches you about it — and what is
         // learned is the SPECIES, so meeting it in another situation later
         // offers what the knowledge buys rather than the lesson again. No

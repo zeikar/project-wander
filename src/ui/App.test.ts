@@ -1,11 +1,34 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../core/game-state";
 import { encounters } from "../content/encounters";
+import type { EncounterOption } from "../content/encounters";
 import { roadEvents } from "../content/events";
 import { canChooseOption } from "../core/reducer";
+import { weatherAt } from "../core/weather";
 import { HUNGRY_TRAVEL_HP_LOSS } from "../core/game-state";
 import { costHint, leavesNoFood, trafficHint } from "./App";
 import { journey } from "../content/journey";
+import type { Weather } from "../content/weather";
+
+// A journey seed whose weather at leg 0 is `weather` — every fixture below
+// lands on leg 0, so one scan per sky is enough to pin all three.
+function findSeedWith(weather: Weather): number {
+  for (let seed = 1; seed <= 100000; seed++) {
+    if (weatherAt(seed, 0) === weather) {
+      return seed;
+    }
+  }
+  throw new Error(`no seed in 1..100000 gives ${weather} at leg 0`);
+}
+
+// Named rather than inlined, because most tests below run against every
+// authored option and were written before weather could reprice one of
+// them — CLEAR_SKY_SEED is what keeps their assertions describing the
+// authored (clear-sky) figures they were written to check. RAIN_SEED and
+// WIND_SEED are for the tests that deliberately check a reprice.
+const CLEAR_SKY_SEED = findSeedWith("clear");
+const RAIN_SEED = findSeedWith("rain");
+const WIND_SEED = findSeedWith("wind");
 
 // No component test harness exists in this repo (App.tsx has no JSX-rendering
 // tests), so this pins the predicate itself: a plain function of state and an
@@ -21,7 +44,7 @@ function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
     preparation: 1,
     legIndex: 0,
     rngState: 1,
-    seed: 1,
+    seed: CLEAR_SKY_SEED,
     activeEncounterId: "ford-boar",
     lastEncounterResult: null,
     lastRoadToll: null,
@@ -71,6 +94,12 @@ const watchTheFlightLine = beeHollow.options.find(
 const workTheDeepSeam = beeHollow.options.find(
   (option) => option.id === "work-the-deep-seam",
 )!; // foodDelta +2, unlocked by knowing the hollow
+const rowanFlock = encounters.find(
+  (encounter) => encounter.id === "rowan-flock",
+)!;
+const takeTheWindfall = rowanFlock.options.find(
+  (option) => option.id === "take-the-windfall",
+)!; // foodDelta +1 clear, +2 under wind
 
 describe("leavesNoFood", () => {
   it("warns when an affordable option would spend the last food", () => {
@@ -373,6 +402,94 @@ describe("costHint", () => {
     // watch-the-flight-line gives up the afternoon and nothing else. An empty
     // clause is the truthful label, not a missing one.
     expect(costHint(state, watchTheFlightLine)).toBe("");
+  });
+});
+
+// costHint and leavesNoFood read `effectiveOption`, the same function the
+// reducer charges through — these three pin that a rain or wind reprice
+// actually surfaces on the label, not only in the numbers the reducer applies.
+describe("weather repricing on the label", () => {
+  it("rain's reach-in reads a little blood, not the clear-sky middle band, and no digit", () => {
+    const state = makeEncounterState({
+      seed: RAIN_SEED,
+      activeEncounterId: "bee-hollow",
+    });
+    const hint = costHint(state, reachIn);
+
+    expect(hint).toContain("a little blood");
+    expect(hint).not.toMatch(/blood\s*\d/i);
+    expect(hint).not.toMatch(/\d\s*blood/i);
+  });
+
+  it("wind's windfall reads gains 2 food, not the clear-sky 1", () => {
+    const state = makeEncounterState({
+      seed: WIND_SEED,
+      activeEncounterId: "rowan-flock",
+    });
+
+    expect(costHint(state, takeTheWindfall)).toBe(" — gains 2 food");
+  });
+
+  // Neither shipped reprice can flip `leavesNoFood`'s own boolean: both
+  // `weatherDeltas` only ever GIVE the traveler more than the clear-sky
+  // figure, so from any reachable (non-negative) starting food or survivable
+  // hp there is no state where either one crosses the warning's actual
+  // trigger. A test built only from `reachIn`/`takeTheWindfall` would pass
+  // whether or not `leavesNoFood` reads the effective numbers at all — proven
+  // by mutating it to read `option.hpDelta`/`option.foodDelta` directly and
+  // watching the suite stay green. `leavesNoFood` and `effectiveOption` are
+  // pure functions of `(state, option)`; nothing requires the option to come
+  // from `encounters.ts`, so the two tests below build a synthetic
+  // `EncounterOption` whose `weatherDeltas` crosses the trigger in each
+  // direction, the same way this file already pins `costHint` and
+  // `leavesNoFood` as plain functions rather than by proxy through shipped
+  // content.
+  it("warns under the sky that reprices an option's food to exactly zero, and not under the one that does not", () => {
+    // Base (clear-sky) foodDelta is 0, so at food 1 the clause never fires.
+    // The wind reprice moves it to -1, which does, at the same starting food.
+    const syntheticOption: EncounterOption = {
+      id: "test-only-windfall-cost",
+      label: "test-only option",
+      hpDelta: 0,
+      foodDelta: 0,
+      preparationDelta: 0,
+      resultText: "test-only",
+      weatherDeltas: { weather: "wind", foodDelta: -1 },
+    };
+    const clear = makeEncounterState({ seed: CLEAR_SKY_SEED, food: 1 });
+    const wind = makeEncounterState({ seed: WIND_SEED, food: 1 });
+
+    expect(leavesNoFood(clear, syntheticOption)).toBe(false);
+    expect(leavesNoFood(wind, syntheticOption)).toBe(true);
+  });
+
+  // The lethality guard, read through the EFFECTIVE hp: base (clear-sky)
+  // hpDelta is -1, survivable at hp 5, so the food clause (also met, foodDelta
+  // -1 at food 1) decides the warning — TRUE. The rain reprice deepens the
+  // wound to -5, which the same hp does not survive, so the guard must block
+  // the warning even though the food clause is still met — FALSE. A version
+  // of `leavesNoFood` that read `option.hpDelta` instead of the effective one
+  // would still see the clear-sky -1 under rain, stay "alive", and wrongly
+  // warn — which is exactly the failure this test is built to catch.
+  it("blocks the warning under the sky that reprices an option's wound to lethal, even though the food clause is still met", () => {
+    const syntheticOption: EncounterOption = {
+      id: "test-only-lethal-reprice",
+      label: "test-only option",
+      hpDelta: -1,
+      foodDelta: -1,
+      preparationDelta: 0,
+      resultText: "test-only",
+      weatherDeltas: { weather: "rain", hpDelta: -5 },
+    };
+    const clear = makeEncounterState({
+      seed: CLEAR_SKY_SEED,
+      hp: 5,
+      food: 1,
+    });
+    const rain = makeEncounterState({ seed: RAIN_SEED, hp: 5, food: 1 });
+
+    expect(leavesNoFood(clear, syntheticOption)).toBe(true);
+    expect(leavesNoFood(rain, syntheticOption)).toBe(false);
   });
 });
 
