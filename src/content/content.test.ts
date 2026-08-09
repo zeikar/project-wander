@@ -828,5 +828,52 @@ describe("village content", () => {
 
       expect(new Set(lines).size).toBe(lines.length);
     });
+
+    // The one thing the two checks above cannot see: swapping `first` and
+    // `then` inside `skyRumor` keeps the leg count, the species ban and the
+    // uniqueness all green, and keeps the reducer's forecast test green too,
+    // because that one composes its expectation by calling `skyRumor` itself.
+    // A traveler told the wrong way round packs for the wrong sky, so the
+    // ORDER is the claim.
+    // Read off the weather's own word — "clear weather" contains "clear", and
+    // none of the sentence's fixed scaffolding names any of the three — so a
+    // reworded noun leaves this alone and a swapped clause does not.
+    it("names the sky that holds before the sky that replaces it", () => {
+      // Both roles, every weather: an empty or lopsided `combos` would let the
+      // loop below pass without comparing anything.
+      expect(new Set(combos.map((combo) => combo.first)).size).toBe(
+        WEATHERS.length,
+      );
+      expect(new Set(combos.map((combo) => combo.then)).size).toBe(
+        WEATHERS.length,
+      );
+
+      for (const { first, holds, then } of combos) {
+        const line = skyRumor(first, holds, then).toLowerCase();
+        const firstAt = line.indexOf(first);
+        const thenAt = line.indexOf(then);
+
+        // Each sky is named once, so a first-occurrence index IS that clause's
+        // position. Without this the comparison below could be reading two
+        // mentions of the same sky.
+        expect(line.lastIndexOf(first)).toBe(firstAt);
+        expect(line.lastIndexOf(then)).toBe(thenAt);
+
+        expect(firstAt).toBeGreaterThanOrEqual(0);
+        expect(thenAt).toBeGreaterThanOrEqual(0);
+        expect(firstAt).toBeLessThan(thenAt);
+      }
+    });
+
+    // Exactly one exact sentence, as the anchor the index comparisons are not:
+    // they hold for any line that names the two skies in the right order,
+    // however garbled in between. This pairing is the one that also pins the
+    // capitalization of a two-word sky at the head of the sentence. One case
+    // only, so rewording the rumor stays a one-line update.
+    it("reads, for one pairing, exactly as written", () => {
+      expect(skyRumor("clear", 2, "rain")).toBe(
+        "Clear weather holds for the next 2 legs, then rain moves in.",
+      );
+    });
   });
 });

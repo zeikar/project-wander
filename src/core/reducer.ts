@@ -149,9 +149,13 @@ export function offeredOptions(
 
 // Which villagers the departure morning actually puts in front of the
 // traveler, and — for the trapper — WHICH animal he talks about. The single
-// place that pick is made: `teachesSpecies` exists only on the option this
-// function returns, so the button the player reads and the id the reducer
-// appends are one field rather than two computations that could drift.
+// DEFINITION of that pick: nowhere else in the codebase decides which species
+// is taught, so there is one rule to change and one to read.
+// The screen and the reducer each CALL this function rather than passing the
+// answer between them, which is the same shape `offeredOptions`,
+// `offeredRoutes` and `weatherAt` already have. They agree because it is pure
+// and its two inputs — `state.seed` and `state.known` — cannot change between
+// the render and the click that follows it.
 // Never consumes a roll (VILLAGE_SALT), so the screen can ask as often as it
 // likes without moving the seed's road script.
 export function offeredVillageOptions(
@@ -305,6 +309,12 @@ export function reduce(state: GameState, action: GameAction): GameState {
       // Resolved out of what the morning ACTUALLY offered, not out of
       // `village.options`: the withheld trapper has to be refused like any
       // other id the screen never showed.
+      // Re-derived here rather than carried on the action, deliberately. The
+      // action names an id and nothing else, so the species this morning
+      // teaches is settled by the rule at the moment it is applied — an
+      // action carrying a species would be the screen telling the reducer what
+      // was earned, and a stale render could then teach an animal this state
+      // never offered.
       const option = offeredVillageOptions(state).find(
         (candidate) => candidate.id === action.optionId,
       );
@@ -325,10 +335,11 @@ export function reduce(state: GameState, action: GameAction): GameState {
         ...state,
         food: state.food + option.foodDelta,
         preparation: state.preparation + option.preparationDelta,
-        // Exactly the field the button named. The pick lives on the offered
-        // option and nowhere else, so the screen and the rule cannot learn two
-        // different animals — and no dedupe is needed, because a known species
-        // is never in the pool `offeredVillageOptions` picks from.
+        // Exactly the field carried by the option resolved above — the
+        // reducer's own copy of the offer, not the screen's. The button named
+        // the same animal because it read the same function on the same
+        // state. No dedupe is needed either way: a known species is never in
+        // the pool `offeredVillageOptions` picks from.
         known:
           option.teachesSpecies !== undefined
             ? [...state.known, option.teachesSpecies]

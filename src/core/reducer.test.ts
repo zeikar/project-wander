@@ -250,28 +250,46 @@ function playJourney(
   let state = reduce(createInitialState(), { type: "START_JOURNEY", seed });
   const trace: GameState[] = [state];
 
-  // The village counts as a phase the journey is still running in. Without it
-  // here the loop would return a one-element trace — the departure morning and
-  // nothing else — and every balance assertion downstream would silently be
-  // measuring a journey that never happened. The 50-step bound still holds:
-  // the village adds one step to a walk that fit in 50 with room.
+  // Exhaustive on the phase, and only `arrived` and `defeated` end a journey.
+  // A phase this loop does not know how to play is a broken harness, not a
+  // finished walk: returning the trace for one would hand every balance
+  // assertion downstream a truncated journey to pass against — a one-element
+  // trace if START_JOURNEY ever stopped reaching the village, and silence for
+  // any phase added later. So those throw, naming the phase. The 50-step bound
+  // below still holds: the village adds one step to a walk that fit in 50 with
+  // room.
   for (let step = 0; step < 50; step++) {
-    if (
-      state.phase !== "traveling" &&
-      state.phase !== "encounter" &&
-      state.phase !== "village"
-    ) {
-      return trace;
+    switch (state.phase) {
+      case "village":
+        state = reduce(state, skyVillager(state));
+        break;
+      case "traveling":
+        state = reduce(state, travel(state, which));
+        break;
+      case "encounter":
+        state = reduce(state, {
+          type: "CHOOSE_ENCOUNTER_OPTION",
+          optionId: pickOptionId(state),
+        });
+        break;
+      case "arrived":
+      case "defeated":
+        return trace;
+      // The title screen is where a journey has not begun, never where one
+      // ends. Reaching it here means START_JOURNEY failed to leave it.
+      case "title":
+        throw new Error(
+          `journey from seed ${seed} sat in phase "title" instead of setting out`,
+        );
+      // Stops compiling the day a phase is added without a way to play it,
+      // and names the phase if one turns up here anyway.
+      default: {
+        const unplayable: never = state.phase;
+        throw new Error(
+          `journey from seed ${seed} reached a phase this harness cannot play: ${String(unplayable)}`,
+        );
+      }
     }
-    state =
-      state.phase === "village"
-        ? reduce(state, skyVillager(state))
-        : state.phase === "traveling"
-          ? reduce(state, travel(state, which))
-          : reduce(state, {
-              type: "CHOOSE_ENCOUNTER_OPTION",
-              optionId: pickOptionId(state),
-            });
     trace.push(state);
   }
 
@@ -1602,9 +1620,11 @@ describe("the village morning", () => {
       optionId: trapper.id,
     });
 
-    // Exactly the id the button named, appended to what was already known:
-    // the screen and the rule read one field, so they cannot learn two
-    // different animals.
+    // Exactly the id the offer named, appended to what was already known.
+    // This is the agreement itself under test: `trapper` is what a screen
+    // rendering this state would show, and `next.known` is what the reducer
+    // decided when handed only the id — one `offeredVillageOptions` away on
+    // each side, and they land on the same animal.
     expect(next.known).toEqual([alreadyKnown, trapper.teachesSpecies]);
     expect(next.food).toBe(state.food);
     expect(next.preparation).toBe(state.preparation);
@@ -2015,13 +2035,18 @@ describe("full journeys", () => {
   // Re-recorded for the departure morning, and the check that matters is what
   // did NOT move: the whole change is ONE PREPENDED ROW — the village state
   // START_JOURNEY now lands in, at the starting resources and legIndex 0 —
-  // with every other row byte-identical to the trace recorded before the
-  // village existed. That is the evidence the morning consumes no roll and
-  // charges no toll: this line spends it on the shepherd, who gives neither
-  // food nor gear, so a single moved resource column or activeEncounterId
-  // would mean the village had quietly shifted the seed's own script. None
-  // moved. (Verified by slicing the first row off the played trace and
-  // matching it against the previous recording.)
+  // and in every later row all six PROJECTED columns are unchanged from the
+  // trace recorded before the village existed. (Verified by slicing the first
+  // row off the played trace and matching it against the previous recording.)
+  // That is evidence the morning charges no toll, which it states directly:
+  // this line spends the morning on the shepherd, who gives neither food nor
+  // gear, so a moved resource column would be the village paying or charging
+  // something. It says nothing DIRECT about rolls — `project` omits `rngState`
+  // and `seed`, so a consumed roll is invisible to this comparison except
+  // through its consequences: it would shift what the selection rolls draw and
+  // surface as a changed `activeEncounterId` on the later legs. The direct
+  // proof is "spends no roll, whichever villager the morning is given to",
+  // which asserts `rngState` itself across all four villagers.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {

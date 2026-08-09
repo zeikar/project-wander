@@ -191,11 +191,14 @@ export function trafficHint(
 }
 
 // Names the animal a villager's offer will actually teach, so the choice is
-// readable BEFORE it is made. Read off the very field the reducer appends —
-// `teachesSpecies`, filled by `offeredVillageOptions` — so the button cannot
-// name one animal while the rule learns another. Empty for the villagers who
-// teach nothing, the same way costHint's clauses are empty for what an option
-// does not touch.
+// readable BEFORE it is made. Read off `teachesSpecies`, filled by
+// `offeredVillageOptions` — the one place that pick is defined, and the same
+// function the reducer calls when the button is pressed. It is pure in
+// `state.seed` and `state.known`, neither of which moves between this render
+// and that click, so the animal named here is the animal learned. The reducer
+// asks again rather than being told, because what was earned is its call.
+// Empty for the villagers who teach nothing, the same way costHint's clauses
+// are empty for what an option does not touch.
 // Exported for its unit test: this file has no JSX-rendering harness, so the
 // pure string function is tested directly, the same way `costHint` is.
 export function knowledgeHint(option: VillageOption): string {

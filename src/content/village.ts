@@ -25,9 +25,10 @@ export interface VillageOption {
   // WHICH species the knowledge villager teaches. NEVER authored — the pick
   // is seeded and depends on what is already known, so it cannot live in
   // static content. `offeredVillageOptions` (core) fills it on the offered
-  // copy of the knowledge option, and both the reducer and the UI read THIS
-  // field rather than recomputing the pick. Pinned absent in authored
-  // content by test.
+  // copy of the knowledge option, and that function is the only place the pick
+  // is defined: the screen and the reducer each CALL it and read this field off
+  // what it hands back, neither of them re-implementing the choice. Pinned
+  // absent in authored content by test.
   teachesSpecies?: string;
 }
 
