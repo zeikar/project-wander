@@ -135,6 +135,7 @@ describe("weatherProse", () => {
       closes: [
         "bee-hollow/smoke-them",
         "wallow-boar/smoke-it-out-of-the-hollow",
+        "wolves-at-a-kill/smoke-them-off-the-kill",
       ],
     },
     {
@@ -145,7 +146,11 @@ describe("weatherProse", () => {
     {
       weather: "wind",
       clauseWord: "spread out",
-      closes: ["rowan-flock/net-the-fall", "rut-stag/wave-your-kit"],
+      closes: [
+        "rowan-flock/net-the-fall",
+        "rut-stag/wave-your-kit",
+        "walled-lane-stag/sheet-over-the-coping",
+      ],
     },
   ];
 

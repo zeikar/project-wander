@@ -63,6 +63,62 @@ describe("encounters content", () => {
     );
   });
 
+  // The seeded encounter script is a function of BOTH orders: the reducer picks
+  // a species by indexing `speciesList`, then indexes that species' situations
+  // the same way. `encounters/index.ts` says so in a comment — this is what
+  // makes the comment enforceable. Reordering either list is not a refactor; it
+  // rewrites what every existing seed meets on the road, and no other test in
+  // this suite would notice, because they all derive their expectations from
+  // the same arrays. ADD AT THE END, and update this list when you do.
+  it("keeps both load-bearing orders exactly as shipped", () => {
+    expect(speciesList.map((species) => species.id)).toEqual([
+      "boar",
+      "wolves",
+      "bees",
+      "waxwings",
+      "red-deer",
+    ]);
+    expect(encounters.map((encounter) => encounter.id)).toEqual([
+      "ford-boar",
+      "wallow-boar",
+      "sow-and-litter",
+      "pine-shadows",
+      "wolves-at-a-kill",
+      "bee-hollow",
+      "rowan-flock",
+      "rut-stag",
+      "walled-lane-stag",
+    ]);
+  });
+
+  // `wolves-at-a-kill` is the one scene authored so that arriving destitute is
+  // not punished: its free answer PAYS. The generic invariants above cannot see
+  // that — they are satisfied by any rescue that merely costs nothing — so the
+  // contract is pinned to the option and its figures here.
+  it("keeps the kill's free answer paying, in every sky", () => {
+    const kill = encounters.find(
+      (encounter) => encounter.id === "wolves-at-a-kill",
+    )!;
+    const rescue = kill.options.find(
+      (option) => option.id === "wait-out-the-feed",
+    )!;
+
+    expect(rescue.hpDelta).toBe(0);
+    expect(rescue.foodDelta).toBe(1);
+    expect(rescue.preparationDelta).toBe(0);
+    // Ungated in both senses: no kit has to be in hand, and it is on the menu
+    // whether or not the traveler has studied the animal.
+    expect(rescue.requiresPreparation ?? 0).toBe(0);
+    expect(rescue.codex).toBeUndefined();
+
+    for (const weather of WEATHERS) {
+      const effective = effectiveOption(rescue, weather);
+      expect(effective.closedReason).toBeUndefined();
+      expect(effective.foodDelta).toBe(1);
+      expect(effective.hpDelta).toBe(0);
+    }
+  });
+
   it.each(encounters.map((encounter) => [encounter.id, encounter] as const))(
     "%s offers a playable set of choices",
     (_id, encounter) => {
@@ -397,6 +453,11 @@ describe("road events content", () => {
     { encounter: "ford-boar", option: "wade-past", hpDelta: -4 },
     { encounter: "pine-shadows", option: "walk-on", hpDelta: -3 },
     { encounter: "rut-stag", option: "push-past", hpDelta: -4 },
+    // The drove lane charges what the hollow charges. It was authored a band
+    // cheaper and the sweep sent it back: see the note above the encounter.
+    // `wolves-at-a-kill` has no entry here on purpose — its free answer pays
+    // food, so nothing in that scene is forced.
+    { encounter: "walled-lane-stag", option: "press-along-the-wall", hpDelta: -4 },
   ] as const;
 
   it.each(FORCED_WOUNDS)(
@@ -437,9 +498,19 @@ describe("road events content", () => {
       weather: "rain",
     },
     { encounter: "bee-hollow", option: "smoke-them", weather: "rain" },
+    {
+      encounter: "wolves-at-a-kill",
+      option: "smoke-them-off-the-kill",
+      weather: "rain",
+    },
     { encounter: "wallow-boar", option: "wait-downwind", weather: "wind" },
     { encounter: "rowan-flock", option: "net-the-fall", weather: "wind" },
     { encounter: "rut-stag", option: "wave-your-kit", weather: "wind" },
+    {
+      encounter: "walled-lane-stag",
+      option: "sheet-over-the-coping",
+      weather: "wind",
+    },
   ] as const;
 
   // The shipped reprice set, same shape again. `hpDelta`/`foodDelta` are the

@@ -77,9 +77,13 @@ They are drawn from the band ABOVE a route's own odds — the stretch that used 
 
 Animals
 
-Five species. Two of them give food.
+Five species, met in nine situations. A species is picked first and one of its situations second, so giving an animal more ways to be met splits its own share and never makes it commoner.
 
-That ratio is not flavour. Adding cost-shaped animals thins the share of encounters that can feed you, and an eight-leg road runs on food.
+Three species can feed you, and one of them — the wolves — only in one of its two situations.
+
+That ratio is not flavour. Adding cost-shaped animals thins the share of encounters that can feed you, and an eight-leg road runs on food. It moves in both directions: the wolves' second situation lifted the share of encounters offering food from 55.6% to 64.5%, which is a difficulty change, not a content addition.
+
+A second situation is worth authoring when it poses a DIFFERENT decision, not when it dresses the same one. Two shapes have earned it so far — a scene where nothing is in your way and the question is whether to take a risk at all (`wallow-boar`, `wolves-at-a-kill`), and a scene where the animal's known answer has nowhere to go (`sow-and-litter`, whose sow will not follow her nose off the road; `walled-lane-stag`, whose lane has no uphill).
 
 An observation must be strictly dominated by an option that is always offered. That gap is the price of the knowledge.
 
