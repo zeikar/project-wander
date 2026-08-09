@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { signalAt, weatherAt } from "./weather";
+import { weatherAt } from "./weather";
 import { journey } from "../content/journey";
 import { encounters } from "../content/encounters";
 import {
@@ -10,7 +10,6 @@ import {
 import type { Weather } from "../content/weather";
 
 const LEG_COUNT = journey.legs.length;
-const FINAL_LEG = LEG_COUNT - 1;
 const SEED_COUNT = 500;
 
 // Groups a seed's script into maximal same-weather runs, in order. Used both
@@ -28,21 +27,6 @@ function weatherRuns(seed: number): Array<{ weather: Weather; length: number }> 
     }
   }
   return runs;
-}
-
-// A leg is eligible for a signal exactly under the semantics in
-// core/weather.ts, derived here independently of `blockAt` — by comparing a
-// leg's weather to the one before it — so these tests do not simply restate
-// the implementation they are meant to check.
-function isEligible(seed: number, legIndex: number): boolean {
-  const weather = weatherAt(seed, legIndex);
-  const isBlockFirst =
-    legIndex === 0 || weatherAt(seed, legIndex - 1) !== weather;
-  return (
-    (weather === "rain" || weather === "wind") &&
-    !isBlockFirst &&
-    legIndex < FINAL_LEG
-  );
 }
 
 describe("weatherAt", () => {
@@ -91,65 +75,6 @@ describe("weatherAt", () => {
   });
 });
 
-describe("signalAt", () => {
-  it("never fires on a clear leg, a block's first leg, or the journey's final leg", () => {
-    let ineligibleChecked = 0;
-    for (let seed = 1; seed <= SEED_COUNT; seed++) {
-      for (let leg = 0; leg < LEG_COUNT; leg++) {
-        if (isEligible(seed, leg)) {
-          continue;
-        }
-        ineligibleChecked += 1;
-        // hit=1, falseAlarm=1: if the eligibility gate were not enforced,
-        // this would show on every one of these legs regardless of truth.
-        expect(signalAt(seed, leg, 1, 1)).toBe(false);
-      }
-    }
-    expect(ineligibleChecked).toBeGreaterThan(0);
-  });
-
-  it("at hit=1, falseAlarm=0, shows exactly when eligible and the next leg clears", () => {
-    let eligibleChecked = 0;
-    for (let seed = 1; seed <= SEED_COUNT; seed++) {
-      for (let leg = 0; leg < LEG_COUNT; leg++) {
-        const eligible = isEligible(seed, leg);
-        if (eligible) {
-          eligibleChecked += 1;
-        }
-        const clears = eligible && weatherAt(seed, leg + 1) === "clear";
-        expect(signalAt(seed, leg, 1, 0)).toBe(clears);
-      }
-    }
-    expect(eligibleChecked).toBeGreaterThan(0);
-  });
-
-  it("at hit=0, never shows a signal before a clearing", () => {
-    let checked = 0;
-    for (let seed = 1; seed <= SEED_COUNT; seed++) {
-      for (let leg = 0; leg < LEG_COUNT; leg++) {
-        if (isEligible(seed, leg) && weatherAt(seed, leg + 1) === "clear") {
-          checked += 1;
-          expect(signalAt(seed, leg, 0, 1)).toBe(false);
-        }
-      }
-    }
-    expect(checked).toBeGreaterThan(0);
-  });
-
-  it("at falseAlarm=0, never shows a signal before a non-clearing", () => {
-    let checked = 0;
-    for (let seed = 1; seed <= SEED_COUNT; seed++) {
-      for (let leg = 0; leg < LEG_COUNT; leg++) {
-        if (isEligible(seed, leg) && weatherAt(seed, leg + 1) !== "clear") {
-          checked += 1;
-          expect(signalAt(seed, leg, 1, 0)).toBe(false);
-        }
-      }
-    }
-    expect(checked).toBeGreaterThan(0);
-  });
-});
-
 describe("weatherProse", () => {
   it("gives every sky a non-empty line", () => {
     for (const weather of ["clear", "rain", "wind"] as const) {
@@ -157,21 +82,10 @@ describe("weatherProse", () => {
     }
   });
 
-  it("carries a signal line for rain and wind only", () => {
-    expect(weatherProse.rain.signal).toBeDefined();
-    expect(weatherProse.wind.signal).toBeDefined();
-    expect(weatherProse.clear.signal).toBeUndefined();
-  });
-
-  // The cue's rates are discovered by living under the sky, not read off the
-  // screen — the same contract the HP bands and traffic hints keep.
+  // The same contract the HP bands and traffic hints keep.
   it("never states a digit or a percentage", () => {
     for (const weather of ["clear", "rain", "wind"] as const) {
-      const prose = weatherProse[weather];
-      expect(prose.line).not.toMatch(/\d/);
-      if (prose.signal) {
-        expect(prose.signal).not.toMatch(/\d/);
-      }
+      expect(weatherProse[weather].line).not.toMatch(/\d/);
     }
   });
 

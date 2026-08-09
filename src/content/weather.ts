@@ -12,26 +12,22 @@ export type Weather = "clear" | "rain" | "wind";
 export const WEATHER_MIN_LEGS = 2;
 export const WEATHER_MAX_LEGS = 4;
 
-// The cue's two rates: P(shown | the next leg actually clears) and
-// P(shown | it does not). PROVISIONAL — final values set by the Task 5 sweep
-// against a precision target; method and figures to be recorded here;
-// nothing renders a signal until Task 6 locks these, so these placeholders
-// can never put an unkept "likely" on screen.
-export const SIGNAL_HIT = 0.7;
-export const SIGNAL_FALSE = 0.2;
-
 export interface WeatherProse {
   line: string;
-  // Only rain and wind carry one: a lean on what tomorrow might do. Clear has
-  // nothing to forecast against — the sky it might change INTO is the thing
-  // the signal exists to hint at.
-  signal?: string;
 }
 
-// One line per sky, plus a signal line for the two that close something off.
-// Clear is given its own line rather than left blank on purpose: a slot that
-// only appears for rain and wind is harder to learn than one that is always
-// there and simply has nothing to report.
+// One line per sky. Clear is given its own line rather than left blank on
+// purpose: a slot that only appears for rain and wind is harder to learn
+// than one that is always there and simply has nothing to report.
+//
+// A forecast cue for rain and wind — a lean on whether tomorrow's sky would
+// clear — was designed, built, and measured (Task 5's grid, both seed sets)
+// before this line was written. Precision was reachable: 0.55-0.83 across
+// the grid, honest enough to word. But it fired on only 201 of 2236
+// encounters and changed the pick on 44 of 300 journeys, and none of those
+// changes moved an outcome — worth at most +0.3pp against a declared +3pp
+// bar. Measured worthless, not merely unlocked, so it was removed rather
+// than shipped as decoration nobody's choice depended on.
 //
 // AUTHORING RULE: a line may state only physics true of every option in the
 // shipped pairing (encounters.ts AND events.ts — both feed `findScene` in
@@ -64,10 +60,8 @@ export const weatherProse: Record<Weather, WeatherProse> = {
   },
   rain: {
     line: "Nothing carries a scent in this, and no tinder will smoke — only pitch burns wet.",
-    signal: "It may break by tomorrow — or close in again.",
   },
   wind: {
     line: "No downwind worth working from, and nothing spread out would stay put — though the wind shakes loose what hung.",
-    signal: "It may ease by tomorrow — or freshen again.",
   },
 };

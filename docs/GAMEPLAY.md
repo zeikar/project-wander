@@ -67,3 +67,17 @@ Meet the same animal again on the same journey and it offers an answer a first m
 Knowledge lasts one journey.
 
 The next traveler sets out ignorant.
+
+---
+
+Weather
+
+The sky is clear, rain, or wind.
+
+One sky holds two to four legs, and a boundary always changes it — the same sky never runs on into itself.
+
+Rain and wind each close some answers and open others. Rain closes what needs a scent or dry tinder, and opens the hollow: wet bees barely fly, so reaching in for the comb costs a fraction of what it costs on a dry day. Wind closes what needs a downwind angle or a cloth held spread, and opens the rowan: the wind has already shaken the fruit down, so gathering what fell is worth more than it usually is.
+
+Clear undoes both: every closed answer opens again, and every price returns to what it was.
+
+A closed answer keeps its button. It only gains a reason it cannot be taken.

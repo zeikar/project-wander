@@ -279,10 +279,9 @@ function TravelScreen({
           whose line is short — for the same reason the road-rule line is
           shown every leg rather than only when it bites: a slot that only
           appears for rain and wind is harder to learn than one that is
-          always there. The signal is deliberately not rendered here — see
-          content/weather.ts: its rates are unmeasured placeholders that the
-          sweep selects and a later task locks, and nothing may show "likely"
-          on a rate the game does not yet keep. */}
+          always there. A forecast of tomorrow's sky was designed and
+          measured (content/weather.ts) and dropped rather than rendered —
+          reading it was worth at most +0.3pp against a +3pp bar. */}
       <p className="weather-line">{weatherProse[weather].line}</p>
       {/* The terms of the road, up with the stats they govern rather than down
           by the buttons. Stated on EVERY leg, not only when it is about to
