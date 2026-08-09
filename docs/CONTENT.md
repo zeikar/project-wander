@@ -160,3 +160,27 @@ Weather never changes what the road turns up. It only prices and closes the answ
 The travel screen already carried a result line, a road-toll line, and a road-rule line before weather added a standing line of its own, and a playtest had already found the screen busy. Folding the sky into the fork's own sign prose was considered and deliberately deferred, not forgotten.
 
 A forecast of tomorrow's sky was designed, built, and measured before it was ever written into a line. All thirty points of the declared rate grid failed. Precision was reachable at 0.55-0.83 across both seed sets — honest enough to word — but it fired on only 201 of 2236 encounters and changed the pick on 44 of 300 journeys, moving no outcome: worth at most +0.3pp against a declared +3pp bar. Measured worthless rather than merely unproven, it was removed rather than shipped as decoration.
+
+The Ashfold shepherd is not that cue coming back. What was dropped was a free per-leg hint about whether tomorrow clears; what ships is the whole standing block — today's sky, how many legs it holds, and what follows — bought with the morning's only choice, which is to say at the price of the smith, the baker and the trapper all three. A forecast nobody spends anything on and a forecast that costs every other thing the morning could have given are different instruments.
+
+Note which way round the evidence runs. The dropped cue was measured against a declared bar and failed it. The shepherd has not been measured at all — the village's own gate is a separate pass, and until it runs, the case for him is a design argument and nothing more.
+
+---
+
+Village
+
+The departure morning is a fixed roster of four, never seeded. Variation comes from state, not from the menu.
+
+Every option gives. None charges hp, food, or preparation.
+
+The four currencies — a point of gear, a point of food, the sky ahead, and one animal's worth of knowledge — are pairwise distinct: no villager carries more than one, pinned by test.
+
+Gear and food each give exactly +1, and nothing else on that option moves.
+
+The sky rumor is derived off the same weather script the road then walks, never authored. It names the opening sky, how many legs it holds, and what replaces it, so it cannot say anything the road does not then do.
+
+The knowledge villager's species is seed-picked among the species still unknown, and materialized onto the offered option — never authored in content, because a static id has no way to know what this traveler has already learned.
+
+With all five species known, that villager is withdrawn and the morning offers three. A recorded limitation, deliberately not compensated: a substitute reward is a new system, and more species or a second village would dissolve the limitation rather than address it.
+
+No shop, no coin, no inventory. Villager prose keeps the NPC rules already at the top of this file.

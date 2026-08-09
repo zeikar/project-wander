@@ -1,3 +1,7 @@
+Village
+
+↓
+
 Travel
 
 ↓
@@ -21,6 +25,22 @@ Destination
 The journey is eight legs.
 
 Three days of food used to cover a four-leg walk. Four days do not cover eight.
+
+---
+
+Village
+
+The journey starts in the village, not on the road. One morning, four people, and time to meet exactly one of them before you go.
+
+Nobody charges anything. The morning itself is the price — meeting one means the other three go unmet.
+
+The four give in four different currencies, never two from the same person: a point of gear, a point of food, the sky ahead, and knowledge of one animal.
+
+The sky is read off the same weather script the road then walks — the opening sky, how many legs it holds, and what follows after — so what you hear in the village is exactly what you then meet, never a guess.
+
+The knowledge is the same knowledge watching an animal earns on the road, and it opens the same doors: an animal named this way is already known before you have met it face to face.
+
+Know every animal already and that conversation is not on offer. The morning shows three people instead of four, and nothing stands in for it.
 
 ---
 
@@ -64,9 +84,9 @@ What you get is knowledge of how that animal works.
 
 Meet the same animal again on the same journey and it offers an answer a first meeting does not.
 
-Knowledge lasts one journey.
+Knowledge survives the journey that earned it, into the next one.
 
-The next traveler sets out ignorant.
+Only a fresh page load starts a traveler ignorant.
 
 ---
 
