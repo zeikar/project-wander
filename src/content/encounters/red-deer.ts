@@ -5,7 +5,10 @@ export const redDeer: Species = {
   id: "red-deer",
   name: "Red Stag",
   fieldNote:
-    "A stag in the rut is not hunting you, he is moving you. He drives downhill, away from the ground he is holding. Step up rather than back and you stop being a rival at all.",
+    // "Step up" was true of the hollow and of nowhere else; a drove lane between
+    // two walls has no up, and that is the whole of what its scene is built on.
+    // The note keeps the lesson and drops the one place it was learned.
+    "A stag in the rut is not hunting you, he is moving you. He drives away from the ground he is holding, and that ground has an edge to it. Get yourself past the edge and you stop being a rival at all.",
 };
 
 export const redDeerEncounters: readonly Encounter[] = [
@@ -119,7 +122,7 @@ export const redDeerEncounters: readonly Encounter[] = [
         foodDelta: 0,
         preparationDelta: 0,
         resultText:
-          "You go along the stones with your back against them, and he comes, and there is nowhere in a lane this width to be that is not in front of him. He puts you into the coping twice and stands over you the second time before he decides he has made his point.",
+          "You go along the stones with your back against them, and he comes, and there is nowhere in a lane this width to be that is not in front of him. He puts you into the coping twice, and stands over you the second time until he decides he has made his point.",
       },
       {
         id: "back-down-the-lane",
