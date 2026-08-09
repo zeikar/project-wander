@@ -14,6 +14,12 @@ export interface GameState {
   preparation: number;
   legIndex: number;
   rngState: number;
+  // The journey's own seed, kept separate from `rngState`. `rngState`
+  // advances a different number of rolls per leg depending on what that leg
+  // turns up, so a function of the WEATHER — which has to answer the same
+  // question about a given leg no matter how the road played out getting
+  // there — is keyed on this instead. See core/weather.ts.
+  seed: number;
   activeEncounterId: string | null;
   lastEncounterResult: string | null;
   // What the ROAD just charged, kept separate from what an animal just did.
@@ -51,6 +57,7 @@ export function createInitialState(): GameState {
     preparation: 0,
     legIndex: 0,
     rngState: 0,
+    seed: 0,
     activeEncounterId: null,
     lastEncounterResult: null,
     lastRoadToll: null,

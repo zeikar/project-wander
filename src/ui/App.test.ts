@@ -21,6 +21,7 @@ function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
     preparation: 1,
     legIndex: 0,
     rngState: 1,
+    seed: 1,
     activeEncounterId: "ford-boar",
     lastEncounterResult: null,
     lastRoadToll: null,

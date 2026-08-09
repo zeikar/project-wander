@@ -217,6 +217,11 @@ export function reduce(state: GameState, action: GameAction): GameState {
         preparation: journey.start.preparation,
         legIndex: 0,
         rngState: action.seed >>> 0,
+        // Stored separately from `rngState`, and normalized the same way, for
+        // the reason given on `GameState.seed`: weather is a function of the
+        // JOURNEY, not of `rngState`, which advances a variable number of
+        // rolls per leg depending on what each leg turns up.
+        seed: action.seed >>> 0,
         activeEncounterId: null,
         lastEncounterResult: null,
         lastRoadToll: null,

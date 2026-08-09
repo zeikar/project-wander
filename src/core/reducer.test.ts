@@ -30,6 +30,7 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     preparation: 3,
     legIndex: 0,
     rngState: 1,
+    seed: 1,
     activeEncounterId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
@@ -294,6 +295,10 @@ describe("reduce", () => {
 
     expect(positive.rngState).toBe(123);
     expect(negative.rngState).toBe(4294967295);
+    // `seed` is normalized the same way as `rngState`, and independently of
+    // it — this is the one action that sets both from the same input.
+    expect(positive.seed).toBe(123);
+    expect(negative.seed).toBe(4294967295);
   });
 
   it("START_JOURNEY after defeat restarts with full resources", () => {

@@ -21,6 +21,7 @@ function arrived(overrides: Partial<GameState> = {}): GameState {
     preparation: 0,
     legIndex: journey.legs.length,
     rngState: 1,
+    seed: 1,
     activeEncounterId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
