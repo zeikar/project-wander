@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { encounters, speciesList } from "./encounters";
 import { roadEvents } from "./events";
 import { journey } from "./journey";
+import { skyRumor, village, type VillageOption } from "./village";
+import type { Weather } from "./weather";
 // The one core import in this folder, and only from a test. The rule that
 // content imports nothing from core is about what ships: the content modules
 // themselves stay standalone. Restating the toll as a literal 3 here would put
@@ -689,5 +691,142 @@ describe("road events content", () => {
         expect(row.foodDelta).not.toBe(option.foodDelta);
       }
     }
+  });
+});
+
+describe("village content", () => {
+  it("has exactly four options, with unique non-empty ids, labels, and result text", () => {
+    expect(village.options.length).toBe(4);
+
+    const ids = village.options.map((option) => option.id);
+    expect(new Set(ids).size).toBe(ids.length);
+
+    for (const option of village.options) {
+      expect(option.id.length).toBeGreaterThan(0);
+      expect(option.label.length).toBeGreaterThan(0);
+      expect(option.resultText.length).toBeGreaterThan(0);
+    }
+  });
+
+  // Villagers only ever give: none touches hp, and food and preparation never
+  // go down. That is the confirmed invariant a departure-day stop is built on
+  // — there is nothing yet on the road to spend.
+  it("never costs hp, food, or preparation", () => {
+    for (const option of village.options) {
+      expect(option.hpDelta).toBe(0);
+      expect(option.foodDelta).toBeGreaterThanOrEqual(0);
+      expect(option.preparationDelta).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("gives exactly one point of preparation from exactly one villager", () => {
+    const gearGivers = village.options.filter(
+      (option) => option.preparationDelta > 0,
+    );
+
+    expect(gearGivers).toHaveLength(1);
+    expect(gearGivers[0]!.preparationDelta).toBe(1);
+    expect(gearGivers[0]!.foodDelta).toBe(0);
+  });
+
+  it("gives exactly one point of food from exactly one villager", () => {
+    const foodGivers = village.options.filter(
+      (option) => option.foodDelta > 0,
+    );
+
+    expect(foodGivers).toHaveLength(1);
+    expect(foodGivers[0]!.foodDelta).toBe(1);
+    expect(foodGivers[0]!.preparationDelta).toBe(0);
+  });
+
+  it("gives sky and knowledge from exactly one villager each, with no ledger delta attached", () => {
+    const skyGivers = village.options.filter(
+      (option) => option.gives === "sky",
+    );
+    expect(skyGivers).toHaveLength(1);
+    expect(skyGivers[0]!.hpDelta).toBe(0);
+    expect(skyGivers[0]!.foodDelta).toBe(0);
+    expect(skyGivers[0]!.preparationDelta).toBe(0);
+
+    const knowledgeGivers = village.options.filter(
+      (option) => option.gives === "knowledge",
+    );
+    expect(knowledgeGivers).toHaveLength(1);
+    expect(knowledgeGivers[0]!.hpDelta).toBe(0);
+    expect(knowledgeGivers[0]!.foodDelta).toBe(0);
+    expect(knowledgeGivers[0]!.preparationDelta).toBe(0);
+  });
+
+  // The four currencies — a point of gear, a point of food, the sky, and
+  // knowledge — are pairwise distinct: no villager hands over more than one.
+  it("keeps the four currencies pairwise distinct across the four villagers", () => {
+    const currenciesOf = (option: VillageOption): string[] => {
+      const carried: string[] = [];
+      if (option.preparationDelta > 0) carried.push("gear");
+      if (option.foodDelta > 0) carried.push("food");
+      if (option.gives === "sky") carried.push("sky");
+      if (option.gives === "knowledge") carried.push("knowledge");
+      return carried;
+    };
+
+    for (const option of village.options) {
+      expect(currenciesOf(option)).toHaveLength(1);
+    }
+
+    expect(new Set(village.options.flatMap(currenciesOf)).size).toBe(4);
+  });
+
+  // `teachesSpecies` is materialized on the offered copy at runtime (core), the
+  // same structural check style as the roadEvents `codex` check above: content
+  // never carries the field, only the game session does. The four other
+  // encounter/event-only fields have no business on a villager either.
+  it("carries no encounter-only fields: no seeded pick, no codex marker, no weather rule", () => {
+    for (const option of village.options) {
+      expect(option).not.toHaveProperty("teachesSpecies");
+      expect(option).not.toHaveProperty("codex");
+      expect(option).not.toHaveProperty("requiresPreparation");
+      expect(option).not.toHaveProperty("closedIn");
+      expect(option).not.toHaveProperty("weatherDeltas");
+    }
+  });
+
+  describe("skyRumor", () => {
+    const HOLDS = [2, 3, 4] as const;
+
+    const combos: Array<{ first: Weather; holds: number; then: Weather }> =
+      [];
+    for (const first of WEATHERS) {
+      for (const holds of HOLDS) {
+        for (const then of WEATHERS) {
+          if (then === first) continue;
+          combos.push({ first, holds, then });
+        }
+      }
+    }
+
+    it("states the exact leg count and never names a species", () => {
+      const speciesNames = speciesList.map((species) =>
+        species.name.toLowerCase(),
+      );
+
+      for (const { first, holds, then } of combos) {
+        const line = skyRumor(first, holds, then);
+
+        expect(line.length).toBeGreaterThan(0);
+        expect(line).toContain(String(holds));
+
+        for (const name of speciesNames) {
+          expect(line.toLowerCase()).not.toContain(name);
+        }
+      }
+    });
+
+    it("gives every distinct (first, holds, then) its own sentence", () => {
+      const lines = combos.map(({ first, holds, then }) =>
+        skyRumor(first, holds, then),
+      );
+
+      expect(new Set(lines).size).toBe(lines.length);
+    });
   });
 });
