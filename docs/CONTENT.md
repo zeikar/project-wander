@@ -77,9 +77,23 @@ They are drawn from the band ABOVE a route's own odds — the stretch that used 
 
 Animals
 
-Five species. Two of them give food.
+Five species, met in twelve situations. A species is picked first and one of its situations second, so giving an animal more ways to be met splits its own share and never makes it commoner.
 
-That ratio is not flavour. Adding cost-shaped animals thins the share of encounters that can feed you, and an eight-leg road runs on food.
+How often the road can feed you is therefore an average of per-species RATIOS, not a count of scenes. It ships at 50.0%, and a test pins both the ratios and the average:
+
+| species | situations | of which feed you |
+|---|---|---|
+| boar | 3 | 1 — the wallow |
+| wolves | 2 | 1 — the kill |
+| bees | 3 | 2 — not the robbed hollow |
+| waxwings | 2 | 2 — this is the second food source |
+| red stag | 2 | 0 — a cost animal wherever he is met |
+
+That ratio is not flavour, and it is the largest difficulty knob in the game. Adding situations to an animal that ALWAYS feeds you dilutes the share and makes the road harder; adding a feeding situation to a cost animal does the reverse. Measured over 300 seeds against five blind policies: the wolves' kill took the share from 55.6% to 64.5% and careful play from a 17.7% best ending to 30.3%; the three bee and waxwing situations brought it back to 59.2% and 20.7%. Decide the target BEFORE authoring, or the scenes decide it for you.
+
+A species is learned once, so its `fieldNote` is what the codex shows no matter which situation taught it. Name no place in it. A note reading "at a hollow's mouth" has the codex describe a hollow to a traveler who watched a straw skep.
+
+A second situation is worth authoring when it poses a DIFFERENT decision, not when it dresses the same one. Two shapes have earned it so far — a scene where nothing is in your way and the question is whether to take a risk at all (`wallow-boar`, `wolves-at-a-kill`), and a scene where the animal's known answer has nowhere to go (`sow-and-litter`, whose sow will not follow her nose off the road; `walled-lane-stag`, whose lane has no uphill).
 
 An observation must be strictly dominated by an option that is always offered. That gap is the price of the knowledge.
 

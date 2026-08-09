@@ -63,6 +63,101 @@ describe("encounters content", () => {
     );
   });
 
+  // The seeded encounter script is a function of BOTH orders: the reducer picks
+  // a species by indexing `speciesList`, then indexes that species' situations
+  // the same way. `encounters/index.ts` says so in a comment — this is what
+  // makes the comment enforceable. Reordering either list is not a refactor; it
+  // rewrites what every existing seed meets on the road, and no other test in
+  // this suite would notice, because they all derive their expectations from
+  // the same arrays. ADD AT THE END, and update this list when you do.
+  it("keeps both load-bearing orders exactly as shipped", () => {
+    expect(speciesList.map((species) => species.id)).toEqual([
+      "boar",
+      "wolves",
+      "bees",
+      "waxwings",
+      "red-deer",
+    ]);
+    expect(encounters.map((encounter) => encounter.id)).toEqual([
+      "ford-boar",
+      "wallow-boar",
+      "sow-and-litter",
+      "pine-shadows",
+      "wolves-at-a-kill",
+      "bee-hollow",
+      "robbed-hollow",
+      "old-skep",
+      "rowan-flock",
+      "thorn-hedge-flock",
+      "rut-stag",
+      "walled-lane-stag",
+    ]);
+  });
+
+  // How often the road can feed a traveler is an average of PER-SPECIES ratios,
+  // because a species is drawn first and one of its situations second. That
+  // makes the number of situations authored for an animal that always feeds you
+  // — the bees and the waxwings — the largest food lever in the game, and it
+  // only pulls down. The counts here were chosen to land the share on a declared
+  // target before the scenes were written, and until this test the target lived
+  // only in a comment: no other invariant can see whether a situation feeds at
+  // all, so an edit could quietly move the whole road's difficulty and keep
+  // every other test green.
+  it("keeps the feeding ratio each species was authored to", () => {
+    const FEEDING_SITUATIONS: Record<string, number> = {
+      boar: 1, // the wallow only
+      wolves: 1, // the kill only
+      bees: 2, // not the robbed hollow
+      waxwings: 2, // both — this is the second food source
+      "red-deer": 0, // a cost animal in both of his situations
+    };
+
+    let share = 0;
+    for (const species of speciesList) {
+      const situations = encounters.filter(
+        (encounter) => encounter.speciesId === species.id,
+      );
+      const feeding = situations.filter((encounter) =>
+        encounter.options.some((option) => option.foodDelta > 0),
+      );
+
+      expect(feeding.length).toBe(FEEDING_SITUATIONS[species.id]);
+      share += feeding.length / situations.length;
+    }
+
+    // 50.0%, which is where the road sat before the wolves and the bees gained
+    // situations. Moving this is a difficulty decision, not a content one.
+    expect(share / speciesList.length).toBeCloseTo(0.5, 5);
+  });
+
+  // `wolves-at-a-kill` is the one scene authored so that arriving destitute is
+  // not punished: its free answer PAYS. The generic invariants above cannot see
+  // that — they are satisfied by any rescue that merely costs nothing — so the
+  // contract is pinned to the option and its figures here.
+  it("keeps the kill's free answer paying, in every sky", () => {
+    const kill = encounters.find(
+      (encounter) => encounter.id === "wolves-at-a-kill",
+    )!;
+    const rescue = kill.options.find(
+      (option) => option.id === "wait-out-the-feed",
+    )!;
+
+    expect(rescue.hpDelta).toBe(0);
+    expect(rescue.foodDelta).toBe(1);
+    expect(rescue.preparationDelta).toBe(0);
+    // Ungated in both senses: no kit has to be in hand, and it is on the menu
+    // whether or not the traveler has studied the animal.
+    expect(rescue.requiresPreparation ?? 0).toBe(0);
+    expect(rescue.codex).toBeUndefined();
+
+    for (const weather of WEATHERS) {
+      const effective = effectiveOption(rescue, weather);
+      expect(effective.closedReason).toBeUndefined();
+      expect(effective.foodDelta).toBe(1);
+      expect(effective.hpDelta).toBe(0);
+    }
+  });
+
   it.each(encounters.map((encounter) => [encounter.id, encounter] as const))(
     "%s offers a playable set of choices",
     (_id, encounter) => {
@@ -397,6 +492,14 @@ describe("road events content", () => {
     { encounter: "ford-boar", option: "wade-past", hpDelta: -4 },
     { encounter: "pine-shadows", option: "walk-on", hpDelta: -3 },
     { encounter: "rut-stag", option: "push-past", hpDelta: -4 },
+    // The drove lane charges what the hollow charges. It was authored a band
+    // cheaper and the sweep sent it back: see the note above the encounter.
+    // `wolves-at-a-kill` has no entry here on purpose — its free answer pays
+    // food, so nothing in that scene is forced.
+    { encounter: "walled-lane-stag", option: "press-along-the-wall", hpDelta: -4 },
+    // A band under the ford and the lane, because a colony that has already
+    // been robbed has nothing left to hold a line over.
+    { encounter: "robbed-hollow", option: "push-through-the-homeless", hpDelta: -3 },
   ] as const;
 
   it.each(FORCED_WOUNDS)(
@@ -437,9 +540,26 @@ describe("road events content", () => {
       weather: "rain",
     },
     { encounter: "bee-hollow", option: "smoke-them", weather: "rain" },
+    {
+      encounter: "wolves-at-a-kill",
+      option: "smoke-them-off-the-kill",
+      weather: "rain",
+    },
     { encounter: "wallow-boar", option: "wait-downwind", weather: "wind" },
     { encounter: "rowan-flock", option: "net-the-fall", weather: "wind" },
     { encounter: "rut-stag", option: "wave-your-kit", weather: "wind" },
+    {
+      encounter: "walled-lane-stag",
+      option: "sheet-over-the-coping",
+      weather: "wind",
+    },
+    { encounter: "robbed-hollow", option: "smoke-a-path", weather: "rain" },
+    { encounter: "old-skep", option: "smoke-the-skep", weather: "rain" },
+    {
+      encounter: "thorn-hedge-flock",
+      option: "beat-the-hedge-over-your-sheet",
+      weather: "wind",
+    },
   ] as const;
 
   // The shipped reprice set, same shape again. `hpDelta`/`foodDelta` are the
@@ -455,6 +575,12 @@ describe("road events content", () => {
     {
       encounter: "rowan-flock",
       option: "take-the-windfall",
+      weather: "wind",
+      foodDelta: 2,
+    },
+    {
+      encounter: "thorn-hedge-flock",
+      option: "take-what-drops-below",
       weather: "wind",
       foodDelta: 2,
     },
