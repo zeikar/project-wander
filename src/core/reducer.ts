@@ -7,9 +7,9 @@ import type { LegRoute } from "../content/journey";
 import { encounters, speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
-import { skyRumor, village } from "../content/village";
+import { village } from "../content/village";
 import type { VillageOption } from "../content/village";
-import { effectiveOption, skyAhead, weatherAt } from "./weather";
+import { effectiveOption, weatherAt } from "./weather";
 
 // What the core needs from whatever the road just put in front of the traveler,
 // whether that is an animal or a place. `EventOption` carries every required
@@ -170,7 +170,7 @@ export function offeredVillageOptions(
   // option is also what keeps the transition free of any dedupe code — the
   // button that would teach a known species does not exist.
   if (teachable.length === 0) {
-    return village.options.filter((option) => option.gives !== "knowledge");
+    return village.options.filter((option) => !option.teaches);
   }
 
   // The pool shrinks as `known` grows across journeys, so the same seed teaches
@@ -180,9 +180,7 @@ export function offeredVillageOptions(
   const picked = teachable[Math.floor(roll.value * teachable.length)]!;
 
   return village.options.map((option) =>
-    option.gives === "knowledge"
-      ? { ...option, teachesSpecies: picked.id }
-      : option,
+    option.teaches ? { ...option, teachesSpecies: picked.id } : option,
   );
 }
 
@@ -322,13 +320,8 @@ export function reduce(state: GameState, action: GameAction): GameState {
         return state;
       }
 
-      // The shepherd reads out the journey's own weather script — the same
-      // block walk `weatherAt` shows on the road, so the forecast cannot be
-      // wrong about a sky the player is about to stand under.
-      const { first, holds, then } = skyAhead(state.seed);
-
       // hp is deliberately not touched. No villager carries an hpDelta (pinned
-      // on all four in content.test.ts), so there is no clamp here and no
+      // on all three in content.test.ts), so there is no clamp here and no
       // branch that cannot fire. A villager who draws blood is a design change
       // that comes back through review, not through a latent code path.
       return {
@@ -344,10 +337,11 @@ export function reduce(state: GameState, action: GameAction): GameState {
           option.teachesSpecies !== undefined
             ? [...state.known, option.teachesSpecies]
             : state.known,
-        lastEncounterResult:
-          option.gives === "sky"
-            ? `${option.resultText} ${skyRumor(first, holds, then)}`
-            : option.resultText,
+        // Whatever the villager says, and nothing composed on top of it. The
+        // shepherd's forecast used to be appended here; he was measured and
+        // cut (content/village.ts), so the morning's result line is now
+        // exactly what the chosen option was authored to say.
+        lastEncounterResult: option.resultText,
         // Clears nothing: `village` is only ever reached from START_JOURNEY,
         // which already left this null, so this line restates an invariant
         // rather than paying off a charge. Written out anyway because the

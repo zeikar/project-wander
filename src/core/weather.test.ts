@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { skyAhead, weatherAt } from "./weather";
+import { weatherAt } from "./weather";
 import { journey } from "../content/journey";
 import { encounters } from "../content/encounters";
 import {
@@ -74,53 +74,6 @@ describe("weatherAt", () => {
       seen.add(weatherAt(seed, 0));
     }
     expect([...seen].sort()).toEqual(["clear", "rain", "wind"]);
-  });
-});
-
-// Every expectation here is derived by SCANNING `weatherAt` — never by calling
-// `blockAt` a second time — because the whole value of `skyAhead` is that the
-// forecast and the sky the road shows are the same walk. A version that
-// computed its own blocks would agree with itself and still be wrong on the
-// road; this is what would catch that.
-describe("skyAhead", () => {
-  const FORECAST_SEEDS = 300;
-
-  // "at least", not "exactly": a `holds` too SMALL still walks a stretch of
-  // road that is genuinely `first` and passes here. What forbids that is the
-  // next test, where leg `holds` has to already be a DIFFERENT sky.
-  it("names the sky the road actually opens with, and holds it for at least that many legs", () => {
-    for (let seed = 1; seed <= FORECAST_SEEDS; seed++) {
-      const { first, holds } = skyAhead(seed);
-
-      for (let leg = 0; leg < holds; leg++) {
-        expect(weatherAt(seed, leg)).toBe(first);
-      }
-    }
-  });
-
-  it("names what the road turns to at the boundary, and it is always a different sky", () => {
-    for (let seed = 1; seed <= FORECAST_SEEDS; seed++) {
-      const { first, holds, then } = skyAhead(seed);
-
-      expect(weatherAt(seed, holds)).toBe(then);
-      // A boundary always changes the sky — the block walk never repeats
-      // itself — so a forecast promising the same weather twice would be
-      // describing a road that does not exist.
-      expect(then).not.toBe(first);
-    }
-  });
-
-  // `then` is only meaningful if the road is long enough to reach it. Asserted
-  // rather than clamped in `skyAhead`, so shortening the journey below the
-  // longest weather block breaks here loudly.
-  it("always turns inside the road it is describing", () => {
-    for (let seed = 1; seed <= FORECAST_SEEDS; seed++) {
-      const { holds } = skyAhead(seed);
-
-      expect(holds).toBeGreaterThanOrEqual(WEATHER_MIN_LEGS);
-      expect(holds).toBeLessThanOrEqual(WEATHER_MAX_LEGS);
-      expect(holds).toBeLessThan(LEG_COUNT);
-    }
   });
 });
 

@@ -99,6 +99,8 @@ An observation must be strictly dominated by an option that is always offered. T
 
 `read-the-pack` was the weakest observation in the game at 10.3% of its offers, and the fix was on the payoff side rather than the price: `show-your-kit` was the only `requires` option asking for two preparation HELD, which an eight-leg road spends. At one it is offered 130 times across 300 seeds instead of 59, and `read-the-pack` reaches 19.0%.
 
+Those three figures came from the policy set of the sweep that made the change and do not reproduce under the five-policy harness the village was measured with — that instrument reads 45 offers and 12.1% on the same untouched tree. Neither reading is wrong; they are different instruments, and only one of them is written down. A figure in this file is evidence of the decision it justified, not a number a later sweep should expect to hit. Say which harness produced a figure, or a future reader will try to reproduce it and conclude the game changed.
+
 It was not lowered to zero, which measured better again at 20.4%. `requiresPreparation` would then have exactly one consumer left — the state a playtest already found registers with nobody — and the label promises a kit to show.
 
 
@@ -161,26 +163,32 @@ The travel screen already carried a result line, a road-toll line, and a road-ru
 
 A forecast of tomorrow's sky was designed, built, and measured before it was ever written into a line. All thirty points of the declared rate grid failed. Precision was reachable at 0.55-0.83 across both seed sets — honest enough to word — but it fired on only 201 of 2236 encounters and changed the pick on 44 of 300 journeys, moving no outcome: worth at most +0.3pp against a declared +3pp bar. Measured worthless rather than merely unproven, it was removed rather than shipped as decoration.
 
-The Ashfold shepherd is not that cue coming back. What was dropped was a free per-leg hint about whether tomorrow clears; what ships is the whole standing block — today's sky, how many legs it holds, and what follows — bought with the morning's only choice, which is to say at the price of the smith, the baker and the trapper all three. A forecast nobody spends anything on and a forecast that costs every other thing the morning could have given are different instruments.
+The Ashfold shepherd was built on the argument that this was not that cue coming back. What was dropped was a free per-leg hint about whether tomorrow clears; what he sold was the whole standing block — today's sky, how many legs it holds, and what follows — bought with the morning's only choice, which is to say at the price of the smith, the baker and the trapper all three. A forecast nobody spends anything on and a forecast that costs every other thing the morning could have given looked like different instruments.
 
-Note which way round the evidence runs. The dropped cue was measured against a declared bar and failed it. The shepherd has not been measured at all — the village's own gate is a separate pass, and until it runs, the case for him is a design argument and nothing more.
+The village's gate then ran, and they are the same instrument. Over 300 seeds, five blind policies forced onto each villager averaged 16.3% best-ending with the smith, 14.1% with the baker, 12.0% with the trapper and 8.9% with the shepherd — choosing him cost about 7.4pp against the smith. A paired experiment, one policy consuming the forecast against an identical one ignoring it and both forced onto the shepherd, put the forecast's own worth at +1.3pp. He was cut. The village ships with three.
+
+Note which way round the evidence runs, because it now runs the same way twice. The per-leg cue was measured against a declared bar and failed it at +0.3pp. The shepherd was a design argument until it was measured, and it failed too. Price is not what makes a forecast decide something.
 
 ---
 
 Village
 
-The departure morning is a fixed roster of four, never seeded. Variation comes from state, not from the menu.
+The departure morning is a fixed roster of three, never seeded. Variation comes from state, not from the menu.
 
 Every option gives. None charges hp, food, or preparation.
 
-The four currencies — a point of gear, a point of food, the sky ahead, and one animal's worth of knowledge — are pairwise distinct: no villager carries more than one, pinned by test.
+The three currencies — a point of gear, a point of food, and one animal's worth of knowledge — are pairwise distinct: no villager carries more than one, pinned by test.
 
 Gear and food each give exactly +1, and nothing else on that option moves.
 
-The sky rumor is derived off the same weather script the road then walks, never authored. It names the opening sky, how many legs it holds, and what replaces it, so it cannot say anything the road does not then do.
+It was four. The fourth read out the sky ahead and was measured and cut; the figures are in the Weather section above.
+
+The road starts one meal short of what it used to, and that is what makes the morning a choice rather than a bonus. Measured over 300 seeds against five blind policies, the village as a free handout took a careful line's best ending from 20.7% to 34.3% and its death rate from 10.0% to 5.0% while food opportunity barely moved (59.2% to 60.3%) — a head start, not a better-fed road. So `journey.start` took a food back off it: the baker returns the traveler to the old starting line, the smith trades that meal for a point of gear, and the trapper leaves the meal spent and an animal known.
+
+Take back ONE resource, not one per villager. Cutting preparation as well was measured and reverted: three villagers hand back one resource between them, so a start two short is still one short at the gate. Careful play fell to a 10.7% best ending and 18.7% deaths — as far past the correction as the village had been past the other way — and preparation at 1 collapsed `show-your-kit`, which needs a point HELD, from 130 offers per 300 seeds to 28, dragging `read-the-pack` from 19.0% of its offers to 9.8% and three other observations under the decoration line behind it.
 
 The knowledge villager's species is seed-picked among the species still unknown, and materialized onto the offered option — never authored in content, because a static id has no way to know what this traveler has already learned.
 
-With all five species known, that villager is withdrawn and the morning offers three. A recorded limitation, deliberately not compensated: a substitute reward is a new system, and more species or a second village would dissolve the limitation rather than address it.
+With all five species known, that villager is withdrawn and the morning offers two. A recorded limitation, deliberately not compensated: a substitute reward is a new system, and more species or a second village would dissolve the limitation rather than address it.
 
 No shop, no coin, no inventory. Villager prose keeps the NPC rules already at the top of this file.

@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { encounters, speciesList } from "./encounters";
 import { roadEvents } from "./events";
 import { journey } from "./journey";
-import { skyRumor, village, type VillageOption } from "./village";
-import type { Weather } from "./weather";
+import { village, type VillageOption } from "./village";
 // The one core import in this folder, and only from a test. The rule that
 // content imports nothing from core is about what ships: the content modules
 // themselves stay standalone. Restating the toll as a literal 3 here would put
@@ -695,8 +694,8 @@ describe("road events content", () => {
 });
 
 describe("village content", () => {
-  it("has exactly four options, with unique non-empty ids, labels, and result text", () => {
-    expect(village.options.length).toBe(4);
+  it("has exactly three options, with unique non-empty ids, labels, and result text", () => {
+    expect(village.options.length).toBe(3);
 
     const ids = village.options.map((option) => option.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -739,33 +738,25 @@ describe("village content", () => {
     expect(foodGivers[0]!.preparationDelta).toBe(0);
   });
 
-  it("gives sky and knowledge from exactly one villager each, with no ledger delta attached", () => {
-    const skyGivers = village.options.filter(
-      (option) => option.gives === "sky",
-    );
-    expect(skyGivers).toHaveLength(1);
-    expect(skyGivers[0]!.hpDelta).toBe(0);
-    expect(skyGivers[0]!.foodDelta).toBe(0);
-    expect(skyGivers[0]!.preparationDelta).toBe(0);
+  it("gives knowledge from exactly one villager, with no ledger delta attached", () => {
+    const knowledgeGivers = village.options.filter((option) => option.teaches);
 
-    const knowledgeGivers = village.options.filter(
-      (option) => option.gives === "knowledge",
-    );
     expect(knowledgeGivers).toHaveLength(1);
     expect(knowledgeGivers[0]!.hpDelta).toBe(0);
     expect(knowledgeGivers[0]!.foodDelta).toBe(0);
     expect(knowledgeGivers[0]!.preparationDelta).toBe(0);
   });
 
-  // The four currencies — a point of gear, a point of food, the sky, and
-  // knowledge — are pairwise distinct: no villager hands over more than one.
-  it("keeps the four currencies pairwise distinct across the four villagers", () => {
+  // The three currencies — a point of gear, a point of food, and knowledge —
+  // are pairwise distinct: no villager hands over more than one. It was four
+  // until the sky was measured and cut; what the count guards is unchanged,
+  // which is that meeting one villager forgoes what every other one carries.
+  it("keeps the three currencies pairwise distinct across the three villagers", () => {
     const currenciesOf = (option: VillageOption): string[] => {
       const carried: string[] = [];
       if (option.preparationDelta > 0) carried.push("gear");
       if (option.foodDelta > 0) carried.push("food");
-      if (option.gives === "sky") carried.push("sky");
-      if (option.gives === "knowledge") carried.push("knowledge");
+      if (option.teaches) carried.push("knowledge");
       return carried;
     };
 
@@ -773,7 +764,7 @@ describe("village content", () => {
       expect(currenciesOf(option)).toHaveLength(1);
     }
 
-    expect(new Set(village.options.flatMap(currenciesOf)).size).toBe(4);
+    expect(new Set(village.options.flatMap(currenciesOf)).size).toBe(3);
   });
 
   // `teachesSpecies` is materialized on the offered copy at runtime (core), the
@@ -788,92 +779,5 @@ describe("village content", () => {
       expect(option).not.toHaveProperty("closedIn");
       expect(option).not.toHaveProperty("weatherDeltas");
     }
-  });
-
-  describe("skyRumor", () => {
-    const HOLDS = [2, 3, 4] as const;
-
-    const combos: Array<{ first: Weather; holds: number; then: Weather }> =
-      [];
-    for (const first of WEATHERS) {
-      for (const holds of HOLDS) {
-        for (const then of WEATHERS) {
-          if (then === first) continue;
-          combos.push({ first, holds, then });
-        }
-      }
-    }
-
-    it("states the exact leg count and never names a species", () => {
-      const speciesNames = speciesList.map((species) =>
-        species.name.toLowerCase(),
-      );
-
-      for (const { first, holds, then } of combos) {
-        const line = skyRumor(first, holds, then);
-
-        expect(line.length).toBeGreaterThan(0);
-        expect(line).toContain(String(holds));
-
-        for (const name of speciesNames) {
-          expect(line.toLowerCase()).not.toContain(name);
-        }
-      }
-    });
-
-    it("gives every distinct (first, holds, then) its own sentence", () => {
-      const lines = combos.map(({ first, holds, then }) =>
-        skyRumor(first, holds, then),
-      );
-
-      expect(new Set(lines).size).toBe(lines.length);
-    });
-
-    // The one thing the two checks above cannot see: swapping `first` and
-    // `then` inside `skyRumor` keeps the leg count, the species ban and the
-    // uniqueness all green, and keeps the reducer's forecast test green too,
-    // because that one composes its expectation by calling `skyRumor` itself.
-    // A traveler told the wrong way round packs for the wrong sky, so the
-    // ORDER is the claim.
-    // Read off the weather's own word — "clear weather" contains "clear", and
-    // none of the sentence's fixed scaffolding names any of the three — so a
-    // reworded noun leaves this alone and a swapped clause does not.
-    it("names the sky that holds before the sky that replaces it", () => {
-      // Both roles, every weather: an empty or lopsided `combos` would let the
-      // loop below pass without comparing anything.
-      expect(new Set(combos.map((combo) => combo.first)).size).toBe(
-        WEATHERS.length,
-      );
-      expect(new Set(combos.map((combo) => combo.then)).size).toBe(
-        WEATHERS.length,
-      );
-
-      for (const { first, holds, then } of combos) {
-        const line = skyRumor(first, holds, then).toLowerCase();
-        const firstAt = line.indexOf(first);
-        const thenAt = line.indexOf(then);
-
-        // Each sky is named once, so a first-occurrence index IS that clause's
-        // position. Without this the comparison below could be reading two
-        // mentions of the same sky.
-        expect(line.lastIndexOf(first)).toBe(firstAt);
-        expect(line.lastIndexOf(then)).toBe(thenAt);
-
-        expect(firstAt).toBeGreaterThanOrEqual(0);
-        expect(thenAt).toBeGreaterThanOrEqual(0);
-        expect(firstAt).toBeLessThan(thenAt);
-      }
-    });
-
-    // Exactly one exact sentence, as the anchor the index comparisons are not:
-    // they hold for any line that names the two skies in the right order,
-    // however garbled in between. This pairing is the one that also pins the
-    // capitalization of a two-word sky at the head of the sentence. One case
-    // only, so rewording the rumor stays a one-line update.
-    it("reads, for one pairing, exactly as written", () => {
-      expect(skyRumor("clear", 2, "rain")).toBe(
-        "Clear weather holds for the next 2 legs, then rain moves in.",
-      );
-    });
   });
 });

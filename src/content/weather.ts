@@ -29,11 +29,20 @@ export interface WeatherProse {
 // encounters and changed the pick on 44 of 300 journeys, and none of those
 // changes moved an outcome — worth at most +0.3pp against a declared +3pp
 // bar. Measured worthless, not merely unlocked, so it was removed rather
-// than shipped as decoration nobody's choice depended on. The shepherd in
-// Ashfold (content/village.ts) is NOT that cue coming back: this one names
-// the opening sky, how many legs it holds and what replaces it, and it is
-// bought with the morning's only choice — a whole-block forecast paid for
-// against a loaf and a mended strap, not a free per-leg hint about tomorrow.
+// than shipped as decoration nobody's choice depended on.
+//
+// The Ashfold shepherd was the argument that a forecast BOUGHT with something
+// would be a different instrument: not a free per-leg hint, but the whole
+// standing block — opening sky, how long it holds, what replaces it — paid for
+// against a loaf and a mended strap. He was built, and then measured, and the
+// argument did not survive it. Over 300 seeds, five blind policies forced onto
+// each villager averaged 16.3% best-ending with the smith, 14.1% with the
+// baker, 12.0% with the trapper and 8.9% with him; a paired policy that
+// consumed the forecast against an identical one that ignored it, both forced
+// onto the shepherd, put the forecast's own worth at +1.3pp against the 7.4pp
+// the choice cost. Price does not make a forecast decide anything. Both are
+// gone, and this line — a statement of today, never of tomorrow — is what the
+// game says about the sky.
 //
 // AUTHORING RULE: a line may state only physics true of every option in the
 // shipped pairing (encounters.ts AND events.ts — both feed `findScene` in

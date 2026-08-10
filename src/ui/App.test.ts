@@ -498,7 +498,7 @@ describe("knowledgeHint", () => {
   // reducer's own village tests find them.
   const villagerWho = (matches: (option: VillageOption) => boolean) =>
     village.options.find(matches)!;
-  const trapper = villagerWho((option) => option.gives === "knowledge");
+  const trapper = villagerWho((option) => option.teaches === true);
 
   it("names the very animal the offer carries, whichever one it is", () => {
     // Every species, so a lookup that reached for a FIXED entry — the first in

@@ -302,9 +302,9 @@ function VillageScreen({
           >
             {option.label}
             {/* The same label function the encounter screen uses, on the same
-                option shape, so food and preparation stay exact numbers and the
-                two villagers who give neither read as the empty clause they
-                are. No villager costs anything, so nothing here is ever
+                option shape, so food and preparation stay exact numbers and
+                the trapper, who gives neither, reads as the empty clause he
+                is. No villager costs anything, so nothing here is ever
                 disabled. */}
             {costHint(state, option)}
             {knowledgeHint(option)}
@@ -349,12 +349,13 @@ function TravelScreen({
           whose line is short — for the same reason the road-rule line is
           shown every leg rather than only when it bites: a slot that only
           appears for rain and wind is harder to learn than one that is
-          always there. A forecast of tomorrow's sky was designed and
-          measured (content/weather.ts) and dropped rather than rendered —
-          reading it was worth at most +0.3pp against a +3pp bar. That is
-          NOT the Ashfold shepherd returning: he sells no per-leg hint, he
-          reads out the whole standing block for the price of the morning's
-          only choice. This line stays a statement of today. */}
+          always there. Two forecasts have now been measured and neither
+          ships: a free per-leg cue on whether tomorrow clears, worth at most
+          +0.3pp against a +3pp bar (content/weather.ts), and the Ashfold
+          shepherd who sold the whole standing block for the morning's only
+          choice, whose forecast was worth +1.3pp while choosing him cost
+          about 7.4pp against the smith (content/village.ts). This line stays
+          a statement of today, and today is all the sky the game says. */}
       <p className="weather-line">{weatherProse[weather].line}</p>
       {/* The terms of the road, up with the stats they govern rather than down
           by the buttons. Stated on EVERY leg, not only when it is about to
