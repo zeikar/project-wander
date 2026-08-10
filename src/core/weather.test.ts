@@ -15,7 +15,9 @@ const SEED_COUNT = 500;
 // Groups a seed's script into maximal same-weather runs, in order. Used both
 // to check run lengths and to check that adjacent runs never share a
 // weather — the two properties the block walk is supposed to guarantee.
-function weatherRuns(seed: number): Array<{ weather: Weather; length: number }> {
+function weatherRuns(
+  seed: number,
+): Array<{ weather: Weather; length: number }> {
   const runs: Array<{ weather: Weather; length: number }> = [];
   for (let leg = 0; leg < LEG_COUNT; leg++) {
     const weather = weatherAt(seed, leg);

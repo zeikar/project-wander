@@ -70,6 +70,15 @@ export function weatherAt(seed: number, legIndex: number): Weather {
   return blockAt(seed >>> 0, legIndex).weather;
 }
 
+// `blockAt` also fed a `skyAhead` — the opening sky, how many legs it held and
+// what replaced it — which existed for the Ashfold shepherd and went with him
+// (content/village.ts records the measurement). The block walk itself is
+// untouched, because the road still reads it on every leg; only the forecast
+// built on top of it is gone. `WeatherBlock.length` is what the forecast read
+// and no caller reads now, and `start` was never read by anything — both are
+// left as they are rather than collapsing `blockAt` into `weatherAt`, so this
+// change provably moves no sky over any leg.
+
 // What an option's `closedIn`/`weatherDeltas` actually mean under one sky —
 // the ONE place either is read. `canChooseOption`, `CHOOSE_ENCOUNTER_OPTION`
 // (both in reducer.ts) and the encounter button's label (App.tsx) all call

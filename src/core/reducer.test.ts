@@ -6,6 +6,7 @@ import {
   findScene,
   offeredOptions,
   offeredRoutes,
+  offeredVillageOptions,
   peekRoad,
   reduce,
   speciesOf,
@@ -17,6 +18,8 @@ import { effectiveOption, weatherAt } from "./weather";
 import { journey } from "../content/journey";
 import { encounters, speciesList } from "../content/encounters";
 import { EVENT_CHANCE, roadEvents } from "../content/events";
+import { village } from "../content/village";
+import type { VillageOption } from "../content/village";
 import type { EncounterOption } from "../content/encounters";
 import type { Weather } from "../content/weather";
 
@@ -121,7 +124,12 @@ function findRngState(
       // bare leg only exists on the quiet way — callers wanting one must not
       // ask for "busy", and this throws loudly rather than quietly returning a
       // state that turns up a place instead.
-      findRngStateIn(chance + EVENT_CHANCE, 1, `an empty ${which} leg`, mustFork);
+      findRngStateIn(
+        chance + EVENT_CHANCE,
+        1,
+        `an empty ${which} leg`,
+        mustFork,
+      );
 }
 
 // A journey seed whose weather at `legIndex` is `weather` — the weather
@@ -200,6 +208,11 @@ const spendthrift: OptionPolicy = (state) => {
 // 125 of 200 seeds where it used to manage 200. This is the smallest policy
 // that deserves the word careful now: fill the pack when it runs low, and
 // otherwise take the option that costs the least blood.
+// That 125 is the figure that made the case at the time and is left standing as
+// the record; it is not current and nothing asserts it. Two milestones have
+// moved it since — 158 of 200 before the village, 141 after the road stopped
+// starting a food and a preparation richer. The argument holds either way: a
+// careful line still has to eat.
 const provisioned: OptionPolicy = (state) => {
   const options = affordableOptions(state);
   if (state.food <= 1) {
@@ -215,6 +228,30 @@ const provisioned: OptionPolicy = (state) => {
   ).id;
 };
 
+// The morning always spends itself on the baker. Resolved by what she GIVES
+// rather than by her id, so renaming the villager does not silently reroute
+// every balance measurement below. One food giver, and she carries nothing
+// else — both pinned by the currency-distinctness test in content.test.ts, so
+// the delta alone identifies her and cannot hand this line a field note that
+// would quietly change what the road offers it.
+// This used to be the shepherd, chosen because he left every resource exactly
+// where he found it, which kept these baselines measuring the game they
+// measured before the village existed. He was cut (content/village.ts), and no
+// resource-neutral villager remains. The baker is the closest thing left to
+// that old starting line: `journey.start` now sets out a food and a
+// preparation short, and her loaf puts the food back to 3 + 1 = 4, which is
+// exactly what the road used to start with. So these journeys walk with the
+// old food and one less preparation, and the assertions below moved by that
+// much and no more. Villager variation is exercised by the exhaustive ending
+// walk and by the village contract tests, deliberately not smuggled into these
+// baselines.
+function bakerMorning(state: GameState): GameAction {
+  const baker = offeredVillageOptions(state).find(
+    (option) => option.foodDelta > 0,
+  )!;
+  return { type: "CHOOSE_VILLAGE_OPTION", optionId: baker.id };
+}
+
 // Plays a whole journey from a seed and returns every state along the way. The
 // step bound doubles as a proof that no state can leave the player stuck.
 function playJourney(
@@ -225,17 +262,46 @@ function playJourney(
   let state = reduce(createInitialState(), { type: "START_JOURNEY", seed });
   const trace: GameState[] = [state];
 
+  // Exhaustive on the phase, and only `arrived` and `defeated` end a journey.
+  // A phase this loop does not know how to play is a broken harness, not a
+  // finished walk: returning the trace for one would hand every balance
+  // assertion downstream a truncated journey to pass against — a one-element
+  // trace if START_JOURNEY ever stopped reaching the village, and silence for
+  // any phase added later. So those throw, naming the phase. The 50-step bound
+  // below still holds: the village adds one step to a walk that fit in 50 with
+  // room.
   for (let step = 0; step < 50; step++) {
-    if (state.phase !== "traveling" && state.phase !== "encounter") {
-      return trace;
+    switch (state.phase) {
+      case "village":
+        state = reduce(state, bakerMorning(state));
+        break;
+      case "traveling":
+        state = reduce(state, travel(state, which));
+        break;
+      case "encounter":
+        state = reduce(state, {
+          type: "CHOOSE_ENCOUNTER_OPTION",
+          optionId: pickOptionId(state),
+        });
+        break;
+      case "arrived":
+      case "defeated":
+        return trace;
+      // The title screen is where a journey has not begun, never where one
+      // ends. Reaching it here means START_JOURNEY failed to leave it.
+      case "title":
+        throw new Error(
+          `journey from seed ${seed} sat in phase "title" instead of setting out`,
+        );
+      // Stops compiling the day a phase is added without a way to play it,
+      // and names the phase if one turns up here anyway.
+      default: {
+        const unplayable: never = state.phase;
+        throw new Error(
+          `journey from seed ${seed} reached a phase this harness cannot play: ${String(unplayable)}`,
+        );
+      }
     }
-    state =
-      state.phase === "traveling"
-        ? reduce(state, travel(state, which))
-        : reduce(state, {
-            type: "CHOOSE_ENCOUNTER_OPTION",
-            optionId: pickOptionId(state),
-          });
     trace.push(state);
   }
 
@@ -332,7 +398,8 @@ describe("reduce", () => {
     });
     const next = reduce(state, { type: "START_JOURNEY", seed: 9 });
 
-    expect(next.phase).toBe("traveling");
+    // Into the village, not onto the road: a restart begins the morning again.
+    expect(next.phase).toBe("village");
     expect(next.hp).toBe(journey.start.hp);
     expect(next.food).toBe(journey.start.food);
     expect(next.preparation).toBe(journey.start.preparation);
@@ -646,7 +713,9 @@ describe("route branches", () => {
   });
 
   it("turns up a place on the band above the animals", () => {
-    const state = makeTravelingState({ rngState: findEventRngState("quiet", true) });
+    const state = makeTravelingState({
+      rngState: findEventRngState("quiet", true),
+    });
     const next = reduce(state, travel(state, "quiet"));
 
     expect(next.phase).toBe("encounter");
@@ -968,9 +1037,15 @@ describe("encounter choices", () => {
     expect(taught.known).toEqual(["boar"]);
 
     // Now the same animal, a different situation.
-    const atTheWallow = { ...taught, phase: "encounter" as const, activeEncounterId: "wallow-boar" };
+    const atTheWallow = {
+      ...taught,
+      phase: "encounter" as const,
+      activeEncounterId: "wallow-boar",
+    };
     const wallow = findScene("wallow-boar")!;
-    const offered = offeredOptions(atTheWallow, wallow).map((option) => option.id);
+    const offered = offeredOptions(atTheWallow, wallow).map(
+      (option) => option.id,
+    );
 
     // The lesson is spent — this situation's observation is gone...
     expect(offered).not.toContain("watch-it-work-the-mud");
@@ -998,9 +1073,9 @@ describe("encounter choices", () => {
     expect(
       canChooseOption({ ...base, preparation: threshold - 1 }, showYourKit),
     ).toBe(false);
-    expect(canChooseOption({ ...base, preparation: threshold }, showYourKit)).toBe(
-      true,
-    );
+    expect(
+      canChooseOption({ ...base, preparation: threshold }, showYourKit),
+    ).toBe(true);
   });
 
   it("taking that option spends no preparation — it only asks what you carry", () => {
@@ -1183,9 +1258,9 @@ describe("codex knowledge", () => {
     });
 
     expect(canChooseOption(base, showYourKit)).toBe(false);
-    expect(
-      canChooseOption({ ...base, known: ["wolves"] }, showYourKit),
-    ).toBe(true);
+    expect(canChooseOption({ ...base, known: ["wolves"] }, showYourKit)).toBe(
+      true,
+    );
   });
 
   it("closes the observation once there is nothing left to learn", () => {
@@ -1196,9 +1271,9 @@ describe("codex knowledge", () => {
     });
 
     expect(canChooseOption(base, readThePack)).toBe(true);
-    expect(
-      canChooseOption({ ...base, known: ["wolves"] }, readThePack),
-    ).toBe(false);
+    expect(canChooseOption({ ...base, known: ["wolves"] }, readThePack)).toBe(
+      false,
+    );
   });
 
   it("watching an animal costs the afternoon and teaches exactly one species", () => {
@@ -1437,6 +1512,280 @@ describe("the road reports its own toll separately from the animal", () => {
   });
 });
 
+// The departure morning. Half of what follows is about what the village must
+// NOT do — spend a roll off the journey's script, charge the road's toll, or
+// name an animal it then fails to teach — because those are the ways a phase
+// wedged in front of leg 0 could quietly move a game that was tuned without it.
+describe("the village morning", () => {
+  function makeVillageState(overrides: Partial<GameState> = {}): GameState {
+    const started = reduce(createInitialState(), {
+      type: "START_JOURNEY",
+      seed: 1,
+    });
+    return { ...started, ...overrides };
+  }
+
+  // Villagers are resolved by WHAT THEY GIVE, never by a hardcoded id, so
+  // renaming one does not quietly point a test at a different person.
+  function villager(
+    state: GameState,
+    matches: (option: VillageOption) => boolean,
+  ): VillageOption {
+    const found = offeredVillageOptions(state).find(matches);
+    if (!found) {
+      throw new Error("the morning offered no villager matching that");
+    }
+    return found;
+  }
+
+  it("starts the journey in the village, before the first leg", () => {
+    const started = reduce(createInitialState(), {
+      type: "START_JOURNEY",
+      seed: 4,
+    });
+
+    expect(started.phase).toBe("village");
+    expect(started.legIndex).toBe(0);
+    expect(started.lastRoadToll).toBeNull();
+  });
+
+  it("the smith gives a point of preparation, and the road charges nothing for it", () => {
+    const state = makeVillageState();
+    const smith = villager(state, (option) => option.preparationDelta > 0);
+
+    const next = reduce(state, {
+      type: "CHOOSE_VILLAGE_OPTION",
+      optionId: smith.id,
+    });
+
+    expect(next.preparation).toBe(state.preparation + 1);
+    expect(next.food).toBe(state.food);
+    expect(next.hp).toBe(state.hp);
+    expect(next.phase).toBe("traveling");
+    expect(next.legIndex).toBe(0);
+    // No leg was walked, so the road took nothing. This is the whole reason
+    // the morning is a phase of its own rather than an encounter on leg 0.
+    expect(next.lastRoadToll).toBeNull();
+    expect(next.lastEncounterResult).toBe(smith.resultText);
+    expect(next.log).toEqual([`${village.name} — ${smith.label}`]);
+  });
+
+  it("the baker gives a day's food, and the road charges nothing for that either", () => {
+    const state = makeVillageState();
+    const baker = villager(state, (option) => option.foodDelta > 0);
+
+    const next = reduce(state, {
+      type: "CHOOSE_VILLAGE_OPTION",
+      optionId: baker.id,
+    });
+
+    expect(next.food).toBe(state.food + 1);
+    expect(next.preparation).toBe(state.preparation);
+    expect(next.hp).toBe(state.hp);
+    expect(next.phase).toBe("traveling");
+    expect(next.legIndex).toBe(0);
+    expect(next.lastRoadToll).toBeNull();
+    expect(next.log).toEqual([`${village.name} — ${baker.label}`]);
+  });
+
+  // The load-bearing one. Every seed's road script was tuned before the
+  // village existed; if the morning drew from the journey's own stream, which
+  // villager was met would rewrite what the road then turns up.
+  it("spends no roll, whichever villager the morning is given to", () => {
+    const state = makeVillageState();
+    const options = offeredVillageOptions(state);
+
+    expect(options).toHaveLength(village.options.length);
+    for (const option of options) {
+      const next = reduce(state, {
+        type: "CHOOSE_VILLAGE_OPTION",
+        optionId: option.id,
+      });
+
+      expect(next.rngState).toBe(state.rngState);
+      expect(next.seed).toBe(state.seed);
+    }
+  });
+
+  it("the trapper offers an animal the traveler lacks, and teaches exactly that one", () => {
+    // Started from a traveler who already knows THE ANIMAL THIS SEED WOULD
+    // OTHERWISE OFFER — taken from the offer itself on an empty notebook, not
+    // guessed — so "an animal the traveler lacks" is a claim the fixture can
+    // actually break. Against an empty notebook, or against any other animal
+    // being the known one, an offer that never consulted `known` at all would
+    // still satisfy the line below.
+    const alreadyKnown = villager(
+      makeVillageState(),
+      (option) => option.teaches === true,
+    ).teachesSpecies!;
+    const state = makeVillageState({ known: [alreadyKnown] });
+    const trapper = villager(state, (option) => option.teaches === true);
+
+    expect(trapper.teachesSpecies).toBeDefined();
+    expect(speciesList.map((species) => species.id)).toContain(
+      trapper.teachesSpecies,
+    );
+    expect(state.known).not.toContain(trapper.teachesSpecies);
+
+    const next = reduce(state, {
+      type: "CHOOSE_VILLAGE_OPTION",
+      optionId: trapper.id,
+    });
+
+    // Exactly the id the offer named, appended to what was already known.
+    // This is the agreement itself under test: `trapper` is what a screen
+    // rendering this state would show, and `next.known` is what the reducer
+    // decided when handed only the id — one `offeredVillageOptions` away on
+    // each side, and they land on the same animal.
+    expect(next.known).toEqual([alreadyKnown, trapper.teachesSpecies]);
+    expect(next.food).toBe(state.food);
+    expect(next.preparation).toBe(state.preparation);
+  });
+
+  it("has only the animal still missing left to talk about", () => {
+    const allButOne = speciesList.slice(0, -1).map((species) => species.id);
+    const state = makeVillageState({ known: allButOne });
+
+    expect(
+      villager(state, (option) => option.teaches === true).teachesSpecies,
+    ).toBe(speciesList.at(-1)!.id);
+  });
+
+  it("picks the animal off the seed, so two journeys hear about different ones", () => {
+    const taught = (seed: number) =>
+      villager(
+        makeVillageState({ seed }),
+        (option) => option.teaches === true,
+      ).teachesSpecies;
+    const first = taught(1);
+
+    // The `findSeedWith` pattern: scan for a seed that actually differs rather
+    // than asserting a hardcoded pair, so retuning the salt cannot make this
+    // pass by coincidence.
+    let differing: number | undefined;
+    for (let seed = 2; seed <= 100000; seed++) {
+      if (taught(seed) !== first) {
+        differing = seed;
+        break;
+      }
+    }
+
+    expect(differing).toBeDefined();
+    expect(taught(differing!)).not.toBe(first);
+    // And stable: asking the same seed twice cannot change the answer.
+    expect(taught(1)).toBe(first);
+  });
+
+  // The recorded limitation, pinned as behaviour and deliberately left
+  // uncompensated: with every animal known the trapper simply is not there.
+  it("withdraws the trapper once there is nothing left to learn, and refuses him anyway", () => {
+    const state = makeVillageState({
+      known: speciesList.map((species) => species.id),
+    });
+    const options = offeredVillageOptions(state);
+    const withheld = village.options.find(
+      (option) => option.teaches === true,
+    )!;
+
+    expect(options).toHaveLength(village.options.length - 1);
+    expect(options.some((option) => option.teaches === true)).toBe(false);
+    expect(
+      reduce(state, {
+        type: "CHOOSE_VILLAGE_OPTION",
+        optionId: withheld.id,
+      }),
+    ).toBe(state);
+  });
+
+  it("ignores the road's actions inside the village and the village's action outside it", () => {
+    // The encounter is left ACTIVE on purpose. `wade-past` is a real option of
+    // `ford-boar` and costs nothing the morning cannot pay, so every other
+    // reason CHOOSE_ENCOUNTER_OPTION could bail — no scene, no such option, no
+    // affording it — is satisfied here, and the phase guard is the only thing
+    // left refusing it. Without this the action would die at `findScene(null)`
+    // and the guard could be deleted with the suite still green.
+    const state = makeVillageState({ activeEncounterId: "ford-boar" });
+    const smith = villager(state, (option) => option.preparationDelta > 0);
+    const onTheRoad = makeTravelingState();
+
+    expect(
+      reduce(onTheRoad, {
+        type: "CHOOSE_VILLAGE_OPTION",
+        optionId: smith.id,
+      }),
+    ).toBe(onTheRoad);
+    expect(reduce(state, travel(state))).toBe(state);
+    expect(
+      reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: "wade-past",
+      }),
+    ).toBe(state);
+    expect(
+      reduce(state, {
+        type: "CHOOSE_VILLAGE_OPTION",
+        optionId: "no-such-villager",
+      }),
+    ).toBe(state);
+  });
+
+  // The same crossing the codex tests pin for a lesson learned on the road:
+  // what the trapper gives is knowledge of the same kind, and it has to buy
+  // the same thing in the journey after the one it was given in.
+  it("carries the trapper's animal into the next journey, and opens what knowing it buys", () => {
+    // Deliberately NOT a seed whose trapper teaches the first species in
+    // `speciesList`: a handler that appended a hardcoded id instead of the
+    // offered one would slip past this test on such a seed, which is how this
+    // seed was chosen rather than taken as read.
+    const started = reduce(createInitialState(), {
+      type: "START_JOURNEY",
+      seed: 2,
+    });
+    const trapper = villager(started, (option) => option.teaches === true);
+    expect(trapper.teachesSpecies).not.toBe(speciesList[0]!.id);
+    const taught = trapper.teachesSpecies!;
+    const afterVillage = reduce(started, {
+      type: "CHOOSE_VILLAGE_OPTION",
+      optionId: trapper.id,
+    });
+
+    // Arrival fabricated rather than walked: what this pins is the crossing,
+    // not the road in between.
+    const nextJourney = reduce(
+      { ...afterVillage, phase: "arrived" },
+      { type: "START_JOURNEY", seed: 6 },
+    );
+    expect(nextJourney.known).toEqual([taught]);
+
+    const situation = encounters.find(
+      (encounter) =>
+        encounter.speciesId === taught &&
+        encounter.options.some((option) => option.codex === "requires"),
+    )!;
+    const unlocked = situation.options.find(
+      (option) => option.codex === "requires",
+    )!;
+    const atTheAnimal: GameState = {
+      ...nextJourney,
+      phase: "encounter",
+      activeEncounterId: situation.id,
+      legIndex: 1,
+      food: 3,
+      preparation: 3,
+      // Pinned clear so a sky-closed answer cannot make this pass vacuously
+      // on the "closed" side of the comparison.
+      seed: findSeedWith("clear", 1),
+    };
+
+    expect(canChooseOption(atTheAnimal, unlocked)).toBe(true);
+    // And shut to a traveler who never sat with him, which is what makes the
+    // carry worth anything.
+    expect(canChooseOption({ ...atTheAnimal, known: [] }, unlocked)).toBe(
+      false,
+    );
+  });
+});
+
 describe("full journeys", () => {
   it("can be lost: reckless play is defeated on at least one seed", () => {
     const lost = SCANNED_SEEDS.filter(
@@ -1454,15 +1803,20 @@ describe("full journeys", () => {
 
     // "Most", not "nearly every", and the name changed with the number: this
     // guarantee genuinely weakened on an eight-leg road. It used to be 200 of
-    // 200 and measures 145 now. Two things moved. The policy had to — `prudent`
-    // above only avoids wounds and never eats, which was enough when three days
-    // of food covered a four-leg walk and starves on eight, so this measures
-    // `provisioned` instead. And the road is simply longer, so there is more of
-    // it to get wrong. That the remaining losses are the LINE's fault and not
-    // the road's is what the sweep pins: death is unavoidable on 0.3% of seeds.
-    // The floor is 125 — deliberately well under the measured 145, because a
-    // simple policy's exact score is brittle to content retuning. What it
-    // guards is a collapse, not a wobble.
+    // 200. Two things moved. The policy had to — `prudent` above only avoids
+    // wounds and never eats, which was enough when three days of food covered
+    // a four-leg walk and starves on eight, so this measures `provisioned`
+    // instead. And the road is simply longer, so there is more of it to get
+    // wrong. That the remaining losses are the LINE's fault and not the road's
+    // is what the sweep pins: death is unavoidable on 0.3% of seeds.
+    // Measured 167 of 200 before `journey.start` gave back what the village
+    // hands out, and 143 of 200 after: this line walks with the same food it
+    // always had (the baker's loaf restores it) and one less preparation, and
+    // 24 seeds it used to survive it no longer does.
+    // The floor stays 125 — deliberately well under the measured 143, because
+    // a simple policy's exact score is brittle to content retuning. What it
+    // guards is a collapse, not a wobble, and the headroom it keeps over the
+    // measurement is the same headroom it kept at 145.
     expect(won.length).toBeGreaterThanOrEqual(125);
   });
 
@@ -1475,11 +1829,21 @@ describe("full journeys", () => {
   // cannot show that the reducer ever produces them — an ending stranded by
   // retuning would leave that suite green while the prose went dead. Defeat is
   // not included here; the reckless-loss test above already covers it.
+  // Re-run when `journey.start` gave back the food and the preparation the
+  // village hands out: all four are still reached, so a road that starts a
+  // resource short did not strand an ending. This is the one balance assertion
+  // in this file the change did not move at all.
   it("can end in every authored arrival ending", () => {
     const reached = new Set<string>();
 
     for (const seed of SCANNED_SEEDS) {
-      for (const policy of [prudent, reckless, hoarding, spendthrift, provisioned]) {
+      for (const policy of [
+        prudent,
+        reckless,
+        hoarding,
+        spendthrift,
+        provisioned,
+      ]) {
         for (const which of ["quiet", "busy"] as const) {
           const end = playJourney(seed, policy, which).at(-1)!;
           if (end.phase === "arrived") {
@@ -1542,6 +1906,20 @@ describe("full journeys", () => {
           return false;
         case "arrived":
           return arrivalEnding(state) === "travelOn";
+        // The departure morning is a line of play like any other: which
+        // villager was met changes the food, the gear and the knowledge the
+        // journey starts with, so all of them have to be tried before a seed
+        // can be called locked out. The memo key already carries phase,
+        // resources and `known`, so nothing new needs keying.
+        case "village":
+          return offeredVillageOptions(state).some((option) =>
+            canReachTravelOn(
+              reduce(state, {
+                type: "CHOOSE_VILLAGE_OPTION",
+                optionId: option.id,
+              }),
+            ),
+          );
         case "traveling":
           // Every line of play now includes which way was walked, so every way
           // ON OFFER has to be tried before a seed can be called locked out.
@@ -1584,8 +1962,16 @@ describe("full journeys", () => {
     // before `show-your-kit` went behind knowledge — so the two changes read as
     // one trade rather than two: a first meeting with wolves still costs
     // something, and the road now offers a way to be somewhere else.
-    // The cap keeps roughly the same headroom over the measured figure as the
-    // 0.4/32.5% pairing it replaces.
+    // The departure morning then fell on the same side — a free resource, and
+    // a walk that tries every villager — taking it to 16/200 (8.0%). Giving
+    // that resource back in `journey.start` is the first change to push it the
+    // other way: 29/200 (14.5%), still under half of what it was before the
+    // village existed, because the morning is now a CHOICE of which resource
+    // to set out strong in rather than a handout on top of a full pack.
+    // The cap stays 0.4, and it is slack at 14.5% — this has been a collapse
+    // guard rather than a tuning target since the village halved the figure it
+    // watches. Recorded rather than tightened to fit: a cap re-derived from
+    // each measurement is a record of the measurement, not a bound on it.
     expect(lockedOut.length / SCANNED_SEEDS.length).toBeLessThanOrEqual(0.4);
   });
 
@@ -1644,8 +2030,50 @@ describe("full journeys", () => {
   // this line still draws `bee-hollow` on both of its bee legs, so their
   // re-recording is a no-op here — which is a coincidence of this seed, not a
   // guarantee about the split.
+  // Re-recorded for the departure morning, and the check that matters is what
+  // did NOT move: the whole change is ONE PREPENDED ROW — the village state
+  // START_JOURNEY now lands in, at the starting resources and legIndex 0 —
+  // and in every later row all six PROJECTED columns are unchanged from the
+  // trace recorded before the village existed. (Verified by slicing the first
+  // row off the played trace and matching it against the previous recording.)
+  // That is evidence the morning charges no toll, and it was arranged to be:
+  // the line spent that morning on a villager who gave neither food nor gear —
+  // the sky-teller, since cut — so any moved resource column would have been
+  // the village paying or charging something. No such villager remains, which
+  // is why the entry below has a column to account for rather than none.
+  // It says nothing DIRECT about rolls — `project` omits `rngState`
+  // and `seed`, so a consumed roll is invisible to this comparison except
+  // through its consequences: it would shift what the selection rolls draw and
+  // surface as a changed `activeEncounterId` on the later legs. The direct
+  // proof is "spends no roll, whichever villager the morning is given to",
+  // which asserts `rngState` itself across all three villagers.
+  // Re-recorded when `journey.start` dropped a food (4 -> 3) and the morning
+  // began buying it back: the shepherd this line used to spend the morning on
+  // is gone, so it spends it on the baker.
+  // ONE COLUMN MOVED, on ONE ROW: `food` on the village row, 4 to 3. The loaf
+  // puts it back before the first leg, so every later food figure — and
+  // `preparation`, `hp`, `phase`, `legIndex` and all six `activeEncounterId`s —
+  // is identical to the trace recorded before this change. That single cell is
+  // the whole of what taking a meal off the start does to a line that then
+  // spends its morning getting the meal back, which is exactly the shape the
+  // change was aiming for: the baker returns the traveler to the old starting
+  // line, and the other two villagers trade that meal for something else.
+  // Expected, not a defect: no roll is consumed by any of this and the seed's
+  // road script is bit-for-bit what it was.
+  // An earlier draft of this change also cut preparation 2 -> 1, which put
+  // `preparation` one lower on every row here and cost far more than one cell
+  // out on the road — see the note on `journey.start`. That draft is not what
+  // is recorded above.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
+      {
+        phase: "village",
+        activeEncounterId: null,
+        hp: 14,
+        food: 3,
+        preparation: 2,
+        legIndex: 0,
+      },
       {
         phase: "traveling",
         activeEncounterId: null,
@@ -1771,14 +2199,19 @@ describe("full journeys", () => {
 
   it("diverges between seeds", () => {
     // A seed lands in rngState directly, so these two pick opposite first legs.
-    const busy = reduce(createInitialState(), {
+    // Each is stepped through the departure morning on the same villager, who
+    // spends no roll and hands both of them the same loaf, so what differs at
+    // the first leg is the seed and nothing else.
+    const startedBusy = reduce(createInitialState(), {
       type: "START_JOURNEY",
       seed: findRngState(true),
     });
-    const quiet = reduce(createInitialState(), {
+    const startedQuiet = reduce(createInitialState(), {
       type: "START_JOURNEY",
       seed: findRngState(false),
     });
+    const busy = reduce(startedBusy, bakerMorning(startedBusy));
+    const quiet = reduce(startedQuiet, bakerMorning(startedQuiet));
 
     expect(reduce(busy, travel(busy)).phase).toBe("encounter");
     expect(reduce(quiet, travel(quiet)).phase).not.toBe("encounter");

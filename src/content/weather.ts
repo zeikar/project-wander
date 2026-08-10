@@ -1,8 +1,10 @@
 // The sky over one leg of the road. Like journey.ts and encounters.ts this
 // owns its own types and imports nothing: content is the bottom of the
 // dependency chain. `core/weather.ts` reads this module to derive a script,
-// but neither the reducer nor the UI reads either of them yet, so game
-// behavior is unchanged by this module's existence.
+// and both the reducer and the UI read that script — the sky reprices and
+// closes encounter options, and the three screens a traveler passes through
+// on the road (the village morning, the leg, the encounter) each state the
+// line below.
 export type Weather = "clear" | "rain" | "wind";
 
 // How many legs one weather holds before the sky changes. Long enough to be
@@ -28,6 +30,19 @@ export interface WeatherProse {
 // changes moved an outcome — worth at most +0.3pp against a declared +3pp
 // bar. Measured worthless, not merely unlocked, so it was removed rather
 // than shipped as decoration nobody's choice depended on.
+//
+// The Ashfold shepherd was the argument that a forecast BOUGHT with something
+// would be a different instrument: not a free per-leg hint, but the whole
+// standing block — opening sky, how long it holds, what replaces it — paid for
+// against a loaf and a mended strap. He was built, and then measured, and the
+// argument did not survive it. Over 300 seeds, five blind policies forced onto
+// each villager averaged 16.3% best-ending with the smith, 14.1% with the
+// baker, 12.0% with the trapper and 8.9% with him; a paired policy that
+// consumed the forecast against an identical one that ignored it, both forced
+// onto the shepherd, put the forecast's own worth at +1.3pp against the 7.4pp
+// the choice cost. Price does not make a forecast decide anything. Both are
+// gone, and this line — a statement of today, never of tomorrow — is what the
+// game says about the sky.
 //
 // AUTHORING RULE: a line may state only physics true of every option in the
 // shipped pairing (encounters.ts AND events.ts — both feed `findScene` in

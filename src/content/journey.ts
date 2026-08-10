@@ -141,7 +141,28 @@ export const journey: Journey = {
   // 1.7% to 0.3%, and leaves every option exactly as healthy as it was at 3.
   // Losing a twenty-minute journey to a seed costs far more than losing a
   // five-minute one, which is what moved this at all.
-  start: { hp: 14, food: 4, preparation: 2 },
+  // food 4 -> 3 when the departure morning was measured. The village was
+  // handing out a free resource at the start, where it compounds: a careful
+  // blind policy's best ending went 20.7% -> 34.3% and its death rate
+  // 10.0% -> 5.0% once the morning existed, while food opportunity barely moved
+  // (59.2% -> 60.3%) — so the road did not get better fed, it got a head start.
+  // Taking one resource back off the start makes the village a choice about
+  // WHICH resource you set out strong in rather than a bonus: the baker puts
+  // the food back and you leave on the old starting line, the smith trades that
+  // meal for a point of preparation, and the trapper leaves you a meal short
+  // while knowing an animal. hp is untouched because no villager gives it.
+  //
+  // ONE resource, not two, and that was measured the hard way. Cutting
+  // preparation to 1 as well was tried first, on the reasoning that every
+  // villager should then restore something. But three villagers hand back one
+  // resource between them, so a start two short can only ever be one short at
+  // the gate: careful play fell to a 10.7% best ending and 18.7% deaths —
+  // overshooting the correction by as much as the village had overshot the
+  // other way. It also collapsed `show-your-kit`, which needs a preparation
+  // HELD: offered 130 times per 300 seeds at preparation 2, and 28 at 1, which
+  // dragged `read-the-pack` from 19.0% of its offers to 9.8% and three other
+  // observations under the decoration line with it.
+  start: { hp: 14, food: 3, preparation: 2 },
   legs: [
     {
       name: "The Old Millpond Road",

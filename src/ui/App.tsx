@@ -5,6 +5,7 @@ import {
   findScene,
   offeredOptions,
   offeredRoutes,
+  offeredVillageOptions,
   peekRoad,
   reduce,
   speciesOf,
@@ -16,6 +17,8 @@ import type { GameState } from "../core/game-state";
 import type { GameAction } from "../core/actions";
 import { journey } from "../content/journey";
 import type { LegRoute } from "../content/journey";
+import { village } from "../content/village";
+import type { VillageOption } from "../content/village";
 import { weatherProse } from "../content/weather";
 import { speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
@@ -30,10 +33,7 @@ function newSeed(): number {
 // how it compares to what a hungry leg takes — and never as a number.
 // Exported for its unit test: this file has no JSX-rendering harness, so the
 // pure string function is tested directly, the same way `leavesNoFood` is.
-export function costHint(
-  state: GameState,
-  option: EncounterOption,
-): string {
+export function costHint(state: GameState, option: EncounterOption): string {
   // Reads the EFFECTIVE deltas, not the authored ones — the same call
   // `canChooseOption` and the reducer make — so a repriced option's label
   // always shows the number the reducer will actually charge, never the
@@ -190,6 +190,31 @@ export function trafficHint(
     : " — less likely to turn something up";
 }
 
+// Names the animal a villager's offer will actually teach, so the choice is
+// readable BEFORE it is made. Read off `teachesSpecies`, filled by
+// `offeredVillageOptions` — the one place that pick is defined, and the same
+// function the reducer calls when the button is pressed. It is pure in
+// `state.seed` and `state.known`, neither of which moves between this render
+// and that click, so the animal named here is the animal learned. The reducer
+// asks again rather than being told, because what was earned is its call.
+// Empty for the villagers who teach nothing, the same way costHint's clauses
+// are empty for what an option does not touch.
+// Exported for its unit test: this file has no JSX-rendering harness, so the
+// pure string function is tested directly, the same way `costHint` is.
+export function knowledgeHint(option: VillageOption): string {
+  if (option.teachesSpecies === undefined) {
+    return "";
+  }
+  // The id is picked out of `speciesList` in the first place, so a miss is a
+  // broken invariant rather than a state the player can reach — the same
+  // assertion FieldNotes makes on the ids in `known`.
+  const species = speciesList.find(
+    (candidate) => candidate.id === option.teachesSpecies,
+  )!;
+
+  return ` — what he knows about the ${species.name}`;
+}
+
 // Deliberately kept as local components in this one file: at this size,
 // separate screen files would be fragmentation, not organization.
 
@@ -245,6 +270,51 @@ function TitleScreen({ dispatch }: { dispatch: Dispatch<GameAction> }) {
   );
 }
 
+function VillageScreen({
+  state,
+  dispatch,
+}: {
+  state: GameState;
+  dispatch: Dispatch<GameAction>;
+}) {
+  const options = offeredVillageOptions(state);
+  // The sky is overhead in the village too, and it is the sky of the leg about
+  // to be walked — same standing-fact placement as the other two screens.
+  const weather = weatherAt(state.seed, state.legIndex);
+
+  return (
+    <div className="screen">
+      <StatRow state={state} />
+      <p className="weather-line">{weatherProse[weather].line}</p>
+      <h2>{village.name}</h2>
+      <p>{village.description}</p>
+      {/* What is already in the notebook is exactly what the trapper's offer
+          has to be read against: his button names an animal, and this is where
+          the player sees which ones they already have. */}
+      <FieldNotes state={state} />
+      <div className="encounter-options">
+        {options.map((option) => (
+          <button
+            key={option.id}
+            onClick={() =>
+              dispatch({ type: "CHOOSE_VILLAGE_OPTION", optionId: option.id })
+            }
+          >
+            {option.label}
+            {/* The same label function the encounter screen uses, on the same
+                option shape, so food and preparation stay exact numbers and
+                the trapper, who gives neither, reads as the empty clause he
+                is. No villager costs anything, so nothing here is ever
+                disabled. */}
+            {costHint(state, option)}
+            {knowledgeHint(option)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TravelScreen({
   state,
   dispatch,
@@ -279,9 +349,13 @@ function TravelScreen({
           whose line is short — for the same reason the road-rule line is
           shown every leg rather than only when it bites: a slot that only
           appears for rain and wind is harder to learn than one that is
-          always there. A forecast of tomorrow's sky was designed and
-          measured (content/weather.ts) and dropped rather than rendered —
-          reading it was worth at most +0.3pp against a +3pp bar. */}
+          always there. Two forecasts have now been measured and neither
+          ships: a free per-leg cue on whether tomorrow clears, worth at most
+          +0.3pp against a +3pp bar (content/weather.ts), and the Ashfold
+          shepherd who sold the whole standing block for the morning's only
+          choice, whose forecast was worth +1.3pp while choosing him cost
+          about 7.4pp against the smith (content/village.ts). This line stays
+          a statement of today, and today is all the sky the game says. */}
       <p className="weather-line">{weatherProse[weather].line}</p>
       {/* The terms of the road, up with the stats they govern rather than down
           by the buttons. Stated on EVERY leg, not only when it is about to
@@ -509,6 +583,8 @@ export default function App() {
   switch (state.phase) {
     case "title":
       return <TitleScreen dispatch={dispatch} />;
+    case "village":
+      return <VillageScreen state={state} dispatch={dispatch} />;
     case "traveling":
       return <TravelScreen state={state} dispatch={dispatch} />;
     case "encounter":
