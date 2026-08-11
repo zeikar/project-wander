@@ -6,7 +6,13 @@ import { roadEvents } from "../content/events";
 import { canChooseOption } from "../core/reducer";
 import { weatherAt } from "../core/weather";
 import { HUNGRY_TRAVEL_HP_LOSS } from "../core/game-state";
-import { costHint, knowledgeHint, leavesNoFood, trafficHint } from "./App";
+import {
+  costHint,
+  knowledgeHint,
+  leavesNoFood,
+  roadAhead,
+  trafficHint,
+} from "./App";
 import { journey } from "../content/journey";
 import { village } from "../content/village";
 import type { VillageOption } from "../content/village";
@@ -582,5 +588,37 @@ describe("trafficHint", () => {
         expect(trafficHint(leg.routes, route)).not.toMatch(/\d/);
       }
     }
+  });
+});
+
+// The village morning is the first thing a traveler spends, and until this line
+// existed neither the road's length nor the gate's two axes were on screen when
+// they spent it: the counter only appeared once the first leg had begun. These
+// pin that the line is DERIVED — a hand-typed "8 legs" would survive a change to
+// the road's length and quietly start lying.
+describe("roadAhead", () => {
+  // Fabricated figures, deliberately not the shipped ones: the road is 8 legs,
+  // so asserting against `journey.legs.length` would pass for a hardcoded "8"
+  // too. Only a length the game does not have proves the line is derived.
+  it("names the destination and the length it is given", () => {
+    expect(roadAhead("Somewhere", 3)).toBe(
+      "Somewhere is 3 legs of road from here.",
+    );
+    expect(roadAhead("Elsewhere", 11)).toBe(
+      "Elsewhere is 11 legs of road from here.",
+    );
+  });
+
+  it("states one number and no other", () => {
+    expect(roadAhead("Somewhere", 3).match(/\d+/g)).toEqual(["3"]);
+  });
+
+  // The call site is what feeds it the real journey; that is a one-line read in
+  // App.tsx and no JSX harness exists to assert it. What IS pinned here is that
+  // the shipped figures produce a sentence that reads correctly.
+  it("reads correctly on the shipped journey", () => {
+    expect(roadAhead(journey.arrival.name, journey.legs.length)).toBe(
+      `${journey.arrival.name} is ${journey.legs.length} legs of road from here.`,
+    );
   });
 });
