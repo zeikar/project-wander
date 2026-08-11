@@ -1,524 +1,172 @@
 # CLAUDE.md
 
-## Project
+**This file is how to work in this repository. `VISION.md` is what the game is.**
 
-**Project Wander** is a small, AI-assisted fantasy travel RPG prototype.
-
-The current goal is not to build a production-ready game, a reusable game engine, or a large content platform.
-
-The goal is to validate one question:
-
-> Is a short fantasy journey built around travel, discovery, a monster codex, and AI-assisted NPC interactions fun enough that players want to begin another journey?
-
-Read `VISION.md` before making architectural or gameplay decisions.
+Do not restate game design here. If a rule is about the game — resources, the codex, villages, what a monster is, what we intentionally avoid — it belongs in `VISION.md` and this file should link to it instead of repeating it.
 
 ---
 
-## Current Product Direction
+## Read before changing anything
 
-Project Wander is an **AI-assisted fantasy travel RPG** with light roguelike structure.
-
-The experience should focus on:
-
-- travel as the primary gameplay
-- short, replayable journeys
-- exploration and discovery
-- meaningful route and resource decisions
-- memorable NPC and companion interactions
-- a monster codex that unlocks useful knowledge
-- small personal stories rather than epic destiny
-
-The initial prototype should target approximately **20 minutes per journey**.
+1. **`VISION.md`** — the game's direction, boundaries, and the list of things deliberately not built. Read it before any architectural or gameplay decision.
+2. **`.hyperclaude/HANDOFF.md`** — if present (gitignored, local only): current state, decisions already settled, and what not to re-litigate.
+3. **`docs/`** — `GAMEPLAY.md` (the game as built) and `CONTENT.md` (authoring rules, and the measurements behind them).
 
 ---
 
-## Core Development Principles
+## Commands
 
-### 1. Build the Game, Not an Engine
-
-Do not create generic systems unless the current prototype directly requires them.
-
-Avoid:
-
-- generic plugin systems
-- custom dependency injection frameworks
-- ECS architecture without demonstrated need
-- generalized scripting engines
-- visual editors
-- content management tools
-- modding support
-- multiplayer abstractions
-- speculative extension points
-- large inheritance hierarchies
-- factories for objects with only one implementation
-
-Prefer direct, readable code that supports the current playable loop.
-
-A small amount of duplication is acceptable when it keeps the prototype easy to understand and change.
-
----
-
-### 2. Keep the Prototype Playable
-
-The repository should remain runnable and playable after every meaningful change.
-
-Prefer vertical slices over disconnected infrastructure.
-
-A good implementation order is:
-
-1. make the simplest version work
-2. make it playable
-3. test whether it is fun
-4. improve structure where actual pain appears
-5. add content or complexity only after validation
-
-Do not spend multiple changes building infrastructure before any player-facing result exists.
-
----
-
-### 3. Separate Game Rules from Presentation
-
-Core game logic must not depend on:
-
-- React
-- the DOM
-- browser storage
-- CSS
-- animation libraries
-- LLM SDKs
-- network calls
-
-The UI should render state and dispatch player actions.
-
-Recommended dependency direction:
-
-```text
-UI
-  → Application Layer
-      → Game Core
-          → Content Definitions
-
-AI Adapter
-  → Narrative Context produced by the Application Layer
+```bash
+npm run dev        # vite dev server
+npm test           # vitest run
+npm run typecheck  # tsc --noEmit
+npm run build      # tsc --noEmit && vite build
 ```
-
-The game core must not import from UI or AI modules.
-
----
-
-### 4. Game Facts Come From Code
-
-Deterministic systems decide:
-
-- resource changes
-- travel outcomes
-- encounter eligibility
-- combat results
-- quest progress
-- rewards
-- codex unlocks
-- relationship values
-- success and failure
-- world-state changes
-
-AI may express these results, but must not invent or override them.
-
-Use this rule:
-
-> Code decides what happened. AI decides how it is described.
-
----
-
-### 5. AI Must Be Optional
-
-The game must remain fully playable when:
-
-- no API key is configured
-- the AI provider is unavailable
-- a request times out
-- structured output is invalid
-- a rate limit is reached
-
-Every AI-assisted feature requires a deterministic or authored fallback.
-
-Do not place AI calls inside core game reducers or state-transition functions.
-
-Do not expose provider API keys in browser code.
-
-AI integration should sit behind a small adapter interface so providers can be changed later.
-
----
-
-### 6. Prefer Data-Driven Content, Not Data-Driven Everything
-
-Encounters, monsters, travel nodes, items, and codex entries may be represented as typed data when this makes iteration easier.
-
-Do not create a universal schema capable of representing every imagined future feature.
-
-Schemas should support only implemented gameplay.
-
-Use TypeScript types and runtime validation where external or authored data enters the system.
-
----
-
-### 7. Determinism Matters
-
-Random gameplay should use an explicit seeded random source.
-
-Do not call `Math.random()` directly inside game rules.
-
-Benefits include:
-
-- reproducible bugs
-- shareable journeys
-- stable tests
-- easier balancing
-- consistent content generation
-
-Store enough random state to reproduce a journey when practical.
-
-AI-generated prose does not need to be deterministic, but the gameplay facts passed to AI must be.
-
----
-
-## Initial Prototype Scope
-
-Unless a task explicitly changes the scope, assume the prototype contains:
-
-- one village
-- one journey objective
-- one destination
-- one companion
-- three monster species
-- one short travel route with branches
-- simple encounters
-- simple camping
-- a lightweight codex
-- HP
-- Food
-- Preparation
-- one ending or a very small number of endings
-- approximately 20 minutes of playtime
-
-Keep combat minimal.
-
-A text-based encounter flow is acceptable.
-
-Do not add major systems merely because they are common in RPGs.
-
----
-
-## Important Gameplay Boundaries
-
-### Travel
-
-Travel is the main gameplay, not a transition between gameplay sections.
-
-Travel decisions may include:
-
-- route choice
-- risk versus time
-- food use
-- camping
-- investigation
-- helping or ignoring travelers
-- observing monsters
-- companion interactions
-
-### Resources
-
-Start with only:
-
-- `hp`
-- `food`
-- `preparation`
-
-Do not add thirst, temperature, fatigue, morale, encumbrance, durability, disease, or food spoilage unless current playtesting demonstrates a specific need.
-
-Each resource must create meaningful decisions rather than routine maintenance.
-
-### Codex
-
-The codex should affect gameplay.
-
-Codex knowledge may unlock:
-
-- monster weaknesses
-- safer routes
-- alternate encounter actions
-- improved observation
-- non-combat solutions
-- additional dialogue
-- better quest conclusions
-
-Avoid codex entries that exist only as passive lore collectibles.
-
-### NPCs and Companions
-
-AI-assisted characters should react to structured facts such as:
-
-- recent player choices
-- current relationship state
-- active quest facts
-- available knowledge
-- current danger
-- resource scarcity
-
-Do not give AI unrestricted authority to invent permanent canon.
-
-Persist important facts as structured state, not only inside generated prose.
-
----
-
-## Suggested Technical Direction
-
-Unless the repository already establishes another stack, prefer:
-
-- Vite
-- React
-- TypeScript
-- Zustand or a similarly small state layer
-- Zod for external and AI response validation
-- Vitest for game-core tests
-
-Do not introduce a large framework or library without a clear current benefit.
-
-Before adding a dependency, consider whether the feature can be implemented clearly with existing tools.
-
----
-
-## Recommended Source Organization
-
-This is guidance, not a mandatory architecture.
-
-```text
-src/
-├── core/
-│   ├── game-state.ts
-│   ├── actions.ts
-│   ├── reducer.ts
-│   ├── rng.ts
-│   └── rules/
-├── content/
-│   ├── encounters/
-│   ├── monsters/
-│   ├── quests/
-│   └── companions/
-├── application/
-│   ├── game-session.ts
-│   └── narrative-context.ts
-├── ai/
-│   ├── provider.ts
-│   ├── schemas.ts
-│   ├── prompts/
-│   └── fallback.ts
-├── ui/
-│   ├── components/
-│   └── screens/
-└── main.tsx
-```
-
-Do not reorganize the repository solely to match this example if the existing structure is already simple and understandable.
-
----
-
-## State Transition Style
-
-Prefer explicit player actions and pure state transitions.
-
-Example:
-
-```ts
-type GameAction =
-  | { type: "TRAVEL"; routeId: string }
-  | { type: "REST" }
-  | { type: "FORAGE" }
-  | {
-      type: "CHOOSE_ENCOUNTER_OPTION";
-      encounterId: string;
-      optionId: string;
-    };
-```
-
-Core transitions should be:
-
-- predictable
-- testable
-- free of network access
-- free of UI side effects
-- explicit about randomness
-
-Side effects should be handled outside the reducer or rules layer.
-
----
-
-## AI Output Rules
-
-When using an LLM:
-
-1. Send only the minimum relevant structured context.
-2. Ask for constrained structured output when metadata is needed.
-3. Validate all structured responses.
-4. Clamp or reject unsupported values.
-5. Fall back gracefully on failure.
-6. Never treat generated prose as the only source of game state.
-7. Cache generated content when repeated calls add no value.
-8. Avoid making an API call for every small UI interaction.
-
-Good AI uses:
-
-- NPC dialogue
-- companion reactions
-- quest presentation
-- rumors
-- scene descriptions
-- journey summaries
-
-Bad AI uses:
-
-- deciding whether an attack hit
-- changing rewards
-- inventing quest completion
-- altering resource values
-- deciding permanent world rules
-- silently modifying saved state
-
----
-
-## Testing Expectations
-
-Prioritize tests for game rules rather than UI snapshots.
-
-Important tests include:
-
-- resource changes after travel and camping
-- seeded encounter selection
-- valid and invalid action handling
-- quest transitions
-- codex unlock conditions
-- failure and completion states
-- AI fallback behavior
-- schema rejection for malformed AI output
-
-Avoid brittle tests that assert large prose strings unless testing a fixed fallback.
-
-When fixing a gameplay bug, add a regression test when reasonable.
-
----
-
-## Change Discipline
-
-Before implementing a task:
-
-1. inspect the existing repository
-2. read relevant documentation
-3. identify the smallest playable change
-4. avoid unrelated refactors
-5. preserve existing behavior unless the task requires changing it
-
-During implementation:
-
-- keep changes focused
-- use clear names
-- avoid premature abstractions
-- update tests alongside rules
-- keep player-facing text easy to revise
-- document important tradeoffs briefly
-
-After implementation:
-
-- run available tests
-- run type checking
-- run linting if configured
-- verify the main gameplay path manually when possible
-- summarize what changed and any known limitations
 
 Do not claim a command succeeded unless it was actually run successfully.
 
 ---
 
-## Scope Control
+## Design decisions here are measured, and the measurement lives in the code
 
-When a request is ambiguous, prefer the interpretation that:
+This is the most important thing to know about this repository.
 
-- produces a playable result sooner
-- introduces fewer systems
-- modifies fewer files
-- is easier to remove or change
-- provides useful playtest feedback
+Tuning constants and content shapes carry long comments recording **what was measured, what the alternatives scored, and what was tried and reverted.** Before proposing a design or balance change, read the comments in the file you are about to change. The experiment has often already been run.
 
-Before implementing a feature significantly outside the current prototype, clearly flag the scope increase.
+Examples of where this lives: `src/content/journey.ts` (starting resources, fork rate, route odds), `src/content/events.ts` (why places all offer the same trades), `src/content/village.ts` (why a fourth villager was cut), `src/core/game-state.ts` (why the codex persists), `src/core/arrival.ts` (why the ending gate is a conjunction).
 
-Examples of scope increases:
+When you change a measured constant, update the comment with the new evidence. A constant with a stale justification is worse than one with none.
 
-- real-time movement
-- tactical grid combat
-- procedural world simulation
-- complex crafting
-- large inventories
-- multiplayer
-- account systems
-- cloud saves
-- custom content editors
-- Unity migration
-- fully autonomous AI agents
-
-Do not implement these incidentally.
+`VISION.md` § *What We Have Learned* holds the short versions of the most expensive lessons.
 
 ---
 
-## Refactoring Rules
+## Architecture
 
-Refactor when:
+Actual structure:
 
-- current code blocks a requested feature
-- tests are difficult because responsibilities are mixed
-- duplicated rules are already causing inconsistent behavior
-- a module has become difficult to understand
+```text
+src/
+├── core/      # rules: game-state, actions, reducer, rng, weather, arrival
+├── content/   # authored data: journey, village, events, weather, encounters/
+├── ui/        # App.tsx and screens
+└── main.tsx
+```
 
-Do not refactor because a future system might someday need a cleaner abstraction.
+Dependency direction:
 
-Prefer small, local refactors attached to a player-facing improvement.
+```text
+UI → core → content
+```
 
----
+- `src/core/` imports no React, no DOM, no `Date`, no `Math.random`, no network.
+- `src/content/` is the **bottom of the chain**: it imports nothing from `src/core/` (tests excepted). Content-to-content imports are fine.
+- Side effects live outside the reducer and the rules layer.
 
-## Definition of Done
+### Stack
 
-A feature is complete when:
+Vite + React + TypeScript + Vitest. Runtime dependencies are **`react` and `react-dom` only.**
 
-- it supports the intended playable behavior
-- game rules are deterministic where expected
-- error and fallback behavior is reasonable
-- relevant tests pass
-- TypeScript checks pass
-- no unnecessary system was introduced
-- documentation is updated when behavior or architecture changed
-
-For AI-assisted features, completion also requires:
-
-- validated output
-- graceful fallback
-- no exposed secrets
-- game state independent from generated prose
+Adding a dependency needs a current, demonstrated reason. Prefer solving it with what is here.
 
 ---
 
-## Agent Communication
+## Determinism
 
-When reporting work:
+Gameplay randomness comes from the seeded source in `src/core/rng.ts`. Never call `Math.random()` in game rules.
 
-- begin with the player-facing or architectural result
-- list important files changed
-- mention tests and commands actually run
-- state limitations honestly
-- call out decisions that may affect future work
+**Derived values must not consume a roll.** Anything read off the journey outside the encounter script — weather, whether a leg forks, which situation, which species the knowledge villager teaches — is keyed on a salted side-stream (`WEATHER_SALT`, `FORK_SALT`, `SITUATION_SALT`, `LONE_ROUTE_SALT`, `VILLAGE_SALT`) so that reading it never advances `rngState`. Follow this pattern for any new derived value.
 
-Do not bury important limitations under a long implementation diary.
+Weather is keyed on `state.seed`, not `rngState`: `rngState` advances a different number of rolls per leg, so a question about a given leg must not depend on how the road played out getting there.
+
+**`speciesList` and `encounters` in `src/content/encounters/index.ts` are order-sensitive.** The reducer indexes them with seeded rolls, so reordering either rewrites every existing seed's encounter script. Both orders are pinned by test.
 
 ---
 
-## Final Decision Rule
+## AI integration
 
-When uncertain, choose the option that best supports this sentence:
+> Code decides what happened. AI decides how it is described.
+
+- Every AI-assisted feature needs a deterministic or authored fallback. The game must be fully playable with no key, no network, a timeout, or invalid output.
+- No AI calls inside reducers or state-transition functions.
+- No provider API keys in browser code.
+- Validate structured responses at runtime; clamp or reject unsupported values.
+- Cache generated content; do not call the API for every small UI interaction.
+- Never persist game state that exists only inside generated prose.
+
+See `VISION.md` § *AI Makes People Feel Alive* for what AI is and is not allowed to decide.
+
+---
+
+## State transitions
+
+Explicit player actions, pure transitions:
+
+```ts
+type GameAction =
+  | { type: "START_JOURNEY"; seed: number }
+  | { type: "TRAVEL"; routeId: string }
+  | { type: "CHOOSE_ENCOUNTER_OPTION"; optionId: string }
+  | { type: "CHOOSE_VILLAGE_OPTION"; optionId: string };
+```
+
+Invalid actions — an id the current state does not offer — are ignored, not thrown.
+
+Transitions must be predictable, testable, free of network and UI side effects, and explicit about randomness.
+
+---
+
+## Testing
+
+Test game rules, not UI snapshots. Priorities: resource changes, seeded selection, invalid action handling, codex unlock conditions, failure and completion states, AI fallback, schema rejection.
+
+Avoid asserting long prose strings unless the point is a fixed fallback.
+
+**A green suite is not evidence.** Multiple tests in this repo have been found that could not fail — every one inside a passing suite, every one found only by breaking the implementation on purpose. Mutate the code before believing a test bites.
+
+When fixing a gameplay bug, add a regression test.
+
+---
+
+## Change discipline
+
+Before implementing: read the repo and the relevant docs, identify the smallest playable change, avoid unrelated refactors, preserve existing behavior unless the task requires changing it.
+
+Keep the repository runnable and playable after every meaningful change. Prefer vertical slices over disconnected infrastructure.
+
+Refactor when current code blocks a requested feature, when mixed responsibilities make tests hard, or when duplicated rules are already causing inconsistent behavior. Not because a future system might want a cleaner abstraction. A little duplication is fine when it keeps the prototype easy to change.
+
+Build the game, not an engine: no plugin systems, no DI framework, no ECS, no scripting engine, no editors, no modding or multiplayer abstractions, no factories for a single implementation.
+
+When a request is ambiguous, prefer the interpretation that is playable sooner, introduces fewer systems, touches fewer files, and is easier to remove.
+
+**Flag scope increases explicitly** before implementing something outside the current direction. `VISION.md` § *Things We Intentionally Avoid* is the standing list.
+
+---
+
+## Working agreements
+
+- **Never push without being asked.**
+- The repo is public, deliberately. **Never change its visibility.**
+- Sweep and playtest harnesses are throwaway and never committed — `git status` must come back clean.
+- **Nothing about fun has been settled by measurement.** The simulation finds dominant strategies and dead options. It cannot tell you whether anyone wants a second journey; only a person playing it can.
+
+---
+
+## Definition of done
+
+- The intended playable behavior works.
+- Rules are deterministic where expected; fallbacks are reasonable.
+- `npm test` and `npm run typecheck` pass.
+- No unnecessary system was introduced.
+- Docs updated when behavior or architecture changed; measured comments updated when a constant moved.
+
+## Reporting work
+
+Lead with the player-facing or architectural result. List the files that matter. Say which commands were actually run. State limitations honestly and up front — do not bury them under an implementation diary.
+
+---
+
+## Final decision rule
 
 > Project Wander should become a fun, replayable fantasy journey before it becomes a sophisticated software system.
