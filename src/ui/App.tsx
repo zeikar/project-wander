@@ -270,6 +270,19 @@ function TitleScreen({ dispatch }: { dispatch: Dispatch<GameAction> }) {
   );
 }
 
+// How far it is, said in the village where the first spend happens.
+// Takes its two figures rather than reading `journey` itself, for one reason:
+// a version that read the singleton could not be TESTED for deriving them. The
+// shipped road is 8 legs, so a hand-typed "8" and `journey.legs.length` render
+// the identical string and a test comparing them agrees with both — which is a
+// test that cannot fail, the exact class this project has now found four times.
+// Parameterized, `roadAhead("Somewhere", 3)` pins the derivation outright.
+// Exported for its unit test: this file has no JSX-rendering harness, so the
+// pure string function is tested directly, the same way `costHint` is.
+export function roadAhead(destination: string, legs: number): string {
+  return `${destination} is ${legs} legs of road from here.`;
+}
+
 function VillageScreen({
   state,
   dispatch,
@@ -286,6 +299,22 @@ function VillageScreen({
     <div className="screen">
       <StatRow state={state} />
       <p className="weather-line">{weatherProse[weather].line}</p>
+      {/* How far it is, and what the far end weighs — both stated HERE, because
+          the morning is the first thing the traveler spends and neither was on
+          screen when they spent it. The road's length only appeared once the
+          first leg had already begun ("Leg 1 of 8"), and the gate's two axes
+          only on that same screen, so the choice between a loaf, a mended strap
+          and an animal's name was made without either number. That is the
+          defect this pair of lines closes: not a new channel, just saying at
+          the moment of the decision what the rules had already decided.
+          A research pass put it plainly — information the player cannot act on
+          is worth nothing, and this project has cut two features for exactly
+          that. The reverse also holds: a fact they could have acted on, shown
+          one screen too late, is the same waste seen from the other side. */}
+      <p className="leg-progress">
+        {roadAhead(journey.arrival.name, journey.legs.length)}
+      </p>
+      <p className="departure">{journey.arrival.departure}</p>
       <h2>{village.name}</h2>
       <p>{village.description}</p>
       {/* What is already in the notebook is exactly what the trapper's offer
@@ -377,12 +406,13 @@ function TravelScreen({
         The road takes a meal at the end of every leg. With nothing left to eat,
         it takes {HUNGRY_TRAVEL_HP_LOSS} HP instead.
       </p>
-      {/* Departure only. The traveler needs to know what the gate weighs BEFORE
-          they start spending; repeating it every leg would be nagging about
-          something eight legs away. */}
-      {state.legIndex === 0 && (
-        <p className="departure">{journey.arrival.departure}</p>
-      )}
+      {/* The gate's two axes used to be stated here, on the first leg only, on
+          the reasoning that the traveler must know what it weighs BEFORE they
+          start spending. That reasoning now points one screen earlier: the
+          village morning is the first spend, so the line moved there and is not
+          repeated here. Repeating it every leg would be nagging about something
+          eight legs away, and repeating it once more on leg 1 would be nagging
+          about something said ten seconds ago. */}
       <p className="leg-progress">
         Leg {state.legIndex + 1} of {journey.legs.length}
       </p>
