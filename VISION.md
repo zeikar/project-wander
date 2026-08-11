@@ -128,9 +128,15 @@ Knowledge is permanent and resources are not. A traveler who is about to lose th
 
 Pricing observation against the resources of a single run does not fix this, because the run is the cheap thing.
 
-Layers are what defuse it. If a species holds five layers and a meeting teaches at most one, observing is not a gate you pass once — it is an option that comes back and has to win **again**, against everything else on the menu. Later layers should also **cost conditions rather than resources**: a particular sky, a particular item, a body that is not already hurt. Then "can I afford to watch *this* one, today" is a real question, and a traveler can knowingly walk past something they would like to know.
+**Layers do not fix this**, and it is worth being clear about why, because they look like they do. Splitting a permanent reward across five layers turns one automatic purchase into five. Requiring a particular sky or item is an **access condition, not a price**: fail it and there was no choice, meet it and watching is automatic again. Layers change how often the question is asked, never how it is answered.
 
-This is unproven. It replaces one measured collapse with an argument, and it must be measured across repeated runs — not one — before it is believed.
+The only thing that can outbid permanent knowledge is **other permanent knowledge.**
+
+So the cost of watching this animal has to be **not learning something else** — the place further on you now will not reach, the person who will have moved on, the animal at the next turning. Then observation competes with itself, and a traveler can pass something by knowing exactly what they are giving up.
+
+That makes the currency under pressure **the road itself** — legs, daylight, how far you get — rather than hp and food, which the run resets anyway. It is the same answer as the pillar below: what is lost is the point.
+
+This is an argument, not a measurement. It replaces one measured collapse with reasoning and must be tested across repeated runs before it is believed.
 
 ### The trap: an answer key ends the game
 
@@ -159,7 +165,11 @@ If arriving in a village resets the road's cost, then the road before it stopped
 
 A cap on **one** bed does not achieve this. Anything repeatable — work for coin, coin for a bed, repeat — restores everything eventually and turns the village into an errand. The limit has to sit on the **visit**, not on any single thing bought inside it.
 
-The shape is already proven here: Ashfold is one morning and exactly one of three people. A village should be a **bounded number of choices**, and staying longer should be one of the things that number is spent on.
+Ashfold is the precedent for the **shape** — one morning, exactly one of three people — and for nothing more. It has never tested an inn, a shop, work, coin, or a visit made of several actions, so it proves that an exclusive choice works, not that a visit budget will.
+
+A bounded number of actions is also not sufficient on its own: spend them all on beds and the traveler is whole again. So the invariant is stated separately and must hold however the actions are spent —
+
+> **The most HP one village visit can return is less than a full recovery.**
 
 ---
 
@@ -252,13 +262,15 @@ The road already trades these against each other — a cache swaps preparation f
 
 **Coin is that conversion made reliable, and it happens in villages.** A night at the inn or a thing on a shelf — one purse, two ways to spend it, at a place you chose to walk to. Liquidity is the job, not the existence of the trade.
 
-This is also where coin is most likely to fail. If a shelf sells food, coin becomes a food voucher and inherits food's dominance, and the inn will never compete with it. **What the shelf sells is the decision that makes or breaks coin**, and it has to be settled with measurement, not assertion.
+This is also where coin is most likely to fail. The standing hypothesis: **a shelf that sells food turns coin into a food voucher**, and it inherits food's dominance the way every food-bearing option in this game has so far. Whether a bed can compete with a meal is unknown and has to be measured, not asserted. **What the shelf sells is the decision that makes or breaks coin.**
 
 ## The rule that keeps coin honest
 
-**Coin is worthless on the road.**
+**Coin cannot be spent on the road.**
 
-There is nothing to buy between villages. Money is dead weight out there, and it becomes value only when you walk through a gate. This is what keeps the road about what you carry rather than what you can afford, and it is what stops coin from becoming a second, blurrier food.
+There is nothing to buy between villages. Coin is stored purchasing power for the next gate — worth carrying, but useless where the journey actually happens. That is what keeps the road about what you carry rather than what you can afford.
+
+It is a weaker guarantee than it looks, and the doc should not overstate it. Weightless stored value is still value, so coin does not stop being a resource out there; it only stops being usable. Whether that is enough to keep it from becoming a second, blurrier food depends entirely on what the shelf sells.
 
 Do not let coin solve an encounter. Ever.
 
@@ -295,7 +307,13 @@ The codex is finite, because everything authored is finite. Pretending otherwise
 
 So the saturated state has to be **designed for, and it has to be the best version of the game.** A traveler who knows everything should not run out of reasons to walk; the road should simply be more legible to them — signs that meant nothing now mean something, and a journey they would once have survived they can now read.
 
-**Knowledge stops being the reward and becomes the lens.** What varies after that is the journey: which villages, which weather, which animals in which situations, what work was going.
+**Knowledge stops being the reward and becomes the lens** — and that has to be a loop, not a mood. Here is the concrete one:
+
+> Ignorance hides the conflict. Knowledge reveals it.
+>
+> A traveler who cannot read a road does not know that both ways had something on them, so nothing was missed as far as they can tell. A traveler who knows everything **can see that this fork holds two things worth having, and that one of them is not going to happen today.**
+
+So the full codex does not empty the *What is Lost* pillar — it is what finally makes it bite. Early journeys lose things invisibly. Late journeys lose them **on purpose, knowingly, and that is the harder game.** What varies underneath is the seed: which villages, which weather, which animals in which situations, what work was going.
 
 There is already a counterexample shipping. Learn all five species and the departure morning **withdraws** the trapper, offering two choices instead of three — the saturated state is strictly worse than the ignorant one. That is the failure this section exists to forbid. Every system should be checked against a full codex before it ships.
 
@@ -303,12 +321,12 @@ There is already a counterexample shipping. Learn all five species and the depar
 
 # Animals and Monsters
 
-The codex holds two kinds of thing, and the difference between them is **whether ordinary sense works.**
+The codex holds two kinds of thing, and the difference between them is **whether ordinary sense is enough.**
 
-| | Common sense | What the codex is worth |
+| | Ordinary sense | What the codex is worth |
 |---|---|---|
-| **Animals** | works | you can guess well without it; knowing makes you better |
-| **Monsters** | **misleads** | guessing wrong is worse than not guessing at all |
+| **Animals** | enough — you can guess and be right | knowing makes a good guess better |
+| **Monsters** | **not enough, and the creature says so** | knowing is what turns a warning into an answer |
 
 An animal behaves the way a player already expects a boar or a wolf to behave. That is a strength — the player arrives with priors and the road can play against them — but it caps how strange the world can get. Nobody is astonished by a wolf.
 
@@ -318,20 +336,20 @@ That makes the codex worth **more** on a monster than on an animal, which is whe
 
 ## Monsters are a knowledge problem, not a combat problem
 
-A monster is dangerous in proportion to **how confidently it can be read wrong.**
+The material is not the creature's strength. It is that **the traveler's ordinary reading of the situation is wrong** — and that being wrong is survivable only if the creature says so first.
 
-That is the whole design. The material is not the creature's strength, it is the traveler's certainty: something that presents a signal a person already knows how to interpret, and does not mean by it what a person would mean.
+A misread nobody could see coming is not a lesson, it is a gotcha. This project already measured that **a choice the player cannot read is not a choice**, and a monster that punishes ordinary sense without warning breaks exactly the rule the roads were fixed to obey.
 
-But a misread the player had no way to see coming is not a lesson, it is a gotcha — and this project already measured that **a choice the player cannot read is not a choice.** A monster that punishes ordinary sense without warning breaks the same rule the roads were fixed to obey.
+So the anomaly is readable on sight: an animal doing what no animal does, a quiet where there should not be one, a shape that is nearly right. And it must say **what kind of wrongness** — that this thing is not hunting, or is not alone, or is not what it is imitating. The precedent is the road signs, which name a kind and never a species, measured to recover almost all the value of naming the animal outright. A warning that says only "something is off" gives every monster the same two buttons: watch it, or leave.
 
-So the monster telegraphs **that something is wrong here, never what.** The anomaly is readable on sight: an animal doing something no animal does, a quiet where there should not be one, a shape that is nearly right. What the traveler cannot read is *how* their expectation fails — that arrives journeys later, and that is the locked door.
+What the traveler still cannot read is *why* — the mechanism, the rule behind it, what it means for the next one of these. That is the locked door, and it opens journeys later.
 
 The test, then:
 
 - An **animal** is something you can guess at, and be right.
-- A **monster** shows you, before it costs anything, that **your guess is unsafe.**
+- A **monster** tells you, before it costs anything, **which of your guesses is unsafe** — and not yet why.
 
-A monster earns its place by being misreadable **in a way you were fairly warned about**, not by having more hp.
+A monster earns its place by being misreadable **in a way it warned you about**, not by having more hp.
 
 Two failure modes to hold the line against:
 
@@ -423,7 +441,7 @@ Small enough to finish, long enough to have a shape.
 
 - three or four villages on one road
 - a far destination
-- many species, each met in more than one situation and known in layers
+- **the five species that already exist, and no new ones** — each met in more than one situation, and known in layers
 - an inn, a shop, and work in each village
 - a handful of items
 - coin
@@ -431,7 +449,11 @@ Small enough to finish, long enough to have a shape.
 - the codex, persisting across journeys
 - roughly 30 minutes per journey
 
-**Build the layers before the species list.** Depth is the part that can be got wrong: a layer structure that works on four animals will widen cheaply, and one that does not will have to be unwritten on forty. Prove that meeting the same animal twice is worth something, then add animals.
+**Build the layers before the species list**, and add no animals at all until they work. Depth is the part that can be got wrong, and a layer structure that fails will have to be unwritten from every species carrying it.
+
+Widening is not a content drop, either. The road picks a **species** first, so every animal added directly lowers the rate at which any one of them is met twice — and meeting the same animal twice is the input layers live on. Adding situations moves the per-species feeding ratio, which is the largest difficulty lever in the game. **Adding a species or a situation is a rebalance of the whole road, and needs the baselines re-measured.**
+
+The long-term want is still many animals, each deep. The prototype is how to earn the right to write them.
 
 The objective is not content.
 
