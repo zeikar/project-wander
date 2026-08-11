@@ -132,9 +132,11 @@ Pricing observation against the resources of a single run does not fix this, bec
 
 The only thing that can outbid permanent knowledge is **other permanent knowledge.**
 
-So the cost of watching this animal has to be **not learning something else** — the place further on you now will not reach, the person who will have moved on, the animal at the next turning. Then observation competes with itself, and a traveler can pass something by knowing exactly what they are giving up.
+So the cost of watching this animal has to be **not learning something else.** Then observation competes with itself, and a traveler can pass something by knowing exactly what they are giving up.
 
-That makes the currency under pressure **the road itself** — legs, daylight, how far you get — rather than hp and food, which the run resets anyway. It is the same answer as the pillar below: what is lost is the point.
+Concretely, and as one rule rather than three: **a leg can hold more than one thing worth knowing, and the traveler resolves exactly one of them.** The animal and the place are both there, both readable, and choosing either ends the leg.
+
+No global clock, no daylight meter, no separate time resource. The existing shape already carries this — one choice completes a leg — and the whole cost is that the other thing was standing right there. Adding a time budget instead would drag the run's end condition and every village's rules along with it, for a decision the leg can already express.
 
 This is an argument, not a measurement. It replaces one measured collapse with reasoning and must be tested across repeated runs before it is believed.
 
@@ -154,22 +156,20 @@ A village is where the journey takes a breath.
 
 A village offers:
 
-- a bed, for some of your health back
+- a bed, for as much of your health back as you are willing to pay for
 - goods, for what you can afford
 - work, for coin and for a reason to be here
 - people, who know things
 
-A village must **never** fully restore the traveler.
+A village **may** put a traveler back on their feet completely. What it must never do is give it away.
 
-If arriving in a village resets the road's cost, then the road before it stopped mattering, and so did every decision on it. The village should always leave you a little short of whole.
+The rule is a **price, not a cap**: full recovery is on the shelf, and it costs enough that taking it is giving up whatever else the purse could have bought. A traveler who arrives wrecked can leave whole and leave poor. That is a decision. An arbitrary ceiling on healing is not.
 
-A cap on **one** bed does not achieve this. Anything repeatable — work for coin, coin for a bed, repeat — restores everything eventually and turns the village into an errand. The limit has to sit on the **visit**, not on any single thing bought inside it.
+This works because hp is not what carries the journey's arc — **the road is.** What cannot be recovered in a village is the thing walked past three legs ago, and no amount of coin buys that back. So resetting hp costs the run nothing it needed.
 
-Ashfold is the precedent for the **shape** — one morning, exactly one of three people — and for nothing more. It has never tested an inn, a shop, work, coin, or a visit made of several actions, so it proves that an exclusive choice works, not that a visit budget will.
+The one thing to watch is the leg before a gate, where damage is nearly free. The price is what answers it: arrive in pieces and the purse empties on the bed, so there is nothing left for the shelf.
 
-A bounded number of actions is also not sufficient on its own: spend them all on beds and the traveler is whole again. So the invariant is stated separately and must hold however the actions are spent —
-
-> **The most HP one village visit can return is less than a full recovery.**
+Ashfold is the precedent for the **shape** — one morning, exactly one of three people — and for nothing more. It has never tested an inn, a shop, work, coin, or a visit made of several actions, so it proves that an exclusive choice works, not that a visit budget will. A village should still be a **bounded number of choices**; staying longer is one of the things that number is spent on.
 
 ---
 
@@ -309,11 +309,11 @@ So the saturated state has to be **designed for, and it has to be the best versi
 
 **Knowledge stops being the reward and becomes the lens** — and that has to be a loop, not a mood. Here is the concrete one:
 
-> Ignorance hides the conflict. Knowledge reveals it.
+> Ignorance sees **that** there is a choice. Knowledge sees **what it costs.**
 >
-> A traveler who cannot read a road does not know that both ways had something on them, so nothing was missed as far as they can tell. A traveler who knows everything **can see that this fork holds two things worth having, and that one of them is not going to happen today.**
+> Every traveler can tell there is something on both ways — that much has to be legible from the first journey, or the fork is not a choice at all. What ignorance cannot do is price it. A traveler who knows everything sees that this fork holds two things **worth having**, knows roughly what each is worth, and knows which one is not going to happen today.
 
-So the full codex does not empty the *What is Lost* pillar — it is what finally makes it bite. Early journeys lose things invisibly. Late journeys lose them **on purpose, knowingly, and that is the harder game.** What varies underneath is the seed: which villages, which weather, which animals in which situations, what work was going.
+So the full codex does not empty the *What is Lost* pillar — it is what finally makes it bite. Early journeys lose things vaguely: you knew you were passing something. Late journeys lose them **exactly, on purpose, and that is the harder game.** What varies underneath is the seed: which villages, which weather, which animals in which situations, what work was going.
 
 There is already a counterexample shipping. Learn all five species and the departure morning **withdraws** the trapper, offering two choices instead of three — the saturated state is strictly worse than the ignorant one. That is the failure this section exists to forbid. Every system should be checked against a full codex before it ships.
 
@@ -424,7 +424,7 @@ Every figure below was measured on the loop that exists today — an eight-leg r
 - large inventories
 - crafting
 - giant open worlds
-- villages that fully heal
+- villages that heal for free (healing fully is fine; healing without giving something up is not)
 - coin that solves encounters
 - knowledge that ends encounters instead of opening them
 - monsters that are animals with bigger numbers
