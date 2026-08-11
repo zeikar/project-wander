@@ -1,24 +1,26 @@
 # Project Wander
 
-> A procedural AI-assisted fantasy travel RPG focused on exploration, discovery, and memorable journeys.
+> A seeded fantasy travel RPG about walking from village to village, learning what lives on the road, and leaving before you have seen everything.
 
 ---
 
 # Vision
 
-Project Wander is **not** a traditional RPG about saving the world.
+Project Wander is **not** a game about saving the world.
 
-It is a game about **traveling through a fantasy world because the world itself is worth exploring.**
+It is a game about **traveling through a world worth paying attention to.**
 
-The player is an adventurer driven by curiosity rather than destiny.
+The player is a traveler, not a hero.
 
-The goal is not to become the strongest hero.
+The goal is not to become strong.
 
-The goal is to experience many different journeys.
+The goal is to understand a little more of the world than you did last time.
+
+The tone is quiet. A long road, small towns on it, weather, and a destination that matters far less than what happened getting there.
 
 When players finish a run, we want them to say:
 
-> "That was a great journey."
+> "I want to see what else is out there."
 
 instead of
 
@@ -28,19 +30,38 @@ instead of
 
 # Core Fantasy
 
-You are a young adventurer.
+You are a traveler.
 
-You leave your hometown simply because the world is larger than you imagined.
+You are walking a long road, and there are villages on it.
 
-You travel through villages, forests, ruins, mountains and forgotten roads.
+Between the villages there is weather, animals, strangers, and things people left behind.
 
-You meet strangers.
+In the villages there are beds, shops, work, and people who know things you do not.
 
-You discover creatures.
+You will not see all of it.
 
-You solve problems.
+---
 
-You slowly learn how this world works.
+# The Shape of a Journey
+
+A journey is a **chain**, not a road with an end:
+
+```text
+Village
+  → Road
+      → Village
+          → Road
+              → Village
+                  → ... → the far destination
+```
+
+The road is where the game happens.
+
+The village is where you decide what to spend, what to carry, and whether to stay another day.
+
+A run ends when you reach the far destination, or when the road ends you.
+
+The destination exists because the journey needs one. It is not the point.
 
 ---
 
@@ -48,87 +69,165 @@ You slowly learn how this world works.
 
 ## 1. Journey over Destination
 
-The destination exists only because the journey needs one.
-
 The road itself is the game.
 
-Travel should always create stories.
+Travel must always be able to create a story: a fork, a sky, an animal, a stranger, a thing found.
 
-Examples:
-
-- choosing different routes
-- random encounters
-- weather
-- camping
-- companions
-- villages
-- unexpected discoveries
+Travel must never feel like the loading screen between villages.
 
 ---
 
-## 2. Discovery over Grinding
+## 2. Knowledge is the Progression
 
-The game rewards curiosity.
+This is a **codex roguelike**. What carries across journeys is **what you know**, not what you own.
 
-Players should constantly discover:
+A finished journey leaves behind:
 
-- new places
-- new monsters
-- new NPCs
-- new stories
-- new solutions
+- entries in the codex
+- an understanding of how animals behave
+- knowledge of what a road looks like before it goes wrong
 
-The game should never become repetitive monster farming.
+A finished journey does **not** leave behind:
+
+- levels
+- permanent stat increases
+- an equipment collection
+- a bank of gold
+
+The traveler does not get stronger. The **player** does.
+
+That puts the whole game on one bet: **the knowledge itself has to be worth having.** Three things make it so, and a fourth kills it.
+
+### Show the locked door first
+
+Learning something is only satisfying if you knew you were missing it.
+
+The world should keep doing things the traveler cannot explain — an animal behaving oddly, a villager saying something that does not parse yet, a thing on the road with no obvious use. Ignorance has to be **visible** before knowledge can be a payoff.
+
+An option that simply appears once you know the animal is not a payoff. Nobody was waiting for it.
+
+### Deep and wide
+
+Many animals, and many layers on each.
+
+A species is not one fact. It is behaviour, habitat, what it wants, what it avoids, what it does under a particular sky, what it does to somebody else's food. The traveler should be able to meet the same animal on their tenth journey and still learn something.
+
+Wide alone is a checklist you finish. Deep alone is a small world. This game wants both.
+
+### Knowledge multiplies
+
+Two things known together should do what neither does alone.
+
+Knowing the bees, and knowing what wind does, is knowing when the comb can be taken. That third fact is the one nobody wrote down — but be exact about what is emergent and what is not. **The intersection is authored** (weather already reprices and closes specific options by hand); what falls out of the pair is the player's inference, not the content.
+
+So depth comes from combination, and combination still costs authoring. Species against weather, against items, against places, against the situation they turn up in — those axes exist, but multiplying them blindly buys a large table of inert cells. **Author the intersections that change a readable decision, and leave the rest empty.** A cross-product is a budget, not a feature.
+
+### The other trap: observation as the new answer key
+
+Knowledge is permanent and resources are not. A traveler who is about to lose their hp and food at the end of the run anyway should, in pure metagame terms, **always stop and watch** — which makes the first meeting with any species a non-decision, exactly the way a known animal's free answer used to be.
+
+Pricing observation against the resources of a single run does not fix this, because the run is the cheap thing.
+
+Layers are what defuse it. If a species holds five layers and a meeting teaches at most one, observing is not a gate you pass once — it is an option that comes back and has to win **again**, against everything else on the menu. Later layers should also **cost conditions rather than resources**: a particular sky, a particular item, a body that is not already hurt. Then "can I afford to watch *this* one, today" is a real question, and a traveler can knowingly walk past something they would like to know.
+
+This is unproven. It replaces one measured collapse with an argument, and it must be measured across repeated runs — not one — before it is believed.
+
+### The trap: an answer key ends the game
+
+Knowledge must be an **edge, not an answer.**
+
+Knowing an animal should **open a choice, not settle one.** The moment a known species has one correct button, the encounter is over before it starts — and once the codex is full, so is the game.
+
+This is not a theory, and the history is worth keeping straight. Carrying the codex between journeys once collapsed every later run into one fixed table of answers, matching on 300 of 300 seeds — and the first diagnosis, that persistence was the culprit, was wrong. The actual cause was that a known animal's answer cost nothing and beat every alternative on every axis, so knowing an animal **ended** its encounter instead of informing it. Once knowing widened the menu rather than settling it, the codex could persist safely. That is how it ships today.
 
 ---
 
-## 3. AI Makes People Feel Alive
+## 3. Villages are Punctuation, not Refuge
 
-AI exists to make characters believable.
+A village is where the journey takes a breath.
 
-AI should primarily generate:
+A village offers:
 
-- NPC dialogue
-- companion dialogue
-- quest descriptions
+- a bed, for some of your health back
+- goods, for what you can afford
+- work, for coin and for a reason to be here
+- people, who know things
+
+A village must **never** fully restore the traveler.
+
+If arriving in a village resets the road's cost, then the road before it stopped mattering, and so did every decision on it. The village should always leave you a little short of whole.
+
+A cap on **one** bed does not achieve this. Anything repeatable — work for coin, coin for a bed, repeat — restores everything eventually and turns the village into an errand. The limit has to sit on the **visit**, not on any single thing bought inside it.
+
+The shape is already proven here: Ashfold is one morning and exactly one of three people. A village should be a **bounded number of choices**, and staying longer should be one of the things that number is spent on.
+
+---
+
+## 4. What is Lost
+
+The pressure in this game is **not** starving to death.
+
+The pressure is **passing something by.**
+
+A journey should be able to end with the traveler alive, well fed, and quietly aware that they walked past a thing they will now never know about.
+
+The codex is the record of what you did not miss.
+
+Death should exist. It should not be the main thing at stake.
+
+---
+
+## 5. Small Stories over Epic Destiny
+
+Personal stories over world-ending ones:
+
+- a villager who wants something found
+- a night out of the rain
+- an animal doing something you did not expect
+- someone met once, on one road, who does not come back
+
+These are the moments the game is made of.
+
+---
+
+## 6. AI Makes People Feel Alive
+
+AI exists to make characters and places believable.
+
+AI generates:
+
+- village people and their talk
+- how a quest is asked for
+- companion and NPC reactions
 - rumors
-- reactions
-- storytelling
+- descriptions of a specific moment
+- the account of a finished journey
 
-AI does NOT control gameplay rules.
+AI does **not** decide:
 
-Game rules are deterministic.
+- what an option costs
+- whether something worked
+- what a quest rewards
+- what the codex learned
+- anything that is saved
 
----
+> Code decides what happened. AI decides how it is described.
 
-## 4. Small Stories over Epic Destiny
-
-Personal stories are more important than saving the world.
-
-Examples:
-
-- helping a lonely villager
-- camping during rain
-- finding an abandoned tower
-- protecting a traveling merchant
-- discovering an unknown creature
-
-These moments should be memorable.
+The game must be fully playable with AI turned off.
 
 ---
 
-## 5. Every Journey is Different
+## 7. Every Journey is Different
 
-Every run should feel different.
+Runs are seeded and reproducible.
 
-Randomization should affect:
+What varies between journeys:
 
-- regions
-- NPC relationships
-- monster traits
-- quests
-- encounters
-- companions
+- which villages are on this road, and how far apart
+- weather
+- which animals, in which situations
+- what work the villages have
+- what is found on the road
 
 The player should always wonder:
 
@@ -136,126 +235,143 @@ The player should always wonder:
 
 ---
 
-# Player Fantasy
+# Resources
 
-The player is NOT:
+Keep the count small. Every resource must create a decision, not a chore.
 
-- The chosen one
-- A legendary hero
-- A king
-- A god
+| Resource | What it is | Where it is spent |
+|---|---|---|
+| **HP** | what the road takes out of you | encounters, hungry legs |
+| **Food** | what keeps the road from taking it | every leg walked |
+| **Preparation** | what you are carrying and ready to use | encounter options that need kit |
+| **Coin** | the only thing hp and capability share a price on | **villages only** |
 
-The player IS:
+## Why coin exists
 
-- an adventurer
-- a traveler
-- a curious explorer
+The road already trades these against each other — a cache swaps preparation for food, a comb costs blood and pays in meals — but only **where and when the road happens to offer it.** A wounded traveler carrying a full pack cannot decide to convert; they can only wait to be offered.
 
----
+**Coin is that conversion made reliable, and it happens in villages.** A night at the inn or a thing on a shelf — one purse, two ways to spend it, at a place you chose to walk to. Liquidity is the job, not the existence of the trade.
 
-# Core Gameplay Loop
+This is also where coin is most likely to fail. If a shelf sells food, coin becomes a food voucher and inherits food's dominance, and the inn will never compete with it. **What the shelf sells is the decision that makes or breaks coin**, and it has to be settled with measurement, not assertion.
 
-Accept Journey
+## The rule that keeps coin honest
 
-↓
+**Coin is worthless on the road.**
 
-Travel
+There is nothing to buy between villages. Money is dead weight out there, and it becomes value only when you walk through a gate. This is what keeps the road about what you carry rather than what you can afford, and it is what stops coin from becoming a second, blurrier food.
 
-↓
+Do not let coin solve an encounter. Ever.
 
-Encounter
+## Resources we are not adding
 
-↓
+Thirst, temperature, fatigue, morale, encumbrance, durability, disease, food spoilage.
 
-Make Choices
-
-↓
-
-Camp
-
-↓
-
-Continue Journey
-
-↓
-
-Complete Objective
-
-↓
-
-Return
-
-↓
-
-Start Another Journey
+Not unless play demonstrates a specific need. Each one is a chore until proven otherwise.
 
 ---
 
-# AI Philosophy
+# The Codex
 
-AI is a storyteller.
+The codex is a travel journal, not a collection.
 
-AI is NOT the game engine.
+It records what the traveler learned about a **species** — not about one meeting with one. What you learn about an animal holds wherever that animal turns up.
 
-The engine determines:
+An entry is not a single fact. It fills in over many journeys, a layer at a time, and an animal met often should still have something left to give.
 
-- combat
-- rewards
-- resources
-- probabilities
-- progression
-- world state
+Codex knowledge may unlock:
 
-AI generates:
+- a way through that the traveler could see but not take
+- an explanation for something the road kept doing
+- a better reading of what is on a road before walking it
+- something to say to someone who also knows
 
-- dialogue
-- descriptions
-- personalities
-- emotional reactions
-- flavor text
+Codex entries that exist only to be collected do not belong here.
 
-If AI is disabled, the game must still be fully playable.
+**The codex persists across journeys. Nothing else does.**
+
+## The full codex is a design target, not an accident
+
+The codex is finite, because everything authored is finite. Pretending otherwise just makes "unlocks you have not got yet" into the retention mechanism, which is exactly what the success metric below refuses.
+
+So the saturated state has to be **designed for, and it has to be the best version of the game.** A traveler who knows everything should not run out of reasons to walk; the road should simply be more legible to them — signs that meant nothing now mean something, and a journey they would once have survived they can now read.
+
+**Knowledge stops being the reward and becomes the lens.** What varies after that is the journey: which villages, which weather, which animals in which situations, what work was going.
+
+There is already a counterexample shipping. Learn all five species and the departure morning **withdraws** the trapper, offering two choices instead of three — the saturated state is strictly worse than the ignorant one. That is the failure this section exists to forbid. Every system should be checked against a full codex before it ships.
 
 ---
 
-# Monster Codex
+# Animals and Monsters
 
-The codex is not just a collection.
+The codex holds two kinds of thing, and the difference between them is **whether ordinary sense works.**
 
-It is a travel journal.
+| | Common sense | What the codex is worth |
+|---|---|---|
+| **Animals** | works | you can guess well without it; knowing makes you better |
+| **Monsters** | **misleads** | guessing wrong is worse than not guessing at all |
 
-Players gradually learn:
+An animal behaves the way a player already expects a boar or a wolf to behave. That is a strength — the player arrives with priors and the road can play against them — but it caps how strange the world can get. Nobody is astonished by a wolf.
 
-- appearance
-- behavior
-- habitat
-- weaknesses
-- drops
-- ecology
-- myths
-- cultural knowledge
+Monsters are where the world stops explaining itself. A creature with no real-world counterpart is the locked door the pillar above asks for: it does something inexplicable in front of you, and the framework for it arrives journeys later.
 
-Knowledge should unlock gameplay options.
+That makes the codex worth **more** on a monster than on an animal, which is where the deepening comes from. The further down the road, the more of what you meet is the kind of thing you can be wrong about.
 
-Not just information.
+## Monsters are a knowledge problem, not a combat problem
+
+A monster is dangerous in proportion to **how confidently it can be read wrong.**
+
+That is the whole design. The material is not the creature's strength, it is the traveler's certainty: something that presents a signal a person already knows how to interpret, and does not mean by it what a person would mean.
+
+But a misread the player had no way to see coming is not a lesson, it is a gotcha — and this project already measured that **a choice the player cannot read is not a choice.** A monster that punishes ordinary sense without warning breaks the same rule the roads were fixed to obey.
+
+So the monster telegraphs **that something is wrong here, never what.** The anomaly is readable on sight: an animal doing something no animal does, a quiet where there should not be one, a shape that is nearly right. What the traveler cannot read is *how* their expectation fails — that arrives journeys later, and that is the locked door.
+
+The test, then:
+
+- An **animal** is something you can guess at, and be right.
+- A **monster** shows you, before it costs anything, that **your guess is unsafe.**
+
+A monster earns its place by being misreadable **in a way you were fairly warned about**, not by having more hp.
+
+Two failure modes to hold the line against:
+
+- **A monster that is an animal with bigger numbers.** Then it is decoration. The difference must be in **kind**, never in size.
+- **Genre gravity.** Players see a monster and reach for a weapon. This is a real cost, not an imagined one. The answer is not to forbid fighting — it is to make sure the one who read the other correctly is the one who walks away.
+
+---
+
+# Villages
+
+Each village should be a place, not a menu with a name on it.
+
+What a village can hold:
+
+- **an inn** — health back, for coin and for a day
+- **a shop** — a short shelf, not a catalogue
+- **work** — a small job with a reason behind it, paying coin
+- **people** — who talk, and who know one thing worth knowing
+
+A village visit is a **budget**, not a shopping trip: a fixed number of things you may do before the road takes you again. You should not be able to buy everything on the shelf, and choosing is the point.
+
+Staying longer is one of the things the budget buys — never a way to escape it.
 
 ---
 
 # Combat
 
-Combat is important.
+Combat exists. Combat is not the focus.
 
-Combat is NOT the focus.
+The traveler should usually be able to:
 
-Players should often be able to:
-
+- watch
 - avoid
-- observe
-- negotiate
-- lure
 - prepare
+- use the right thing
+- leave
 
-instead of simply attacking.
+Fighting should be one of several honest answers, and rarely the best one.
+
+**A monster is not a reason to build a combat system.** What turns this into a combat game is not what stands in the road, it is the shape of the resolution — one read-and-choose becoming rounds of trading damage. Whether an encounter should ever run more than one step is a separate decision, to be taken on its own merits and not drifted into.
 
 ---
 
@@ -263,111 +379,94 @@ instead of simply attacking.
 
 Travel is the main gameplay.
 
-Travel includes:
+Travel includes route choice, weather, encounters, camping, foraging, things found, and people met.
 
-- route planning
-- resource management
-- camping
-- conversations
-- weather
-- encounters
-- exploration
-
-Travel should never feel like walking between quests.
-
-Travel IS the quest.
+Travel is the quest.
 
 ---
 
-# Resources
+# What We Have Learned
 
-Keep resources simple.
+These were expensive. Do not re-learn them.
 
-Initial prototype:
+Every figure below was measured on the loop that exists today — an eight-leg road, one village, five species, one arrival gate. **The lessons carry; the numbers do not.** A chain of villages with coin and layered knowledge is a different system, and it needs its own baselines before any of these rates are quoted at it.
 
-- HP
-- Food
-- Preparation
-
-Avoid complex survival mechanics until the core gameplay is proven fun.
-
----
-
-# Prototype Scope
-
-Build the smallest possible game.
-
-One village.
-
-One companion.
-
-Three monsters.
-
-One quest.
-
-One destination.
-
-20-minute playtime.
-
-The objective is NOT content.
-
-The objective is validating the gameplay loop.
-
----
-
-# Architecture Philosophy
-
-The game should be data-driven.
-
-Separate:
-
-- Game Rules
-- Content
-- UI
-- AI
-
-Game logic must be deterministic.
-
-UI should only render state.
-
-AI should never modify core game rules.
+- **Information is worth nothing if it cannot change a decision.** Two informational features were built, measured, and cut — a per-leg weather cue worth +0.3pp and a villager who read the sky ahead, worth +1.3pp against the 7.4pp that choosing him cost.
+- **Whatever gives the binding resource wins everything.** An option worth 3 food was taken on 99.8% of its offers and left the three options beside it under 3%. A new choice must offer a different **kind** of trade, not a bigger one.
+- **A choice the player cannot read is not a choice.** A fork was worth 2.7 points when it only said what the roads were like, and 17.3 when it said what was on them today.
+- **Knowledge that settles an encounter destroys it — and the blame lands in the wrong place.** A persistent codex collapsed every later run into one fixed table of answers, matching on 300 of 300 seeds. Persistence took the blame; the real cause was that a known animal's answer was free and dominant. Knowing has to widen the menu, never shorten it.
+- **The simulation measures defects, never fun.** It finds dominant strategies and dead options. It cannot tell you whether anyone wants a second journey.
 
 ---
 
 # Things We Intentionally Avoid
 
+- levels, XP, and stat growth
+- equipment tiers and loot tables
+- large inventories
+- crafting
 - giant open worlds
-- MMORPG systems
-- complex crafting
-- massive inventories
-- generic engine architecture
-- ECS before necessary
-- overengineering
-- "future proof" abstractions
+- villages that fully heal
+- coin that solves encounters
+- knowledge that ends encounters instead of opening them
+- monsters that are animals with bigger numbers
+- generic engine architecture, ECS, plugin systems
 - building tools before building the game
 
 Ship gameplay first.
 
 ---
 
+# Prototype Scope
+
+Small enough to finish, long enough to have a shape.
+
+- three or four villages on one road
+- a far destination
+- many species, each met in more than one situation and known in layers
+- an inn, a shop, and work in each village
+- a handful of items
+- coin
+- weather
+- the codex, persisting across journeys
+- roughly 30 minutes per journey
+
+**Build the layers before the species list.** Depth is the part that can be got wrong: a layer structure that works on four animals will widen cheaply, and one that does not will have to be unwritten on forty. Prove that meeting the same animal twice is worth something, then add animals.
+
+The objective is not content.
+
+The objective is a loop worth repeating.
+
+---
+
+# Architecture Philosophy
+
+Game logic is deterministic and seeded.
+
+Separate: game rules, content, UI, AI.
+
+The core imports no React, no DOM, no network, no clock, no `Math.random`.
+
+AI never modifies game state.
+
+---
+
 # Success Metric
 
-A successful prototype is one where players voluntarily start another journey immediately after finishing the previous one.
+A successful prototype is one where the player starts another journey immediately — and **not** because there is something left to unlock.
 
-Not because they want better loot.
-
-Because they want another adventure.
+Because there is something left to find out.
 
 ---
 
 # Development Principle
 
-Whenever there are multiple implementation choices, prefer:
+When there are several ways to build it, prefer:
 
 - simpler
 - smaller
 - more playable
-- easier to iterate
+- easier to change
 
 over
 
@@ -375,6 +474,4 @@ over
 - more scalable
 - more abstract
 
-Prototype first.
-
-Optimize later.
+Prototype first. Measure second. Optimize last.

@@ -1,3 +1,9 @@
+This describes the game **as it is built today.**
+
+`VISION.md` describes where it is going. Where the two differ, VISION is the target and this file is the present — not a contradiction to resolve by editing this file, but work not done yet.
+
+---
+
 Village
 
 ↓

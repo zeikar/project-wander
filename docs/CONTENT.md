@@ -1,3 +1,11 @@
+Authoring rules for the content that exists today, and the measurements behind them.
+
+`VISION.md` is the target; this file is the present. Where a rule here is narrower than VISION, it is describing what has been built and measured, not disagreeing with the direction.
+
+A figure in this file is evidence for the decision it justified — not a number a later sweep should expect to reproduce. Say which harness produced it.
+
+---
+
 NPC
 
 Never exposition dumps.
@@ -14,11 +22,13 @@ Never exist only for quests.
 
 ---
 
-Monsters
+Animals and Monsters
 
-Should feel like animals.
+Animals behave like animals. Not evil by default, and not motivated by the traveler — a boar wants what a boar wants and the traveler is in the way of it.
 
-Not evil by default.
+All five species shipped so far are animals. **No monster has been built.**
+
+When one is, the line between the two kinds is legibility, not power: an animal can be guessed at from ordinary sense, and a monster punishes exactly that guess. A monster with the same behaviour and bigger numbers is an animal with bigger numbers. See `VISION.md` § *Animals and Monsters*.
 
 ---
 
@@ -28,9 +38,9 @@ Every encounter carries one `codex: "teaches"` option and one `codex: "requires"
 
 They share a menu slot: the observation is offered until the species is known, what it unlocks only after.
 
-Every encounter also carries a `fieldNote` — the one thing watching it taught, in the traveler's words.
+A `fieldNote` belongs to the SPECIES, not to the encounter — every situation that teaches an animal teaches the same note.
 
-An observe option must be strictly worse in deltas than the encounter's best comparable answer.
+An observe option must be strictly dominated by an option that is always offered and open in every weather.
 
 That gap is the price of the knowledge. Free observation is not a choice.
 
@@ -95,11 +105,9 @@ A species is learned once, so its `fieldNote` is what the codex shows no matter 
 
 A second situation is worth authoring when it poses a DIFFERENT decision, not when it dresses the same one. Two shapes have earned it so far — a scene where nothing is in your way and the question is whether to take a risk at all (`wallow-boar`, `wolves-at-a-kill`), and a scene where the animal's known answer has nowhere to go (`sow-and-litter`, whose sow will not follow her nose off the road; `walled-lane-stag`, whose lane has no uphill).
 
-An observation must be strictly dominated by an option that is always offered. That gap is the price of the knowledge.
-
 `read-the-pack` was the weakest observation in the game at 10.3% of its offers, and the fix was on the payoff side rather than the price: `show-your-kit` was the only `requires` option asking for two preparation HELD, which an eight-leg road spends. At one it is offered 130 times across 300 seeds instead of 59, and `read-the-pack` reaches 19.0%.
 
-Those three figures came from the policy set of the sweep that made the change and do not reproduce under the five-policy harness the village was measured with — that instrument reads 45 offers and 12.1% on the same untouched tree. Neither reading is wrong; they are different instruments, and only one of them is written down. A figure in this file is evidence of the decision it justified, not a number a later sweep should expect to hit. Say which harness produced a figure, or a future reader will try to reproduce it and conclude the game changed.
+Those three figures came from the policy set of the sweep that made the change and do not reproduce under the five-policy harness the village was measured with — that instrument reads 45 offers and 12.1% on the same untouched tree. Neither reading is wrong; they are different instruments, and only one of them is written down.
 
 It was not lowered to zero, which measured better again at 20.4%. `requiresPreparation` would then have exactly one consumer left — the state a playtest already found registers with nobody — and the label promises a kit to show.
 
@@ -110,7 +118,7 @@ Labels
 
 Food and preparation are stated as exact numbers, in both directions.
 
-HP is never a number. It is a scale with three steps — a little blood, blood, a lot of blood — hinged on the one HP figure the game does state outright: what a leg costs when there is nothing left to eat.
+An encounter option's HP price is never a number. The traveler's current HP is printed, and so is the road's toll for walking hungry; it is the cost of an option not yet taken that stays qualitative. It is a scale with three steps — a little blood, blood, a lot of blood — hinged on the one HP figure the game does state outright: what a leg costs when there is nothing left to eat.
 
 Naming the cost came first, because an unlabelled wound read as harmless. The scale came second, because one flat word for costs running from 1 to 6 was not neutral either: a playtester saw a 2 HP wound three times, generalised it, and bet on a fourth encounter costing the same. It cost 4.
 
@@ -191,4 +199,6 @@ The knowledge villager's species is seed-picked among the species still unknown,
 
 With all five species known, that villager is withdrawn and the morning offers two. A recorded limitation, deliberately not compensated: a substitute reward is a new system, and more species or a second village would dissolve the limitation rather than address it.
 
-No shop, no coin, no inventory. Villager prose keeps the NPC rules already at the top of this file.
+No shop, no coin, no inventory, and one village — the state as built, not the direction. `VISION.md` puts several villages on the road, each with an inn, a shop and work, and coin to spend across them. None of it exists yet.
+
+Villager prose keeps the NPC rules already at the top of this file.
