@@ -50,6 +50,15 @@ body {
   font-style: italic;
 }
 
+/* Two things can stand on one leg. A rule between them, so the second reads
+   as a second thing rather than more of the first. Never matches on a leg
+   holding one, which is most of them. */
+.scene + .scene {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}
+
 .encounter-options {
   display: flex;
   flex-direction: column;

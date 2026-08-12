@@ -40,6 +40,8 @@ They share a menu slot: the observation is offered until the species is known, w
 
 A `fieldNote` belongs to the SPECIES, not to the encounter — every situation that teaches an animal teaches the same note.
 
+An option id is unique across every animal and every place, not only within its own scene. A leg can hold two scenes at once and the chosen option is resolved to its scene by id alone, so a collision would serve the wrong deltas, the wrong log line, and a `teaches` option that learns the wrong thing. Pinned by test. (The § *Places* line about a shared id space is about SCENE ids and still holds; this is the option-level rule beside it.)
+
 An observe option must be strictly dominated by an option that is always offered and open in every weather.
 
 That gap is the price of the knowledge. Free observation is not a choice.
@@ -83,6 +85,12 @@ A place that should genuinely mean something different needs a new KIND of trade
 
 They are drawn from the band ABOVE a route's own odds — the stretch that used to be an empty leg. Never mix them into the animal pool: that thins the species and the codex lives on meeting one twice.
 
+`PAIR_CHANCE = 0.5` subdivides that same place band: half of it holds an animal beside the place, and the traveler answers one of the two. It is carved from the PLACE band and never the animal band, and that is the whole reason it is safe — a pair drawn out of the animal band would let the traveler answer the place INSTEAD of an animal already drawn, which is the thinning above. Drawn out of the place band it can only ADD animal meetings. Measured (five policies, 300 seeds, tie instrument `historical`, before/after `991b246`): the share of runs that meet the same species twice went 83.1% → 89.5%, and the share that ANSWER the same species twice went 83.1% → 85.7% — the smaller rise being the pair's own cost, since some added meetings are walked past. It did not fall on any policy. The repo's older recorded 71-74% band does not reproduce under this harness on either tree, so the direction above is the finding and the level is instrument-specific.
+
+0.5 is a starting value, not a measured one. It puts a pair on about an eighth of legs. The lone place still exists at that value and both shapes are pinned reachable by test — that test, not a bounds assertion on the constant, is the only guard on it, and it goes red at 0 and at 1.
+
+What the pair measured, and what it did not (300 seeds; instruments named; nothing retuned): with the four scoring policies pooled, the place takes the pair on 83.9% / 85.8% of eligible decisions under the two tie salts — under the >90% gate, so the pair is not a fake choice, but only just, and `hoarder` alone fails it at 92.6% / 93.5%. The observation is taken on 4.7%, all of it by `learner`; the other three price knowledge at exactly 0 by construction, so that column is a property of the policy set rather than of the road. Under a calibrated scorer that prices a codex entry at K = 4 (≈ 1.3 hungry-day meals on that harness's scale, selected identically by both salts) the pair goes to roughly half — observation 49.3% / 48.6% — which says the mechanic CAN be a live decision and that nothing in the shipped scoring makes it one. Read all of it against one limit: the place teaches nothing, so what was priced is knowledge against a RESOURCE, not `VISION.md`'s knowledge against other knowledge.
+
 ---
 
 Animals
@@ -90,6 +98,8 @@ Animals
 Five species, met in twelve situations. A species is picked first and one of its situations second, so giving an animal more ways to be met splits its own share and never makes it commoner.
 
 How often the road can feed you is therefore an average of per-species RATIOS, not a count of scenes. It ships at 50.0%, and a test pins both the ratios and the average:
+
+Keep this figure and the road's food opportunity apart; conflating them is how a difficulty change hides. The **authored feeding ratio is unchanged at 50.0%** — it is a property of the situations, and `PAIR_CHANCE` does not touch a situation. The **road's food opportunity** — the share of encounters where some available option has a positive effective `foodDelta` — is the one a pair could have moved, and measured on `careful-signs` under `historical` it went 59.2% (1114/1882) to 59.2% (1115/1882) across `991b246` → the pair: one encounter. The encounter count is identical on both trees, because a pair is still one encounter.
 
 | species | situations | of which feed you |
 |---|---|---|
@@ -146,6 +156,12 @@ Each road can show two of the three, not all three. A fork only exists where the
 A sign names a KIND, never a species. Naming the creature was measured and it does not hurt the codex — the repeat rate holds. It simply buys almost nothing: the kind is worth 48.3% of seeds against 51.7% for the species, and a print in the mud does not tell you what to call the animal.
 
 A sign must be true. It is computed from the same band the road then walks, so it cannot promise something the leg does not deliver.
+
+A sign UNDER-reports a pair, by design. A leg holding a place and an animal signs exactly as a lone place does: the place it named is there, and the animal beside it is found on arrival. The sign never lies; it says less than it could. `RoadSign` keeps its three values, and a test named for the behaviour pins it so the weakened contradiction test is not the only thing recording it.
+
+A fourth sign kind — one that advertises a pair — was considered and rejected, and that rejection is **an unmeasured prototype judgment, not a measured result.** The reasoning: a road that reliably advertises more looks like the collapse the road-pricing rule measured at 74-93%. But that measurement was about pricing the two roads differently, so it is precedent for the failure mode and not proof of this one — the paired animal is drawn separately from the other road's animal, so neither road's offer contains the other's, and more buttons is not more value. Against an unmeasured upside it would also cost sixteen new authored lines and break "each road can show two of the three". It stays unbuilt.
+
+What the pair did to the fork, measured as **a reconstruction of the optimal-line instrument** (exhaustive walk over the optimal closure, outcome scalar `endingScore × 10000 + hp × 100 + supplies`, 300 seeds, before/after `991b246`): the branch decides the run on 85.6% → 83.6% of optimal-line travel nodes on the full scalar, 20.5% → 19.3% reading endings alone; the quiet way is uniquely right on 39.1% → 41.7% and the busy way on 46.4% → 41.9%. Set those beside the recorded 50.9% / 24.2% rather than over them: the recorded pair came from an instrument nobody can re-read, and the comparison that means anything is the before figure produced in the same run as the after. The direction is worth noticing on its own — the two ways became **less** different, not more, and are now within 0.2pp of each other on the uniquely-right share.
 
 A sign speaks only for the road it is printed on. It sits inside that road's own button, beside a road that may be showing something else. A test refuses the words "both" and "either", but that is a backstop for one failure mode, not a proof that a sign fits its road — nothing mechanical can check that. Read them.
 

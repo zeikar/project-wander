@@ -1,8 +1,8 @@
 import { useReducer } from "react";
 import type { Dispatch } from "react";
 import {
+  activeScenes,
   canChooseOption,
-  findScene,
   offeredOptions,
   offeredRoutes,
   offeredVillageOptions,
@@ -457,18 +457,11 @@ function EncounterScreen({
   state: GameState;
   dispatch: Dispatch<GameAction>;
 }) {
-  // The encounter phase is only ever entered with an id the reducer just picked
+  // The encounter phase is only ever entered with ids the reducer just picked
   // out of these same lists, so a miss here is a broken invariant, not a state
   // the player can reach. Assert rather than render a fallback: a screen with no
   // options would soft-lock the journey.
-  const scene = findScene(state.activeEncounterId)!;
-  // Only an animal has anything to know about it, and only once it is known.
-  // A place is just a place, and `speciesOf` returns undefined for one.
-  const speciesId = speciesOf(scene.id);
-  const fieldNote =
-    speciesId !== undefined && state.known.includes(speciesId)
-      ? speciesList.find((candidate) => candidate.id === speciesId)!.fieldNote
-      : undefined;
+  const scenes = activeScenes(state);
   const weather = weatherAt(state.seed, state.legIndex);
 
   return (
@@ -483,52 +476,86 @@ function EncounterScreen({
           are reached, the same standing-fact placement as the travel
           screen's weather line. */}
       <p className="weather-line">{weatherProse[weather].line}</p>
-      <h2>{scene.title}</h2>
-      <p>{scene.description}</p>
-      {/* The single entry for the animal in front of you, not the whole
-          notebook: what you know is only actionable here. */}
-      {fieldNote && <p className="field-note">What you know: {fieldNote}</p>}
-      <div className="encounter-options">
-        {offeredOptions(state, scene).map((option) => {
-          // The one place this component asks what the sky did to an option:
-          // the same rule canChooseOption already refused it by, so a closed
-          // button's own reason can never disagree with why it is disabled.
-          const closedReason = effectiveOption(option, weather).closedReason;
-          return (
-            <button
-              key={option.id}
-              disabled={!canChooseOption(state, option)}
-              onClick={() =>
-                dispatch({
-                  type: "CHOOSE_ENCOUNTER_OPTION",
-                  optionId: option.id,
-                })
-              }
-            >
-              {option.label}
-              {costHint(state, option)}
-              {/* "as well" and "then" are load-bearing. A playtester could not
-                  tell whether this figure replaced the option's own cost, was
-                  added to it, or only applied depending on something later in
-                  the leg, and worked the rule out by trial instead: it "fires
-                  when food hits/stays at 0 at leg-end, but the game never
-                  stated that rule directly on screen." Banding the option's
-                  own hp cost put a worded price next to a numbered one, which
-                  made saying which is which more urgent, not less. */}
-              {leavesNoFood(state, option) && (
-                <span className="warning">
-                  {" "}
-                  — and then, with nothing left to eat, finishing the leg will
-                  cost you {HUNGRY_TRAVEL_HP_LOSS} HP as well
-                </span>
-              )}
-              {closedReason && (
-                <span className="warning"> — {closedReason}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* One line, and only where the leg holds two things. It names neither of
+          them and prices nothing: both scenes are already titled and described
+          below, so the only thing missing was the RULE — that the day ends on
+          whichever one is answered. */}
+      {scenes.length > 1 && (
+        <p className="road-rule">
+          Whichever of these you deal with is the end of the day here, and the
+          other is left standing.
+        </p>
+      )}
+      {scenes.map((scene) => {
+        // Only an animal has anything to know about it, and only once it is
+        // known. A place is just a place, and `speciesOf` returns undefined for
+        // one — so on a paired leg this note belongs to the animal's block and
+        // never to the place's.
+        const speciesId = speciesOf(scene.id);
+        const fieldNote =
+          speciesId !== undefined && state.known.includes(speciesId)
+            ? speciesList.find((candidate) => candidate.id === speciesId)!
+                .fieldNote
+            : undefined;
+
+        return (
+          <section className="scene" key={scene.id}>
+            <h2>{scene.title}</h2>
+            <p>{scene.description}</p>
+            {/* The single entry for the animal in front of you, not the whole
+                notebook: what you know is only actionable here. */}
+            {fieldNote && (
+              <p className="field-note">What you know: {fieldNote}</p>
+            )}
+            <div className="encounter-options">
+              {offeredOptions(state, scene).map((option) => {
+                // The one place this component asks what the sky did to an
+                // option: the same rule canChooseOption already refused it by,
+                // so a closed button's own reason can never disagree with why
+                // it is disabled.
+                const closedReason = effectiveOption(
+                  option,
+                  weather,
+                ).closedReason;
+                return (
+                  <button
+                    key={option.id}
+                    disabled={!canChooseOption(state, option)}
+                    onClick={() =>
+                      dispatch({
+                        type: "CHOOSE_ENCOUNTER_OPTION",
+                        optionId: option.id,
+                      })
+                    }
+                  >
+                    {option.label}
+                    {costHint(state, option)}
+                    {/* "as well" and "then" are load-bearing. A playtester could
+                        not tell whether this figure replaced the option's own
+                        cost, was added to it, or only applied depending on
+                        something later in the leg, and worked the rule out by
+                        trial instead: it "fires when food hits/stays at 0 at
+                        leg-end, but the game never stated that rule directly on
+                        screen." Banding the option's own hp cost put a worded
+                        price next to a numbered one, which made saying which is
+                        which more urgent, not less. */}
+                    {leavesNoFood(state, option) && (
+                      <span className="warning">
+                        {" "}
+                        — and then, with nothing left to eat, finishing the leg
+                        will cost you {HUNGRY_TRAVEL_HP_LOSS} HP as well
+                      </span>
+                    )}
+                    {closedReason && (
+                      <span className="warning"> — {closedReason}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

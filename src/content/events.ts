@@ -4,8 +4,16 @@
 // An event fills the stretch of a leg that would otherwise turn up NOTHING.
 // That placement is the whole design, and it is measured: mixing places into
 // the animal pool would cut the species repeat rate the codex lives on, exactly
-// as adding more animals does. Filling the empty stretch instead leaves the
-// animal mix untouched.
+// as adding more animals does. Filling the empty stretch instead can only ever
+// ADD an animal meeting and never take one away, and it is the never-takes-away
+// half the repeat rate needs. It does not leave the animal mix untouched: since
+// PAIR_CHANCE a place-band leg may hold an animal beside the place, which walks
+// the share of legs holding an animal at all from 0.500 to 0.625 on the quiet
+// way and 0.750 to 0.875 on the busy one. Those four figures are closed form —
+// the route's own odds plus EVENT_CHANCE x PAIR_CHANCE — not a sample; a sweep
+// over 2,000,000 rng states reproduces them, which is evidence that the salts
+// do not correlate with the band roll rather than evidence of the rate itself.
+// More meetings is not the danger; fewer of them is.
 
 // Deliberately its own type rather than a shared one with encounters. A place
 // has no species to learn, so it carries neither `codex` nor `fieldNote`, and
@@ -37,6 +45,21 @@ export interface RoadEvent {
 // has something the other does not, and the branch decides the run on 50.9% of
 // those nodes rather than 24.2%.
 export const EVENT_CHANCE = 0.25;
+
+// How much of the place band ALSO holds an animal. It subdivides EVENT_CHANCE
+// rather than the animals' own band, and that side is chosen, not arbitrary:
+// a pair drawn out of the ANIMAL band would let the traveler answer the place
+// instead of the animal already drawn, which thins the species repeat rate
+// the codex lives on (see the note at the top of this file). Drawn out of the
+// place band it can only ADD animal meetings.
+// 0.5 is a starting value, not a measured one — it puts a pair on about an
+// eighth of legs, roughly one a journey, which is enough to measure and small
+// enough not to redraw the road. 1.0 was rejected outright: every place would
+// have an animal at it, so the lone place stops existing and the PAIRED
+// animal draws double against 0.5 — which walks the share of legs holding an
+// animal at all from the route's own odds up to those odds plus the whole
+// event band (0.5 -> 0.75 on the quiet way, 0.75 -> 1.0 on the busy one).
+export const PAIR_CHANCE = 0.5;
 
 // Three places offering the same four trades — take supplies and leave
 // something of your own, spend an evening for materials, pay in skin for what
