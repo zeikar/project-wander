@@ -26,6 +26,14 @@ export interface GameState {
   // there — is keyed on this instead. See core/weather.ts.
   seed: number;
   activeEncounterId: string | null;
+  // The second thing standing on this leg, when the leg holds two. Null on
+  // every other leg. THE FIRST SLOT IS ALWAYS THE ANIMAL and this one is
+  // always the place — not a convention, a load-bearing invariant:
+  // `canChooseOption` resolves the codex gate through `activeEncounterId`, so
+  // the species it reads is the animal whose options carry `codex`. A place
+  // carries none, so the gate is vacuous for its options either way. Pinned by
+  // test in reducer.test.ts; swapping the slots makes the gate lie.
+  secondSceneId: string | null;
   lastEncounterResult: string | null;
   // What the ROAD just charged, kept separate from what an animal just did.
   // Both are applied by the same click, so merging them into one line made
@@ -64,6 +72,7 @@ export function createInitialState(): GameState {
     rngState: 0,
     seed: 0,
     activeEncounterId: null,
+    secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
     known: [],

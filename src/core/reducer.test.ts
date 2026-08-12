@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { GameState } from "./game-state";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "./game-state";
 import {
+  activeScenes,
   canChooseOption,
   findScene,
   offeredOptions,
@@ -37,6 +38,7 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     rngState: 1,
     seed: 1,
     activeEncounterId: null,
+    secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
     known: [],
@@ -147,29 +149,77 @@ function findSeedWith(weather: Weather, legIndex: number): number {
   throw new Error(`no seed in 1..100000 gives ${weather} at leg ${legIndex}`);
 }
 
-// A PLACE on the given way.
-function findEventRngState(which: Which = "quiet", mustFork = false): number {
+// A place on the given way of the SHAPE asked for: standing alone, or with an
+// animal beside it. Whether a place-band leg also holds an animal is read off a
+// salt on `state.rngState`, and this scans for the answer by WALKING the way
+// and looking at what the leg held, rather than reimplementing the salt — the
+// same relationship `findRngStateIn` has with `offeredRoutes`.
+function findPlaceRngState(
+  which: Which,
+  mustFork: boolean,
+  { paired }: { paired: boolean },
+): number {
   const chance = routeFor(0, which).encounterChance;
-  return findRngStateIn(
-    chance,
-    chance + EVENT_CHANCE,
-    `a place on the ${which} way`,
-    mustFork,
+  const wanted = routeFor(0, which).id;
+  for (let rngState = 1; rngState <= 100000; rngState++) {
+    const value = rollRandom(rngState).value;
+    if (value < chance || value >= chance + EVENT_CHANCE) {
+      continue;
+    }
+    const state = makeTravelingState({ rngState });
+    const routes = offeredRoutes(state);
+    if (mustFork && routes.length < 2) {
+      continue;
+    }
+    // The way asked for has to be one this leg actually offers, or the walk
+    // below would be down the other road and land in a different band.
+    if (!routes.some((route) => route.id === wanted)) {
+      continue;
+    }
+    const next = reduce(state, { type: "TRAVEL", routeId: wanted });
+    if ((next.secondSceneId !== null) === paired) {
+      return rngState;
+    }
+  }
+  throw new Error(
+    `no rng state in 1..100000 turns up ${
+      paired ? "a pair" : "a lone place"
+    } on the ${which} way`,
+  );
+}
+
+// What the leg is actually holding, asked of BOTH slots: a leg can hold a place
+// and an animal at once, so "is there a place here" stopped being a question
+// about `activeEncounterId` alone.
+function holdsAnimal(state: GameState): boolean {
+  return activeScenes(state).some((scene) =>
+    encounters.some((candidate) => candidate.id === scene.id),
+  );
+}
+
+function holdsPlace(state: GameState): boolean {
+  return activeScenes(state).some((scene) =>
+    roadEvents.some((candidate) => candidate.id === scene.id),
   );
 }
 
 type OptionPolicy = (state: GameState) => string;
 
+// Every option on the leg, across BOTH scenes when it holds two. A policy that
+// could only see the first slot would never take the place's side of a pair,
+// and every balance figure measured below would describe a game nobody plays.
 function affordableOptions(state: GameState): readonly EncounterOption[] {
-  const scene = findScene(state.activeEncounterId);
-  if (!scene) {
+  const scenes = activeScenes(state);
+  if (scenes.length === 0) {
     throw new Error(`no active scene: ${state.activeEncounterId}`);
   }
-  const affordable = scene.options.filter((option) =>
-    canChooseOption(state, option),
-  );
+  const affordable = scenes
+    .flatMap((scene) => scene.options)
+    .filter((option) => canChooseOption(state, option));
   if (affordable.length === 0) {
-    throw new Error(`no affordable option for ${scene.id}`);
+    throw new Error(
+      `no affordable option for ${scenes.map((scene) => scene.id).join(" + ")}`,
+    );
   }
   return affordable;
 }
@@ -312,6 +362,10 @@ function project(state: GameState) {
   return {
     phase: state.phase,
     activeEncounterId: state.activeEncounterId,
+    // Recorded so the trace can SEE a leg holding two things. Without it a leg
+    // that gained a place beside its animal would be invisible here, and the
+    // golden trace's job is to notice exactly that kind of quiet change.
+    secondSceneId: state.secondSceneId,
     hp: state.hp,
     food: state.food,
     preparation: state.preparation,
@@ -623,18 +677,12 @@ describe("route branches", () => {
       ),
     ).toBe(true);
 
-    // Between the two ways' odds: a place one way, an animal the other.
+    // Between the two ways' odds: a place one way, an animal the other. The
+    // place is looked for across BOTH slots, because a place-band leg may also
+    // hold an animal — which is a subdivision of this band, not a fourth one.
     const split = makeTravelingState({ rngState: findSplittingRngState() });
-    expect(
-      roadEvents.some(
-        (e) => e.id === reduce(split, travel(split, "quiet")).activeEncounterId,
-      ),
-    ).toBe(true);
-    expect(
-      encounters.some(
-        (e) => e.id === reduce(split, travel(split, "busy")).activeEncounterId,
-      ),
-    ).toBe(true);
+    expect(holdsPlace(reduce(split, travel(split, "quiet")))).toBe(true);
+    expect(holdsAnimal(reduce(split, travel(split, "busy")))).toBe(true);
 
     // Above the quiet way's event band: an empty leg one way, a place the other.
     const emptyOnQuiet = makeTravelingState({
@@ -643,13 +691,9 @@ describe("route branches", () => {
     expect(reduce(emptyOnQuiet, travel(emptyOnQuiet, "quiet")).phase).toBe(
       "traveling",
     );
-    expect(
-      roadEvents.some(
-        (e) =>
-          e.id ===
-          reduce(emptyOnQuiet, travel(emptyOnQuiet, "busy")).activeEncounterId,
-      ),
-    ).toBe(true);
+    expect(holdsPlace(reduce(emptyOnQuiet, travel(emptyOnQuiet, "busy")))).toBe(
+      true,
+    );
   });
 
   // The promise a fork makes. Two buttons that land in the same state are the
@@ -668,7 +712,15 @@ describe("route branches", () => {
       const [first, second] = routes.map((route) =>
         reduce(state, { type: "TRAVEL", routeId: route.id }),
       );
-      expect(first!.activeEncounterId).not.toBe(second!.activeEncounterId);
+      // The whole PAIR of slots, not one id. A place-band leg draws its animal
+      // off a salt while the other road draws off `selection`, so the two ways
+      // can now land on the same animal — and they are still different legs,
+      // because only one of them has a place standing beside it. Comparing
+      // `activeEncounterId` alone would call that a fake choice.
+      expect([first!.activeEncounterId, first!.secondSceneId]).not.toEqual([
+        second!.activeEncounterId,
+        second!.secondSceneId,
+      ]);
       expect(peekRoad(state, routes[0]!)).not.toBe(peekRoad(state, routes[1]!));
     }
 
@@ -712,13 +764,16 @@ describe("route branches", () => {
     ).toBe(journey.start.hp - 5 + rest.hpDelta);
   });
 
+  // A LONE place, deliberately: what this pins is that a place teaches nothing,
+  // and on a paired leg the animal beside it would be the thing that could.
   it("turns up a place on the band above the animals", () => {
     const state = makeTravelingState({
-      rngState: findEventRngState("quiet", true),
+      rngState: findPlaceRngState("quiet", true, { paired: false }),
     });
     const next = reduce(state, travel(state, "quiet"));
 
     expect(next.phase).toBe("encounter");
+    expect(next.secondSceneId).toBeNull();
     const place = roadEvents.find((e) => e.id === next.activeEncounterId);
     expect(place).toBeDefined();
     // A place teaches nothing: the codex is per species.
@@ -734,24 +789,43 @@ describe("route branches", () => {
   // what they read, and the road has to then do that — so the sign and the
   // transition are computed from one place. This walks a wide cohort and
   // demands they never disagree.
+  // "place" is the one sign that does not say everything: a place-band leg may
+  // hold an animal as well, and the sign does not mention it. That is the
+  // deliberate under-report (see `RoadSign`), so this test can only demand the
+  // place it named is there. The weakening is not left as the only record of
+  // it — "the sign under-reports, on purpose" below asserts the pair case
+  // directly, so a sign that stopped under-reporting would still be caught.
   it("never shows a sign the road then contradicts", () => {
+    const tally = { quiet: 0, animal: 0, place: 0 };
     for (let rngState = 1; rngState <= 400; rngState++) {
       const state = makeTravelingState({ rngState });
       for (const route of offeredRoutes(state)) {
         const sign = peekRoad(state, route);
         const next = reduce(state, { type: "TRAVEL", routeId: route.id });
+        tally[sign] += 1;
 
         if (sign === "quiet") {
           expect(next.phase).not.toBe("encounter");
+          continue;
+        }
+
+        expect(next.phase).toBe("encounter");
+        if (sign === "animal") {
+          // An animal and NOTHING else: the pair is carved out of the place
+          // band, so an animal-band leg is always a lone animal.
+          expect(holdsAnimal(next)).toBe(true);
+          expect(holdsPlace(next)).toBe(false);
         } else {
-          expect(next.phase).toBe("encounter");
-          const isAnimal = encounters.some(
-            (candidate) => candidate.id === next.activeEncounterId,
-          );
-          expect(isAnimal).toBe(sign === "animal");
+          expect(holdsPlace(next)).toBe(true);
         }
       }
     }
+
+    // Every branch above has to actually run, or a sign that stopped varying
+    // would leave this walking one arm and passing.
+    expect(tally.quiet).toBeGreaterThan(0);
+    expect(tally.animal).toBeGreaterThan(0);
+    expect(tally.place).toBeGreaterThan(0);
   });
 
   // A fork is meant to be an event rather than a rhythm. Both shapes have to
@@ -873,6 +947,290 @@ describe("route branches", () => {
     // below that: what it guards is that the branch is not decoration, which is
     // how the species-split version of this milestone failed.
     expect(differed.length / SCANNED_SEEDS.length).toBeGreaterThan(0.4);
+  });
+});
+
+// A leg can hold two things worth knowing, and the traveler resolves exactly
+// one of them. What the other one costs is that it was standing right there.
+describe("a leg that holds two things", () => {
+  // Walked onto rather than fabricated: a pair is produced by TRAVEL off a
+  // salt, so building one by hand would let these tests pass against a reducer
+  // that never makes one. The sky is pinned clear because several of these
+  // choose an option, and a rain-closed answer would make the assertion below
+  // it vacuous.
+  function makePairState(overrides: Partial<GameState> = {}): GameState {
+    const before = makeTravelingState({
+      rngState: findPlaceRngState("quiet", false, { paired: true }),
+      seed: findSeedWith("clear", 0),
+      ...overrides,
+    });
+    const next = reduce(before, {
+      type: "TRAVEL",
+      routeId: routeFor(before.legIndex, "quiet").id,
+    });
+    if (next.secondSceneId === null) {
+      throw new Error("that state did not turn up a pair");
+    }
+    return next;
+  }
+
+  // The two things standing on this leg, resolved by KIND rather than by which
+  // slot they are in. Which slot each sits in has its own test below; a fixture
+  // that took the animal to BE the first slot would make every test using it
+  // fail for that one reason, and stop saying anything about resolution or
+  // about the codex gate.
+  function animalAndPlace(state: GameState) {
+    const scenes = activeScenes(state);
+    const animal = encounters.find((candidate) =>
+      scenes.some((scene) => scene.id === candidate.id),
+    )!;
+    const place = roadEvents.find((candidate) =>
+      scenes.some((scene) => scene.id === candidate.id),
+    )!;
+    return { animal, place };
+  }
+
+  it("reads everything standing on the leg, animal first", () => {
+    const animal = encounters[0]!;
+    const place = roadEvents[0]!;
+
+    expect(activeScenes(makeTravelingState())).toEqual([]);
+    expect(
+      activeScenes(makeTravelingState({ activeEncounterId: animal.id })),
+    ).toEqual([animal]);
+    expect(
+      activeScenes(makeTravelingState({ activeEncounterId: place.id })),
+    ).toEqual([place]);
+    expect(
+      activeScenes(
+        makeTravelingState({
+          activeEncounterId: animal.id,
+          secondSceneId: place.id,
+        }),
+      ),
+    ).toEqual([animal, place]);
+  });
+
+  // The only guard on PAIR_CHANCE's value, and deliberately the only one: a
+  // bounds assertion on the constant would be a test that cannot fail, while
+  // this one goes red at 0 and at 1.
+  it("turns up both shapes: some place legs stand alone, some hold an animal too", () => {
+    let lone = 0;
+    let paired = 0;
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      const state = makeTravelingState({ rngState });
+      for (const route of offeredRoutes(state)) {
+        const next = reduce(state, { type: "TRAVEL", routeId: route.id });
+        if (!holdsPlace(next)) {
+          continue;
+        }
+        if (next.secondSceneId === null) {
+          lone += 1;
+        } else {
+          paired += 1;
+        }
+      }
+    }
+
+    expect(lone).toBeGreaterThan(0);
+    expect(paired).toBeGreaterThan(0);
+  });
+
+  // The slot invariant `canChooseOption` depends on: the first slot is the
+  // ANIMAL, so the species the codex gate resolves is the one whose options
+  // carry `codex`.
+  it("always puts the animal in the first slot and the place in the second", () => {
+    let pairs = 0;
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      const state = makeTravelingState({ rngState });
+      for (const route of offeredRoutes(state)) {
+        const next = reduce(state, { type: "TRAVEL", routeId: route.id });
+        if (next.secondSceneId === null) {
+          continue;
+        }
+        pairs += 1;
+        expect(
+          encounters.some(
+            (candidate) => candidate.id === next.activeEncounterId,
+          ),
+        ).toBe(true);
+        expect(
+          roadEvents.some((candidate) => candidate.id === next.secondSceneId),
+        ).toBe(true);
+      }
+    }
+
+    expect(pairs).toBeGreaterThan(0);
+  });
+
+  // Both questions a pair asks — whether there is an animal here as well, and
+  // which one — are read off salts, so a leg holding two things spends exactly
+  // the rolls a leg holding one spends. This is the same identity the fork test
+  // asserts, and it is what keeps every existing seed's road script intact.
+  it("spends no extra roll on the second thing", () => {
+    const before = makeTravelingState({
+      rngState: findPlaceRngState("quiet", false, { paired: true }),
+    });
+    const route = routeFor(before.legIndex, "quiet");
+    const sign = peekRoad(before, route);
+    const next = reduce(before, { type: "TRAVEL", routeId: route.id });
+
+    expect(next.secondSceneId).not.toBeNull();
+    expect(next.rngState).toBe(
+      rollRandom(rollRandom(before.rngState).nextState).nextState,
+    );
+    // And asking twice is the same question.
+    expect(peekRoad(before, route)).toBe(sign);
+  });
+
+  it("answering the animal ends the day and leaves the place standing", () => {
+    const state = makePairState({ food: 3, preparation: 3 });
+    const { animal, place } = animalAndPlace(state);
+    const option = animal.options.find(
+      (candidate) =>
+        canChooseOption(state, candidate) &&
+        state.hp +
+          effectiveOption(candidate, weatherAt(state.seed, state.legIndex))
+            .hpDelta >
+          0,
+    )!;
+    const effective = effectiveOption(
+      option,
+      weatherAt(state.seed, state.legIndex),
+    );
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: option.id,
+    });
+
+    expect(next.activeEncounterId).toBeNull();
+    expect(next.secondSceneId).toBeNull();
+    expect(next.legIndex).toBe(state.legIndex + 1);
+    // The road charges for the leg once, not once per thing standing on it.
+    expect(next.food).toBe(state.food + effective.foodDelta - 1);
+    expect(next.lastRoadToll).toBe(journey.road.fed);
+    expect(next.log).toEqual([
+      ...state.log,
+      `${animal.title} — ${option.label}`,
+    ]);
+    expect(next.log.at(-1)).not.toContain(place.title);
+  });
+
+  it("answering the place ends the day, leaves the animal standing, and teaches nothing", () => {
+    const state = makePairState({ food: 3, preparation: 3 });
+    const { animal, place } = animalAndPlace(state);
+    const option = place.options.find((candidate) =>
+      canChooseOption(state, candidate),
+    )!;
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: option.id,
+    });
+
+    expect(next.activeEncounterId).toBeNull();
+    expect(next.secondSceneId).toBeNull();
+    expect(next.legIndex).toBe(state.legIndex + 1);
+    // The animal was there and was not answered, so nothing was learned from
+    // it: what the traveler gave up is exactly this.
+    expect(next.known).toEqual(state.known);
+    expect(next.known).not.toContain(animal.speciesId);
+    expect(next.log).toEqual([
+      ...state.log,
+      `${place.title} — ${option.label}`,
+    ]);
+  });
+
+  it("ignores an option belonging to neither thing on this leg, returning the same state reference", () => {
+    const state = makePairState();
+    const elsewhere = [...encounters, ...roadEvents].find(
+      (scene) =>
+        scene.id !== state.activeEncounterId &&
+        scene.id !== state.secondSceneId,
+    )!;
+
+    expect(
+      reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: elsewhere.options[0]!.id,
+      }),
+    ).toBe(state);
+  });
+
+  // The codex gate resolves the species through `activeEncounterId`, which on a
+  // paired leg is the animal. Weather is a function of `seed`/`legIndex` and the
+  // pair a function of `rngState`, so the two compose freely and this can be
+  // pinned to a clear sky without disturbing the pair.
+  it("reads the codex gate off the animal, and leaves the place's options alone", () => {
+    const unknown = makePairState({ food: 3, preparation: 3 });
+    const { animal, place } = animalAndPlace(unknown);
+    const teaches = animal.options.find(
+      (option) => option.codex === "teaches",
+    )!;
+    const requires = animal.options.find(
+      (option) => option.codex === "requires",
+    )!;
+    const known = { ...unknown, known: [animal.speciesId] };
+
+    expect(canChooseOption(unknown, teaches)).toBe(true);
+    expect(canChooseOption(unknown, requires)).toBe(false);
+    expect(canChooseOption(known, teaches)).toBe(false);
+    expect(canChooseOption(known, requires)).toBe(true);
+
+    // And the place is untouched by any of it: what you know about the animal
+    // standing beside it cannot change what the place costs.
+    for (const option of place.options) {
+      expect(canChooseOption(known, option)).toBe(
+        canChooseOption(unknown, option),
+      );
+    }
+  });
+
+  // The sign is read BEFORE the walk, deliberately: `peekRoad` is a function of
+  // `state.rngState`, and TRAVEL has advanced it two rolls by the time the pair
+  // exists, so asking the post-travel state would inspect the NEXT leg's draw
+  // and pass or fail for no reason connected to this one.
+  it("shows the sign of a place and says nothing about the animal — the sign under-reports, on purpose", () => {
+    const before = makeTravelingState({
+      rngState: findPlaceRngState("quiet", false, { paired: true }),
+    });
+    const route = routeFor(before.legIndex, "quiet");
+
+    expect(peekRoad(before, route)).toBe("place");
+
+    const next = reduce(before, { type: "TRAVEL", routeId: route.id });
+
+    expect(holdsPlace(next)).toBe(true);
+    expect(holdsAnimal(next)).toBe(true);
+  });
+
+  // The paired animal rides a salt rather than the journey's own stream, and a
+  // salted stream that has gone constant looks exactly like a working one from
+  // any single sample. Every species has to turn up, and at least one of them
+  // in more than one of its situations.
+  it("draws the paired animal off a real stream, not a constant", () => {
+    const species = new Set<string>();
+    const situations = new Map<string, Set<string>>();
+    for (let rngState = 1; rngState <= 2000; rngState++) {
+      const state = makeTravelingState({ rngState });
+      for (const route of offeredRoutes(state)) {
+        const next = reduce(state, { type: "TRAVEL", routeId: route.id });
+        if (next.secondSceneId === null) {
+          continue;
+        }
+        const { animal } = animalAndPlace(next);
+        species.add(animal.speciesId);
+        const seen = situations.get(animal.speciesId) ?? new Set<string>();
+        seen.add(animal.id);
+        situations.set(animal.speciesId, seen);
+      }
+    }
+
+    expect([...species].sort()).toEqual(
+      speciesList.map((candidate) => candidate.id).sort(),
+    );
+    expect([...situations.values()].some((seen) => seen.size > 1)).toBe(true);
   });
 });
 
@@ -1813,7 +2171,11 @@ describe("full journeys", () => {
     // hands out, and 143 of 200 after: this line walks with the same food it
     // always had (the baker's loaf restores it) and one less preparation, and
     // 24 seeds it used to survive it no longer does.
-    // The floor stays 125 — deliberately well under the measured 143, because
+    // 164 of 200 once a leg could hold two things. It moved the easier way, as
+    // it had to: a pair only ever ADDS options to a leg that already had some,
+    // and this line takes the best hpDelta among them, so more to choose from
+    // can only help. 21 seeds it used to lose it now survives.
+    // The floor stays 125 — deliberately well under the measured 164, because
     // a simple policy's exact score is brittle to content retuning. What it
     // guards is a collapse, not a wobble, and the headroom it keeps over the
     // measurement is the same headroom it kept at 145.
@@ -1878,6 +2240,12 @@ describe("full journeys", () => {
     // OTHER keyed field but differing in seed (and so in weather) would share
     // one cached answer that is wrong for whichever of them it was not
     // computed from.
+    // `secondSceneId` is keyed for exactly that class of reason, one step on:
+    // the two ways out of a fork can now produce the same `activeEncounterId`
+    // with a place standing beside it on one of them and not the other. Those
+    // two states have different available options and different reachable
+    // endings, and without the field they would share one cached answer, wrong
+    // for whichever of them it was not computed from.
     const seen = new Map<string, boolean>();
     function canReachTravelOn(state: GameState): boolean {
       const key = [
@@ -1889,6 +2257,7 @@ describe("full journeys", () => {
         state.rngState,
         state.seed,
         state.activeEncounterId,
+        state.secondSceneId,
         [...state.known].sort().join("+"),
       ].join(",");
       const hit = seen.get(key);
@@ -1932,17 +2301,21 @@ describe("full journeys", () => {
             ),
           );
         default: {
-          const scene = findScene(state.activeEncounterId)!;
-          return scene.options.some(
-            (option) =>
-              canChooseOption(state, option) &&
-              canReachTravelOn(
-                reduce(state, {
-                  type: "CHOOSE_ENCOUNTER_OPTION",
-                  optionId: option.id,
-                }),
-              ),
-          );
+          // Every option on the leg, across both scenes when it holds two:
+          // answering the place is a line of play like any other, and a walk
+          // that could not take it would call a seed locked out that is not.
+          return activeScenes(state)
+            .flatMap((scene) => scene.options)
+            .some(
+              (option) =>
+                canChooseOption(state, option) &&
+                canReachTravelOn(
+                  reduce(state, {
+                    type: "CHOOSE_ENCOUNTER_OPTION",
+                    optionId: option.id,
+                  }),
+                ),
+            );
         }
       }
     }
@@ -1968,7 +2341,11 @@ describe("full journeys", () => {
     // other way: 29/200 (14.5%), still under half of what it was before the
     // village existed, because the morning is now a CHOICE of which resource
     // to set out strong in rather than a handout on top of a full pack.
-    // The cap stays 0.4, and it is slack at 14.5% — this has been a collapse
+    // A leg holding two things then pushed it back the easy way: 20/200
+    // (10.0%). Same reason as every other change that could only widen the
+    // walk — a pair adds a whole second scene's options to a leg that already
+    // had one scene's worth, and the exhaustive walk tries all of them.
+    // The cap stays 0.4, and it is slack at 10.0% — this has been a collapse
     // guard rather than a tuning target since the village halved the figure it
     // watches. Recorded rather than tightened to fit: a cap re-derived from
     // each measurement is a record of the measurement, not a bound on it.
@@ -2064,11 +2441,26 @@ describe("full journeys", () => {
   // `preparation` one lower on every row here and cost far more than one cell
   // out on the road — see the note on `journey.start`. That draft is not what
   // is recorded above.
+  // Re-recorded when a leg gained the ability to hold TWO things, and diffed
+  // against the previous recording before being accepted. Two kinds of change
+  // are legal here and both, and only both, occurred: the added
+  // `secondSceneId` column on all sixteen rows, and ONE row — leg 0, which
+  // turned up `old-camp` — now turning up a pair, with `wolves-at-a-kill` in
+  // the animal slot and the place it used to hold in the second. Every other
+  // row is identical, including all five later `activeEncounterId`s: the pair
+  // is read off salts, so no roll moved and the seed's road script is
+  // bit-for-bit what it was. No resource column moved anywhere, on that row or
+  // after it, because `prudent` still takes `sleep-under-it` — +3 hp is the
+  // unique best hpDelta across BOTH scenes, so widening the menu did not change
+  // what this line picked. A change on a leg that turned up an animal, or any
+  // movement in `legIndex`/`phase`, would have meant the roll discipline broke,
+  // and there is none.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {
         phase: "village",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 14,
         food: 3,
         preparation: 2,
@@ -2077,6 +2469,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 14,
         food: 4,
         preparation: 2,
@@ -2084,7 +2477,8 @@ describe("full journeys", () => {
       },
       {
         phase: "encounter",
-        activeEncounterId: "old-camp",
+        activeEncounterId: "wolves-at-a-kill",
+        secondSceneId: "old-camp",
         hp: 14,
         food: 4,
         preparation: 2,
@@ -2093,6 +2487,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 14,
         food: 2,
         preparation: 2,
@@ -2101,6 +2496,7 @@ describe("full journeys", () => {
       {
         phase: "encounter",
         activeEncounterId: "out-of-season-shieling",
+        secondSceneId: null,
         hp: 14,
         food: 2,
         preparation: 2,
@@ -2109,6 +2505,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 14,
         food: 0,
         preparation: 2,
@@ -2117,6 +2514,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 11,
         food: 0,
         preparation: 2,
@@ -2125,6 +2523,7 @@ describe("full journeys", () => {
       {
         phase: "encounter",
         activeEncounterId: "thorn-hedge-flock",
+        secondSceneId: null,
         hp: 11,
         food: 0,
         preparation: 2,
@@ -2133,6 +2532,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 11,
         food: 1,
         preparation: 1,
@@ -2141,6 +2541,7 @@ describe("full journeys", () => {
       {
         phase: "encounter",
         activeEncounterId: "wrecked-cart",
+        secondSceneId: null,
         hp: 11,
         food: 1,
         preparation: 1,
@@ -2149,6 +2550,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 10,
         food: 0,
         preparation: 1,
@@ -2157,6 +2559,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 7,
         food: 0,
         preparation: 1,
@@ -2165,6 +2568,7 @@ describe("full journeys", () => {
       {
         phase: "encounter",
         activeEncounterId: "bee-hollow",
+        secondSceneId: null,
         hp: 7,
         food: 0,
         preparation: 1,
@@ -2173,6 +2577,7 @@ describe("full journeys", () => {
       {
         phase: "traveling",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 4,
         food: 0,
         preparation: 2,
@@ -2181,6 +2586,7 @@ describe("full journeys", () => {
       {
         phase: "encounter",
         activeEncounterId: "bee-hollow",
+        secondSceneId: null,
         hp: 4,
         food: 0,
         preparation: 2,
@@ -2189,6 +2595,7 @@ describe("full journeys", () => {
       {
         phase: "arrived",
         activeEncounterId: null,
+        secondSceneId: null,
         hp: 1,
         food: 0,
         preparation: 3,

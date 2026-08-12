@@ -54,6 +54,7 @@ function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
     rngState: 1,
     seed: CLEAR_SKY_SEED,
     activeEncounterId: "ford-boar",
+    secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
     known: [],
@@ -492,6 +493,45 @@ describe("weather repricing on the label", () => {
 
     expect(leavesNoFood(clear, syntheticOption)).toBe(true);
     expect(leavesNoFood(rain, syntheticOption)).toBe(false);
+  });
+});
+
+// A leg can hold a place and an animal at once, and both scenes' options are
+// labelled by the same two functions. `leavesNoFood` is the half that reads
+// `canChooseOption`, which resolves the codex gate through `activeEncounterId`
+// — the ANIMAL on a paired leg; `costHint` reads only the option's effective
+// deltas and the traveler's own numbers. A place carries no `codex` on any
+// option, so what the traveler knows about the animal standing beside it must
+// not move a single character of the place's labels through either.
+describe("labels on a leg that holds two things", () => {
+  it("reads a place's options the same beside a known animal as it does alone", () => {
+    const place = roadEvents[0]!;
+    // food 1 and preparation 1 so that both a cost clause and the
+    // no-food-left warning are live on this place's options — comparing two
+    // empty strings would be a test that cannot fail.
+    const alone = makeEncounterState({
+      activeEncounterId: place.id,
+      food: 1,
+      preparation: 1,
+    });
+    const beside = makeEncounterState({
+      activeEncounterId: "pine-shadows",
+      secondSceneId: place.id,
+      known: ["wolves"],
+      food: 1,
+      preparation: 1,
+    });
+
+    expect(place.options.some((option) => costHint(alone, option) !== "")).toBe(
+      true,
+    );
+    expect(place.options.some((option) => leavesNoFood(alone, option))).toBe(
+      true,
+    );
+    for (const option of place.options) {
+      expect(costHint(beside, option)).toBe(costHint(alone, option));
+      expect(leavesNoFood(beside, option)).toBe(leavesNoFood(alone, option));
+    }
   });
 });
 

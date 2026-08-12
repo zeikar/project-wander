@@ -95,6 +95,22 @@ describe("encounters content", () => {
     ]);
   });
 
+  // A leg can now hold two scenes at once, and the reducer identifies WHICH of
+  // them the traveler answered from the option id alone. So option ids have to
+  // be unique across every animal and every place, not merely within a scene —
+  // an animal and a place sharing one would resolve against whichever `find`
+  // reached first, charging the wrong deltas and logging the wrong title. The
+  // per-scene uniqueness checks below and in "road events content" do not cover
+  // this; all 72 shipped ids are already distinct, so what this constrains is
+  // the next author.
+  it("gives no two options anywhere the same id", () => {
+    const ids = [...encounters, ...roadEvents].flatMap((scene) =>
+      scene.options.map((option) => option.id),
+    );
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   // How often the road can feed a traveler is an average of PER-SPECIES ratios,
   // because a species is drawn first and one of its situations second. That
   // makes the number of situations authored for an animal that always feeds you

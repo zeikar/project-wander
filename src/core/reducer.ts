@@ -2,11 +2,12 @@ import type { GameState } from "./game-state";
 import type { GameAction } from "./actions";
 import { HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
 import { rollRandom } from "./rng";
+import type { RollResult } from "./rng";
 import { FORK_CHANCE, journey } from "../content/journey";
 import type { LegRoute } from "../content/journey";
 import { encounters, speciesList } from "../content/encounters";
-import type { EncounterOption } from "../content/encounters";
-import { EVENT_CHANCE, roadEvents } from "../content/events";
+import type { Encounter, EncounterOption } from "../content/encounters";
+import { EVENT_CHANCE, PAIR_CHANCE, roadEvents } from "../content/events";
 import { village } from "../content/village";
 import type { VillageOption } from "../content/village";
 import { effectiveOption, weatherAt } from "./weather";
@@ -30,6 +31,21 @@ export function findScene(id: string | null): Scene | undefined {
     encounters.find((candidate) => candidate.id === id) ??
     roadEvents.find((candidate) => candidate.id === id)
   );
+}
+
+// Everything standing on this leg, in the order the screen shows it: the
+// animal first, then the place beside it when the leg holds two. What is
+// load-bearing is the STATE SLOT invariant behind that order — the animal in
+// `activeEncounterId`, the place in `secondSceneId`, which is where the codex
+// gate reads and where the invariant is written down (see `secondSceneId`).
+// This array only inherits it: reordering here moves what the screen shows,
+// not what the gate resolves.
+// Non-null asserted rather than filtered: an id in state that resolves to no
+// scene is a broken invariant, and the screen already crashes loudly on one.
+export function activeScenes(state: GameState): readonly Scene[] {
+  return [state.activeEncounterId, state.secondSceneId]
+    .filter((id): id is string => id !== null)
+    .map((id) => findScene(id)!);
 }
 
 // Which animal a situation is, or undefined for a place. The codex is keyed on
@@ -64,6 +80,16 @@ const SITUATION_SALT = 0x165667b1;
 // the morning is a property of the JOURNEY, so the answer has to be the same
 // however many times the screen asks it.
 const VILLAGE_SALT = 0x85ebca6b;
+// Whether a place-band leg ALSO holds an animal, and which animal that is —
+// both read off the same seeded source without consuming a roll, keyed on
+// `state.rngState` because a pair is a question about THIS leg, the way a fork
+// is, not about the journey. Riding a salt rather than a fresh roll is what
+// SITUATION_SALT was added for and buys the same thing here: every existing
+// seed's place draw, and every later leg on that seed, stay bit-for-bit what
+// they were, so the tuning measured before pairs existed still describes this
+// road.
+const PAIR_SALT = 0xc2b2ae35; // does this place-band leg also hold an animal?
+const PAIR_ANIMAL_SALT = 0x27d4eb2d; // and which animal is it
 
 // The authored ways one species can be met, in list order. Never empty: every
 // species in `speciesList` has at least one situation, pinned in
@@ -74,6 +100,14 @@ function pickSituation(speciesId: string, rngState: number) {
   );
   const roll = rollRandom((rngState ^ SITUATION_SALT) >>> 0);
   return situations[Math.floor(roll.value * situations.length)]!;
+}
+
+// Species first, then one of that species' situations — the pick that keeps a
+// boar with three situations exactly as common as one with a single situation.
+// One function so the leg's own draw and a paired draw stay the same rule.
+function pickAnimal(roll: RollResult): Encounter {
+  const species = speciesList[Math.floor(roll.value * speciesList.length)]!;
+  return pickSituation(species.id, roll.nextState);
 }
 
 // Which ways out of this leg the traveler actually has. Most legs have one:
@@ -116,6 +150,14 @@ export function offeredRoutes(state: GameState): readonly LegRoute[] {
 // in the mud tells you something came through, not what to call it. Dodging a
 // species was the feared cost of going further and it was measured away — the
 // codex repeat rate did not move — so this is a trade, not a guard.
+//
+// Three values, and a leg that holds BOTH a place and an animal signs exactly
+// as a lone place does. The sign still cannot lie — the place it named is
+// there — but it UNDER-REPORTS, deliberately: the animal beside it is found on
+// arrival, so a pair is a thing discovered rather than a thing shopped for. A
+// fourth sign would price the pair at the fork and turn the leg's whole point
+// (that answering one thing gives up the other) into a route bonus to steer
+// toward. Pinned by "the sign under-reports, on purpose" in reducer.test.ts.
 export type RoadSign = "animal" | "place" | "quiet";
 
 export function peekRoad(state: GameState, route: LegRoute): RoadSign {
@@ -198,12 +240,19 @@ export function offeredVillageOptions(
 // ones, and an option the sky has closed is refused outright regardless of
 // what the traveler can pay — both read through `effectiveOption` so this can
 // never disagree with what CHOOSE_ENCOUNTER_OPTION actually charges.
-// PRECONDITION: `option` belongs to the encounter named by
-// `state.activeEncounterId`. Every caller satisfies it by construction — both
-// the reducer and the encounter screen look the option up out of that same
-// encounter — but the gate fails OPEN if it is ever violated, so a future caller
-// that pairs an option with a different active encounter would silently allow a
-// `teaches` option the player has already learned.
+// PRECONDITION: `option` belongs to one of the leg's active scenes. Every
+// caller satisfies it by construction — both the reducer and the encounter
+// screen look the option up out of `activeScenes(state)` — but the gate fails
+// OPEN if it is ever violated, so a future caller that pairs an option with a
+// state whose scenes do not hold it would silently allow a `teaches` option the
+// player has already learned.
+// The codex gate reads `activeEncounterId`, which on a leg holding two things
+// is the ANIMAL: the first slot is always the animal (see `secondSceneId`), and
+// the animal is the only scene whose options carry `codex` at all. A place
+// carries none on any option (pinned in content.test.ts), so the two codex
+// clauses are vacuous for a place's options and cannot mis-fire on them —
+// what the traveler knows about the animal beside it changes nothing about
+// what the place costs.
 export function canChooseOption(
   state: GameState,
   option: EncounterOption,
@@ -280,6 +329,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         // rolls per leg depending on what each leg turns up.
         seed: action.seed >>> 0,
         activeEncounterId: null,
+        secondSceneId: null,
         lastEncounterResult: null,
         lastRoadToll: null,
         // Knowledge SURVIVES the journey that earned it. Everything else in
@@ -390,38 +440,63 @@ export function reduce(state: GameState, action: GameAction): GameState {
         return completeLeg({
           ...state,
           lastEncounterResult: null,
+          secondSceneId: null,
           rngState: trigger.nextState,
         });
       }
 
-      // Uniform pick over whichever authored list the band selected. `value` is
-      // in [0, 1) and both lists are non-empty (asserted in encounters.test.ts),
-      // so the index is always in range. Repeats within one journey are
-      // allowed; the road does not promise you something new every time.
-      // For animals the pick is over SPECIES, not over situations. That is what
-      // stops an animal becoming commoner just because it was given more ways
-      // to be met: the boar has three situations and is still drawn one time in
-      // five, exactly as it was when it had one.
+      // One roll, read by both branches below as a uniform pick over whichever
+      // authored list the band selected. `value` is in [0, 1) and both lists
+      // are non-empty (asserted in encounters.test.ts), so the index is always
+      // in range. Repeats within one journey are allowed; the road does not
+      // promise you something new every time.
       const selection = rollRandom(trigger.nextState);
-      const scene =
-        sign === "animal"
-          ? pickSituation(
-              speciesList[Math.floor(selection.value * speciesList.length)]!.id,
-              selection.nextState,
-            )
-          : roadEvents[Math.floor(selection.value * roadEvents.length)]!;
+      if (sign === "animal") {
+        // The pick is over SPECIES, not over situations (see `pickAnimal`).
+        // That is what stops an animal becoming commoner just because it was
+        // given more ways to be met: the boar has three situations and is still
+        // drawn one time in five, exactly as it was when it had one.
+        return {
+          ...state,
+          lastEncounterResult: null,
+          // This path does NOT complete a leg, so nothing has been tolled yet.
+          // Without clearing, the previous leg's toll would still be on screen
+          // while the player reads a new encounter — attributing an old charge
+          // to an animal they have not answered.
+          lastRoadToll: null,
+          rngState: selection.nextState,
+          phase: "encounter",
+          activeEncounterId: pickAnimal(selection).id,
+          secondSceneId: null,
+        };
+      }
+
+      // The place band, and the one place a leg can hold TWO things. Both
+      // questions — whether an animal is here as well, and which one — are read
+      // off salts, so the place this band draws and every later leg on this
+      // seed are exactly what they were before pairs existed.
+      // The pair is carved out of the PLACE band and never the animal band: a
+      // leg that already holds an animal must keep offering that animal, or the
+      // species repeat rate the codex lives on is thinned (content/events.ts).
+      const place =
+        roadEvents[Math.floor(selection.value * roadEvents.length)]!;
+      const paired =
+        rollRandom((state.rngState ^ PAIR_SALT) >>> 0).value < PAIR_CHANCE;
+      const animal = paired
+        ? pickAnimal(rollRandom((state.rngState ^ PAIR_ANIMAL_SALT) >>> 0))
+        : undefined;
 
       return {
         ...state,
         lastEncounterResult: null,
-        // This path does NOT complete a leg, so nothing has been tolled yet.
-        // Without clearing, the previous leg's toll would still be on screen
-        // while the player reads a new encounter — attributing an old charge to
-        // an animal they have not answered.
+        // Cleared for the reason the animal branch above gives: this path does
+        // not complete a leg, so no toll of this leg's has been charged yet.
         lastRoadToll: null,
         rngState: selection.nextState,
         phase: "encounter",
-        activeEncounterId: scene.id,
+        // The animal always takes the first slot; see `secondSceneId`.
+        activeEncounterId: animal ? animal.id : place.id,
+        secondSceneId: animal ? place.id : null,
       };
     }
 
@@ -430,7 +505,15 @@ export function reduce(state: GameState, action: GameAction): GameState {
         return state;
       }
 
-      const scene = findScene(state.activeEncounterId);
+      // Which of the leg's scenes the traveler answered, identified by the
+      // option id ALONE. Sound only because option ids are unique across every
+      // animal and every place — pinned by "gives no two options anywhere the
+      // same id" in content.test.ts, the same way `findScene` relies on the
+      // shared scene-id space being unique. An id belonging to neither scene
+      // falls through to the same refusal an unknown id has always got.
+      const scene = activeScenes(state).find((candidate) =>
+        candidate.options.some((o) => o.id === action.optionId),
+      );
       const option = scene?.options.find(
         (candidate) => candidate.id === action.optionId,
       );
@@ -461,7 +544,11 @@ export function reduce(state: GameState, action: GameAction): GameState {
         ),
         food: state.food + effective.foodDelta,
         preparation: state.preparation + effective.preparationDelta,
+        // BOTH slots, always. Answering one thing on a leg that held two is
+        // what leaves the other where it stands — the whole cost of the pair —
+        // so the scene not chosen is dropped here rather than carried on.
         activeEncounterId: null,
+        secondSceneId: null,
         lastEncounterResult: effective.resultText,
         // Watching the animal is what teaches you about it — and what is
         // learned is the SPECIES, so meeting it in another situation later
