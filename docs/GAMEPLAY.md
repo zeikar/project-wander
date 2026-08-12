@@ -60,6 +60,8 @@ A fork shows what is on each way today — tracks, a stopped fire, nothing movin
 
 It says what KIND of thing is there. Never which animal.
 
+The sign names the place and says nothing about what is standing at it. A leg signed as a place may hold an animal too, and the sign will not have told you.
+
 The two ways still meet the same animals in the same proportion, and charge the same toll. One is more likely to turn something up than the other, and that is the only standing difference between them.
 
 Open ground turns up less than thick cover. The rule never changes, so it can be learned.
@@ -71,6 +73,8 @@ If two ways would lead to the same thing, the road does not fork at all. Two but
 Places
 
 Some legs turn up a place instead of an animal, and some turn up nothing at all.
+
+Some legs turn up a place with an animal already there. Both stand on the page, each with its own answers; you answer one of them and the other is gone. Nothing is spent to choose, and there is no going back for the other.
 
 A place is not a species. There is nothing to learn about it and nothing knowledge unlocks there.
 

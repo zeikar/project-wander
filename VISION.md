@@ -138,7 +138,9 @@ Concretely, and as one rule rather than three: **a leg can hold more than one th
 
 No global clock, no daylight meter, no separate time resource. The existing shape already carries this — one choice completes a leg — and the whole cost is that the other thing was standing right there. Adding a time budget instead would drag the run's end condition and every village's rules along with it, for a decision the leg can already express.
 
-This is an argument, not a measurement. It replaces one measured collapse with reasoning and must be tested across repeated runs before it is believed.
+This was an argument. It has now been tested once, in its smallest form: some legs put a place beside the animal and the traveler answers only one of them. Over 300 seeds the place takes that leg on **83.9%–85.8%** of eligible decisions — under the 90% line that would have called it a non-decision, but only just, and one policy fails outright. Give a scorer an explicit price on knowledge — roughly one and a third meals — and the same leg goes to **about half**. So the mechanism works and nothing in the game currently makes it work: a traveler who values only resources walks past the animal almost every time.
+
+Read that against what it could not reach. A place teaches nothing, so what was priced was knowledge against a **resource**, not knowledge against other knowledge — the thing this section actually asks for. The argument survived its first contact; it has not yet been tested where it matters.
 
 ### The trap: an answer key ends the game
 
