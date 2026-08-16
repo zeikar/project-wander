@@ -34,18 +34,30 @@ export function findScene(id: string | null): Scene | undefined {
 }
 
 // Everything standing on this leg, in the order the screen shows it: the
-// animal first, then the place beside it when the leg holds two. What is
-// load-bearing is the STATE SLOT invariant behind that order — the animal in
-// `activeEncounterId`, the place in `secondSceneId`, which is where the codex
-// gate reads and where the invariant is written down (see `secondSceneId`).
-// This array only inherits it: reordering here moves what the screen shows,
-// not what the gate resolves.
+// animal first, then the place beside it when the leg holds two. DISPLAY ORDER
+// and nothing else. The codex gate used to inherit the slot order from here —
+// it resolved the species through `activeEncounterId`, the first slot — and no
+// longer does: it reads the scene that OWNS the option instead, so reordering
+// this moves what the screen shows and nothing the rules decide.
 // Non-null asserted rather than filtered: an id in state that resolves to no
 // scene is a broken invariant, and the screen already crashes loudly on one.
 export function activeScenes(state: GameState): readonly Scene[] {
   return [state.activeEncounterId, state.secondSceneId]
     .filter((id): id is string => id !== null)
     .map((id) => findScene(id)!);
+}
+
+// Which of the leg's scenes an option belongs to, by its id alone. Sound only
+// because option ids are unique across every animal and every place — pinned
+// by "gives no two options anywhere the same id" in content.test.ts. Undefined
+// for an option standing on no scene of this leg.
+// One definition, read by both the codex gate and CHOOSE_ENCOUNTER_OPTION, so
+// the scene an option is CHECKED against is always the scene it is RESOLVED
+// against.
+function owningScene(state: GameState, optionId: string): Scene | undefined {
+  return activeScenes(state).find((scene) =>
+    scene.options.some((option) => option.id === optionId),
+  );
 }
 
 // Which animal a situation is, or undefined for a place. The codex is keyed on
@@ -233,31 +245,34 @@ export function offeredVillageOptions(
 // `requiresPreparation` is a different thing from a cost: it asks what the
 // traveler is still CARRYING and spends none of it, so an answer that depends on
 // looking equipped closes as soon as the kit is spent elsewhere.
-// The codex gates are repeated from `offeredOptions` rather than reused for one
-// reason only: this function takes no `Encounter`, so it has to resolve the
-// species through `state.activeEncounterId`.
+// The codex gates are repeated from `offeredOptions` rather than reused, and
+// the reason is what each question is: that one answers VISIBILITY for a scene
+// it is handed, this one answers CHOOSABILITY for an option alone — including
+// an option standing on no scene of this leg, where there is no scene to filter
+// against at all.
 // Affordability is checked against the EFFECTIVE deltas, not the authored
 // ones, and an option the sky has closed is refused outright regardless of
 // what the traveler can pay — both read through `effectiveOption` so this can
 // never disagree with what CHOOSE_ENCOUNTER_OPTION actually charges.
-// PRECONDITION: `option` belongs to one of the leg's active scenes. Every
-// caller satisfies it by construction — both the reducer and the encounter
-// screen look the option up out of `activeScenes(state)` — but the gate fails
-// OPEN if it is ever violated, so a future caller that pairs an option with a
-// state whose scenes do not hold it would silently allow a `teaches` option the
-// player has already learned.
-// The codex gate reads `activeEncounterId`, which on a leg holding two things
-// is the ANIMAL: the first slot is always the animal (see `secondSceneId`), and
-// the animal is the only scene whose options carry `codex` at all. A place
-// carries none on any option (pinned in content.test.ts), so the two codex
-// clauses are vacuous for a place's options and cannot mis-fire on them —
-// what the traveler knows about the animal beside it changes nothing about
-// what the place costs.
+// The species the codex gate resolves is the species of the scene that OWNS
+// the option, so on a leg holding two things this cannot be wrong about which
+// scene it is reading: each option is gated on its own scene, not on whichever
+// one the state happens to list first. That is what `offeredOptions` — which
+// is handed a scene — has always done, and the two can no longer disagree
+// about an option they are both looking at.
+// The gate still fails OPEN for an option belonging to NO scene of this leg: it
+// resolves no species, so `teaches` is allowed and `requires` refused. Nothing
+// can be bought on the strength of that — `CHOOSE_ENCOUNTER_OPTION` looks the
+// option up in the same scenes and refuses it outright one line later.
+// A place carries no `codex` on any option (pinned in content.test.ts), so both
+// codex clauses are vacuous for a place's options either way — what the
+// traveler knows about the animal standing beside it changes nothing about what
+// the place costs.
 export function canChooseOption(
   state: GameState,
   option: EncounterOption,
 ): boolean {
-  const known = isKnown(state, state.activeEncounterId);
+  const known = isKnown(state, owningScene(state, option.id)?.id ?? null);
   const effective = effectiveOption(
     option,
     weatherAt(state.seed, state.legIndex),
@@ -506,14 +521,12 @@ export function reduce(state: GameState, action: GameAction): GameState {
       }
 
       // Which of the leg's scenes the traveler answered, identified by the
-      // option id ALONE. Sound only because option ids are unique across every
-      // animal and every place — pinned by "gives no two options anywhere the
-      // same id" in content.test.ts, the same way `findScene` relies on the
-      // shared scene-id space being unique. An id belonging to neither scene
-      // falls through to the same refusal an unknown id has always got.
-      const scene = activeScenes(state).find((candidate) =>
-        candidate.options.some((o) => o.id === action.optionId),
-      );
+      // option id ALONE — the same lookup `canChooseOption` makes below, so the
+      // scene an option was checked against is the scene it is charged and
+      // logged against. An id belonging to no scene of this leg resolves to
+      // nothing and falls through to the same refusal an unknown id has always
+      // got.
+      const scene = owningScene(state, action.optionId);
       const option = scene?.options.find(
         (candidate) => candidate.id === action.optionId,
       );

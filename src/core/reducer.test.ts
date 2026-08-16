@@ -1036,9 +1036,9 @@ describe("a leg that holds two things", () => {
     expect(paired).toBeGreaterThan(0);
   });
 
-  // The slot invariant `canChooseOption` depends on: the first slot is the
-  // ANIMAL, so the species the codex gate resolves is the one whose options
-  // carry `codex`.
+  // The order the screen shows a pair in: the animal first, the place beside
+  // it. Rendering only — no rule reads the slot, and the codex gate resolves
+  // the scene that owns each option rather than inheriting anything from this.
   it("always puts the animal in the first slot and the place in the second", () => {
     let pairs = 0;
     for (let rngState = 1; rngState <= 400; rngState++) {
@@ -1158,10 +1158,11 @@ describe("a leg that holds two things", () => {
     ).toBe(state);
   });
 
-  // The codex gate resolves the species through `activeEncounterId`, which on a
-  // paired leg is the animal. Weather is a function of `seed`/`legIndex` and the
-  // pair a function of `rngState`, so the two compose freely and this can be
-  // pinned to a clear sky without disturbing the pair.
+  // On a walked pair the codex gate resolves the animal's species for the
+  // animal's options and no species at all for the place's, whichever slot each
+  // sits in. Weather is a function of `seed`/`legIndex` and the pair a function
+  // of `rngState`, so the two compose freely and this can be pinned to a clear
+  // sky without disturbing the pair.
   it("reads the codex gate off the animal, and leaves the place's options alone", () => {
     const unknown = makePairState({ food: 3, preparation: 3 });
     const { animal, place } = animalAndPlace(unknown);
@@ -1184,6 +1185,78 @@ describe("a leg that holds two things", () => {
       expect(canChooseOption(known, option)).toBe(
         canChooseOption(unknown, option),
       );
+    }
+  });
+
+  // Hand-built rather than walked, unlike everything else in this block: the
+  // gate is pure in `(state, option)`, and no leg the reducer builds today
+  // holds two ANIMALS — a pair is always a place and an animal. So this state
+  // is unreachable until the task that puts two animals on one leg arrives, and
+  // that task re-pins this on a walked leg. What it checks is exactly what
+  // would break then: an option belonging to the second animal has to be gated
+  // on the SECOND animal's species, not on the first slot's.
+  it("reads the codex gate off the scene that owns the option, not off the first slot", () => {
+    const first = encounters.find((scene) => scene.id === "ford-boar")!;
+    const second = encounters.find((scene) => scene.id === "pine-shadows")!;
+    const firstTeaches = first.options.find(
+      (option) => option.codex === "teaches",
+    )!;
+    const firstRequires = first.options.find(
+      (option) => option.codex === "requires",
+    )!;
+    const secondTeaches = second.options.find(
+      (option) => option.codex === "teaches",
+    )!;
+    const secondRequires = second.options.find(
+      (option) => option.codex === "requires",
+    )!;
+
+    // Clear sky and resources to spare, so the codex gate is the only thing
+    // that can refuse any of these options.
+    const base: Partial<GameState> = {
+      phase: "encounter",
+      activeEncounterId: first.id,
+      secondSceneId: second.id,
+      food: 3,
+      preparation: 3,
+      seed: findSeedWith("clear", 0),
+    };
+    const knowsFirst = makeTravelingState({
+      ...base,
+      known: [first.speciesId],
+    });
+    const knowsSecond = makeTravelingState({
+      ...base,
+      known: [second.speciesId],
+    });
+
+    expect(canChooseOption(knowsFirst, firstTeaches)).toBe(false);
+    expect(canChooseOption(knowsFirst, firstRequires)).toBe(true);
+    expect(canChooseOption(knowsFirst, secondTeaches)).toBe(true);
+    expect(canChooseOption(knowsFirst, secondRequires)).toBe(false);
+
+    // The mirror. Knowing only the animal in the SECOND slot has to move that
+    // animal's options and none of the first's.
+    expect(canChooseOption(knowsSecond, firstTeaches)).toBe(true);
+    expect(canChooseOption(knowsSecond, firstRequires)).toBe(false);
+    expect(canChooseOption(knowsSecond, secondTeaches)).toBe(false);
+    expect(canChooseOption(knowsSecond, secondRequires)).toBe(true);
+
+    // And what the screen SHOWS agrees with the gate on every option of both
+    // scenes. That agreement is the whole point: `offeredOptions` is handed the
+    // scene and was always right, so a gate reading the first slot would show
+    // the second animal's observation and then refuse the click.
+    for (const state of [knowsFirst, knowsSecond]) {
+      for (const scene of [first, second]) {
+        const shown = offeredOptions(state, scene);
+        // Each scene hides exactly one option here — the spent observation in
+        // the known one, the locked answer in the unknown one — so the
+        // comparison below is not two all-true lists agreeing with each other.
+        expect(shown.length).toBe(scene.options.length - 1);
+        for (const option of scene.options) {
+          expect(canChooseOption(state, option)).toBe(shown.includes(option));
+        }
+      }
     }
   });
 

@@ -365,9 +365,11 @@ describe("costHint", () => {
   // shapes actually read as, including the two that say nothing about a wound's
   // size and the one that truthfully says nothing at all.
   it("describes what knowledge costs and what it buys", () => {
-    // Each option is evaluated against ITS OWN encounter: canChooseOption resolves
-    // the codex gate through state.activeEncounterId, so pairing an option with a
-    // different active encounter would model a state the game cannot reach.
+    // Each option is evaluated against ITS OWN encounter: canChooseOption
+    // resolves the codex gate through the scene that OWNS the option, so an
+    // option paired with a state whose scenes do not hold it resolves no
+    // species at all — a state the game cannot reach, and one that would say
+    // nothing about what knowledge costs or buys.
     const atBees = makeEncounterState({
       preparation: 2,
       food: 2,
@@ -498,11 +500,12 @@ describe("weather repricing on the label", () => {
 
 // A leg can hold a place and an animal at once, and both scenes' options are
 // labelled by the same two functions. `leavesNoFood` is the half that reads
-// `canChooseOption`, which resolves the codex gate through `activeEncounterId`
-// — the ANIMAL on a paired leg; `costHint` reads only the option's effective
-// deltas and the traveler's own numbers. A place carries no `codex` on any
-// option, so what the traveler knows about the animal standing beside it must
-// not move a single character of the place's labels through either.
+// `canChooseOption`, which resolves the codex gate through the scene that OWNS
+// the option — here the place itself, whichever slot it is in; `costHint` reads
+// only the option's effective deltas and the traveler's own numbers. A place
+// carries no `codex` on any option, so what the traveler knows about the animal
+// standing beside it must not move a single character of the place's labels
+// through either.
 describe("labels on a leg that holds two things", () => {
   it("reads a place's options the same beside a known animal as it does alone", () => {
     const place = roadEvents[0]!;
