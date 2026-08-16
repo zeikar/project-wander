@@ -49,6 +49,69 @@ describe("encounters content", () => {
     }
   });
 
+  // The codex ladder, which is a content shape now rather than a boolean. A
+  // species' depth is defined by nothing but the length of this array, so an
+  // empty or blank one would make an animal unlearnable while every gate in the
+  // reducer went on treating it as a species with rungs.
+  it("gives every species a ladder of notes that say something", () => {
+    for (const species of speciesList) {
+      expect(species.fieldNotes.length).toBeGreaterThanOrEqual(1);
+      for (const note of species.fieldNotes) {
+        expect(note.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  // The other half of the same shape: a situation sits at exactly one rung, and
+  // that rung has to be one its species has a note for. Above the ceiling the
+  // situation's observation would teach a note that does not exist, and its
+  // unlocked answer would wait on a depth nothing can reach.
+  it("puts every situation at a rung its own species actually has", () => {
+    for (const encounter of encounters) {
+      const species = speciesList.find(
+        (candidate) => candidate.id === encounter.speciesId,
+      )!;
+
+      expect(Number.isInteger(encounter.codexLayer)).toBe(true);
+      expect(encounter.codexLayer).toBeGreaterThanOrEqual(1);
+      expect(encounter.codexLayer).toBeLessThanOrEqual(
+        species.fieldNotes.length,
+      );
+    }
+  });
+
+  // A rung nothing teaches is unreachable, and everything above it is dead
+  // content: the note is written, the answer it buys is authored, and no line of
+  // play can ever get to either. Every rung of every species needs a situation
+  // standing at it.
+  it("leaves no rung of any species with nothing to teach it", () => {
+    for (const species of speciesList) {
+      const situations = encounters.filter(
+        (encounter) => encounter.speciesId === species.id,
+      );
+
+      for (let rung = 1; rung <= species.fieldNotes.length; rung++) {
+        expect(
+          situations.filter((encounter) => encounter.codexLayer === rung)
+            .length,
+        ).toBeGreaterThanOrEqual(1);
+      }
+    }
+  });
+
+  // And the ladder is REAL — there is something above the first rung somewhere
+  // in the shipped content. Everything else about layers passes vacuously on a
+  // road where every species is one deep, so this is what goes red if a future
+  // edit flattens the codex back into a binary without meaning to.
+  it("ships situations at more than one rung", () => {
+    expect(encounters.some((encounter) => encounter.codexLayer === 1)).toBe(
+      true,
+    );
+    expect(encounters.some((encounter) => encounter.codexLayer === 2)).toBe(
+      true,
+    );
+  });
+
   // A leg that holds two animals draws the second out of `speciesList` with the
   // first's species filtered OUT, and indexes the result with a non-null
   // assertion. With one species that filtered pool is empty and the draw is
@@ -193,15 +256,43 @@ describe("encounters content", () => {
       const optionIds = encounter.options.map((option) => option.id);
       expect(new Set(optionIds).size).toBe(optionIds.length);
 
-      // Every encounter now shows two different menus depending on whether the
-      // species is known, so the playability guarantees are checked per MENU
-      // rather than over the authored list. This replaces the single-menu
-      // version: over the whole list, the soft-lock rescue could sit in a menu
-      // the player is not currently being shown.
-      const menus = [
-        encounter.options.filter((option) => option.codex !== "requires"),
-        encounter.options.filter((option) => option.codex !== "teaches"),
-      ];
+      // The unlocked answer is worth nothing if the knowledge behind it is
+      // blank — and the knowledge lives on the species, in rungs, so every
+      // situation has to resolve to a species that exists and has something to
+      // say AT THIS SITUATION'S OWN RUNG. Resolved here because the menus below
+      // are built out of that species' depth.
+      const species = speciesList.find(
+        (candidate) => candidate.id === encounter.speciesId,
+      );
+      expect(species).toBeDefined();
+      expect(species!.name.length).toBeGreaterThan(0);
+      expect(
+        species!.fieldNotes[encounter.codexLayer - 1]!.length,
+      ).toBeGreaterThan(0);
+
+      // Every encounter shows a different menu at every DEPTH of its species,
+      // so the playability guarantees are checked once per depth rather than
+      // over the authored list. This replaces the single-menu version, and then
+      // the known/unknown pair that replaced that: over the whole list the
+      // soft-lock rescue could sit in a menu the player is not being shown, and
+      // over a known/unknown pair it could sit behind a rung they have not
+      // reached.
+      // These menus are the CHOOSABLE ones — a local mirror of the reducer's
+      // gate (`offeredOptions` filters visibility, `canChooseOption` decides
+      // choosability). A locked observation is visible and cannot be taken, so
+      // it must never count toward a rescue, which is why it is filtered out
+      // here rather than merely shown. Being a mirror, a divergence from the
+      // reducer is a defect in one of the two and not something to paper over.
+      const menus = Array.from(
+        { length: species!.fieldNotes.length + 1 },
+        (_, depth) =>
+          encounter.options.filter(
+            (option) =>
+              (option.codex !== "teaches" ||
+                depth === encounter.codexLayer - 1) &&
+              (option.codex !== "requires" || depth >= encounter.codexLayer),
+          ),
+      );
 
       for (const menu of menus) {
         expect(menu.length).toBeGreaterThanOrEqual(2);
@@ -279,16 +370,6 @@ describe("encounters content", () => {
           }),
         ).toBe(true);
       }
-
-      // The unlocked answer is worth nothing if the knowledge behind it is
-      // blank — and the knowledge now lives on the species, so every situation
-      // has to resolve to one that exists and says something.
-      const species = speciesList.find(
-        (candidate) => candidate.id === encounter.speciesId,
-      );
-      expect(species).toBeDefined();
-      expect(species!.fieldNote.length).toBeGreaterThan(0);
-      expect(species!.name.length).toBeGreaterThan(0);
 
       // A requirement is not a second cost: it gates on what is carried and
       // spends none of it. Without this, `requiresPreparation` could quietly
@@ -471,33 +552,46 @@ describe("road events content", () => {
   it("never corners a destitute traveler for more than half a full pool, in any sky", () => {
     for (const weather of WEATHERS) {
       const worstAffordable = Math.max(
-        ...encounters.flatMap((encounter) =>
-          // Known and unknown both: the codex swaps one option for another, so a
-          // species can be generous to a traveler who studied it and brutal to
-          // one who has not. Both travelers are real.
-          [false, true].map((known) => {
-            const affordable = encounter.options.filter((option) => {
-              const effective = effectiveOption(option, weather);
-              return (
-                effective.closedReason === undefined &&
-                effective.foodDelta >= 0 &&
-                effective.preparationDelta >= 0 &&
-                (option.requiresPreparation ?? 0) === 0 &&
-                (option.codex !== "teaches" || !known) &&
-                (option.codex !== "requires" || known)
+        ...encounters.flatMap((encounter) => {
+          // EVERY depth of the species, not merely known and unknown: the codex
+          // slot holds a different option at each one, so a species can be
+          // generous to a traveler who has studied it twice and brutal to one
+          // who never has. All of those travelers are real, and a rung met too
+          // early leaves the slot holding nothing choosable at all — which is
+          // the depth where being cornered is worst and the depth a known/
+          // unknown pair could not see.
+          // The filter is a local mirror of the reducer's own gate, in the same
+          // sense as the menus above.
+          const species = speciesList.find(
+            (candidate) => candidate.id === encounter.speciesId,
+          )!;
+          return Array.from(
+            { length: species.fieldNotes.length + 1 },
+            (_, depth) => {
+              const affordable = encounter.options.filter((option) => {
+                const effective = effectiveOption(option, weather);
+                return (
+                  effective.closedReason === undefined &&
+                  effective.foodDelta >= 0 &&
+                  effective.preparationDelta >= 0 &&
+                  (option.requiresPreparation ?? 0) === 0 &&
+                  (option.codex !== "teaches" ||
+                    depth === encounter.codexLayer - 1) &&
+                  (option.codex !== "requires" || depth >= encounter.codexLayer)
+                );
+              });
+
+              expect(affordable.length).toBeGreaterThan(0);
+
+              // The best they can do is the least blood on offer.
+              return -Math.max(
+                ...affordable.map(
+                  (option) => effectiveOption(option, weather).hpDelta,
+                ),
               );
-            });
-
-            expect(affordable.length).toBeGreaterThan(0);
-
-            // The best they can do is the least blood on offer.
-            return -Math.max(
-              ...affordable.map(
-                (option) => effectiveOption(option, weather).hpDelta,
-              ),
-            );
-          }),
-        ),
+            },
+          );
+        }),
       );
 
       expect(worstAffordable + HUNGRY_TRAVEL_HP_LOSS).toBeLessThanOrEqual(

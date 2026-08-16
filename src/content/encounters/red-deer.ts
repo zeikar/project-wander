@@ -4,11 +4,20 @@ import type { Encounter, Species } from "./types";
 export const redDeer: Species = {
   id: "red-deer",
   name: "Red Stag",
-  fieldNote:
-    // "Step up" was true of the hollow and of nowhere else; a drove lane between
-    // two walls has no up, and that is the whole of what its scene is built on.
-    // The note keeps the lesson and drops the one place it was learned.
-    "A stag in the rut is not hunting you, he is moving you. He drives away from the ground he is holding, and that ground has an edge to it. Get yourself past the edge and you stop being a rival at all.",
+  // "Step up" was true of the hollow and of nowhere else; a drove lane between
+  // two walls has no up, and that is the whole of what its scene is built on.
+  // Neither note names the place it was learned in.
+  //
+  // Two rungs, and this is the one species whose note was SPLIT rather than
+  // extended. It shipped as a single line carrying two facts — that he drives
+  // rather than hunts, and that what he is driving you off has an edge — and
+  // the second half was never what the hollow taught. The hollow shows a stag
+  // pushing one way; only the lane, where being pushed is the way out, shows
+  // what the edge is worth. So the line broke along the seam it already had.
+  fieldNotes: [
+    "A stag in the rut is not hunting you, he is moving you. He drives away from the ground he is holding, and he only ever drives the one way — so the direction he is not pushing you is a direction he has no argument with.",
+    "What he is holding has an edge to it, and letting him drive you is a way of reaching it. Give him his way instead of arguing and he takes you to that edge himself, then stops of his own accord — past it you are not a rival any more, and there is always a way out where the ground he is keeping ends.",
+  ],
 };
 
 export const redDeerEncounters: readonly Encounter[] = [
@@ -17,6 +26,7 @@ export const redDeerEncounters: readonly Encounter[] = [
   {
     id: "rut-stag",
     speciesId: "red-deer",
+    codexLayer: 1,
     title: "A Stag Holding the Hollow",
     description:
       "A red stag stands square in the low ground where the path runs, head up, breathing hard through a throat gone thick with the season. He has not been startled by you. He has been waiting for something to argue with, and you will do.",
@@ -87,13 +97,16 @@ export const redDeerEncounters: readonly Encounter[] = [
       },
     ],
   },
-  // A second way to meet him, built on the shape that made `sow-and-litter`
-  // worth authoring: the SAME knowledge, in a place where its obvious use has
-  // nowhere to go. The hollow's lesson comes out as "step uphill" — and here
-  // there is no uphill, only stone on both sides. What the lesson is really
-  // about survives the change of ground: he is holding something, and a thing
-  // being held has an edge to it. In the hollow that edge is above him. In a
-  // lane it is at the end of it.
+  // A second way to meet him. It was AUTHORED on the shape that made
+  // `sow-and-litter` worth authoring — the same knowledge, in a place where its
+  // obvious use has nowhere to go: the hollow's lesson comes out as "step
+  // uphill", and here there is no uphill, only stone on both sides. That
+  // reading is history now, and the paragraph below is what replaced it. What
+  // the lesson is really about survives the change of ground either way: he is
+  // holding something, and a thing being held has an edge to it. In the hollow
+  // that edge is above him. In a lane it is at the end of it — and it is that
+  // second half, not the change of ground, that turned out to be a rung of its
+  // own.
   //
   // The cornered answer costs exactly what the hollow's `push-past` costs, and
   // that is a MEASURED retreat from a nicer idea. It shipped at -3 first, on the
@@ -105,9 +118,17 @@ export const redDeerEncounters: readonly Encounter[] = [
   // the wound at -4. Making the corner cheaper made a whole option worthless.
   // A scene has to keep its answers a currency apart, and here that costs a
   // pleasing bit of fiction.
+  //
+  // It is the stag's SECOND rung, and the split of his note is what says so:
+  // the hollow shows a stag driving one way, and this scene is the only place
+  // that shows what the far side of the driving is for. Met by a traveler who
+  // has never watched him, the observation stands on the menu LOCKED — the lane
+  // is legibly a scene with something in it, and reading it is what the first
+  // rung buys.
   {
     id: "walled-lane-stag",
     speciesId: "red-deer",
+    codexLayer: 2,
     title: "A Stag in the Drove Lane",
     description:
       "The lane runs between two drystone walls a cart's width apart, and he is standing in the middle of it with his head down and his breath going like a bellows. There is no bank to climb here and no field to step out into — only stone on both sides, him, and the length of the lane behind him.",

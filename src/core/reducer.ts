@@ -1,4 +1,4 @@
-import type { GameState } from "./game-state";
+import type { GameState, KnownSpecies } from "./game-state";
 import type { GameAction } from "./actions";
 import { HUNGRY_TRAVEL_HP_LOSS } from "./game-state";
 import { rollRandom } from "./rng";
@@ -72,11 +72,47 @@ export function speciesOf(sceneId: string | null): string | undefined {
   return encounters.find((candidate) => candidate.id === sceneId)?.speciesId;
 }
 
-// Places return undefined here and so are never "known" — which is right: a
-// place has no species to learn, and carries no `codex` option to ask.
-function isKnown(state: GameState, sceneId: string | null): boolean {
-  const speciesId = speciesOf(sceneId);
-  return speciesId !== undefined && state.known.includes(speciesId);
+// How deep the traveler's knowledge of one species goes: that species' entry in
+// `known`, or 0 when it has no entry. Undefined in — a place, or a scene that
+// does not exist — is 0 as well, which is right: a place has no species to
+// learn and carries no `codex` option to ask.
+// The ceiling is the species' own `fieldNotes.length`, and it is unreachable
+// past that because a `teaches` option is choosable only at exactly the depth
+// below its rung.
+export function speciesDepth(
+  state: GameState,
+  speciesId: string | undefined,
+): number {
+  if (speciesId === undefined) {
+    return 0;
+  }
+  return state.known.find((entry) => entry.speciesId === speciesId)?.depth ?? 0;
+}
+
+// Which rung of its species' ladder a situation sits at, or undefined for a
+// place — the same lookup shape as `speciesOf` above, for the same reason: a
+// place is not a species and has no rung to be at.
+export function codexLayerOf(sceneId: string | null): number | undefined {
+  return encounters.find((candidate) => candidate.id === sceneId)?.codexLayer;
+}
+
+// Learning, in one place: a first rung appends an entry at depth 1 after
+// whatever is already there, and a deeper rung increments the species' existing
+// entry where it stands. Both learning transitions — the road's observation and
+// the trapper's morning — call this, so the two cannot disagree about what a
+// lesson does, and neither can produce a second entry for a species that
+// already has one.
+function withRungLearned(
+  known: readonly KnownSpecies[],
+  speciesId: string,
+): readonly KnownSpecies[] {
+  return known.some((entry) => entry.speciesId === speciesId)
+    ? known.map((entry) =>
+        entry.speciesId === speciesId
+          ? { ...entry, depth: entry.depth + 1 }
+          : entry,
+      )
+    : [...known, { speciesId, depth: 1 }];
 }
 
 // Salts that let a leg's SHAPE be read off the same seeded source WITHOUT
@@ -211,21 +247,31 @@ export function peekRoad(state: GameState, route: LegRoute): RoadSign {
   return "quiet";
 }
 
-// Which options this encounter puts on the table right now. A "teaches" option
-// is the observation itself and vanishes once the species is known; a "requires"
-// option is what that knowledge buys and only appears once it is. They share a
-// menu slot, so learning swaps an answer in rather than lengthening the list.
+// Which options this scene puts on the table right now. Its codex slot has
+// three states and shows exactly one option in all of them: one rung short of
+// this situation's rung the observation is live; shallower than that it is
+// still VISIBLE and refused; at the rung or deeper the answer that rung buys
+// stands in the observation's place. So the menu is the same length at every
+// depth, and learning still swaps an answer in rather than lengthening the
+// list.
+// The locked state is deliberately visible. A traveler who cannot yet read this
+// scene has to be able to SEE that there is something here to read, or the rung
+// above is a door they were never shown — the same idiom a weather-closed
+// answer keeps, which never leaves the menu either.
 // This filters VISIBILITY, not affordability — canChooseOption still decides
-// whether a shown option can be paid for.
+// whether a shown option can be taken, and it is what refuses the locked one.
+// A scene with no rung — a place — resolves to rung 1, and both clauses are
+// vacuous for it anyway: a place carries no `codex` on any option.
 export function offeredOptions(
   state: GameState,
   encounter: Scene,
 ): readonly EncounterOption[] {
-  const known = isKnown(state, encounter.id);
+  const depth = speciesDepth(state, speciesOf(encounter.id));
+  const layer = codexLayerOf(encounter.id) ?? 1;
   return encounter.options.filter(
     (option) =>
-      (option.codex !== "teaches" || !known) &&
-      (option.codex !== "requires" || known),
+      (option.codex !== "teaches" || depth < layer) &&
+      (option.codex !== "requires" || depth >= layer),
   );
 }
 
@@ -243,14 +289,22 @@ export function offeredOptions(
 export function offeredVillageOptions(
   state: GameState,
 ): readonly VillageOption[] {
+  // Anything not yet at the bottom of its own ladder — so the trapper has the
+  // NEXT rung of an animal the traveler has already met to talk about, and a
+  // species at full depth is never in the pool.
   const teachable = speciesList.filter(
-    (species) => !state.known.includes(species.id),
+    (species) => speciesDepth(state, species.id) < species.fieldNotes.length,
   );
 
-  // Nothing left to learn: the trapper is simply not on the menu, the same
-  // idiom a spent `teaches` option follows at an encounter. Withdrawing the
-  // option is also what keeps the transition free of any dedupe code — the
-  // button that would teach a known species does not exist.
+  // Nothing left to learn ANYWHERE: the trapper is simply not on the menu, the
+  // same idiom a spent `teaches` option follows at an encounter. Withdrawing
+  // the option is also what keeps the transition free of any dedupe code — the
+  // button that would teach a species nothing is left to say about does not
+  // exist.
+  // The withdrawal is still a recorded limitation and still uncompensated: a
+  // full codex makes the morning offer two choices instead of three, which is
+  // strictly worse than ignorance. Layers moved the condition from five facts
+  // to nine and no further; they did not answer it.
   if (teachable.length === 0) {
     return village.options.filter((option) => !option.teaches);
   }
@@ -282,16 +336,23 @@ export function offeredVillageOptions(
 // ones, and an option the sky has closed is refused outright regardless of
 // what the traveler can pay — both read through `effectiveOption` so this can
 // never disagree with what CHOOSE_ENCOUNTER_OPTION actually charges.
-// The species the codex gate resolves is the species of the scene that OWNS
-// the option, so on a leg holding two things this cannot be wrong about which
-// scene it is reading: each option is gated on its own scene, not on whichever
-// one the state happens to list first. That is what `offeredOptions` — which
-// is handed a scene — has always done, and the two can no longer disagree
-// about an option they are both looking at.
+// The codex gates are the LAYERED ones: an observation can only be taken at
+// exactly the depth below its situation's rung, and what it buys opens at that
+// rung and stays open. The `===` is what keeps a ladder a ladder — met one rung
+// too early the observation is shown (see `offeredOptions`) and refused here,
+// so no rung can be skipped and no lesson learned out of order; and it is what
+// makes `withRungLearned` land exactly on the rung, never past it.
+// Both the species and the rung are resolved from the scene that OWNS the
+// option, so on a leg holding two things this cannot be wrong about which scene
+// it is reading: each option is gated on its own scene, not on whichever one
+// the state happens to list first. That is what `offeredOptions` — which is
+// handed a scene — has always done, and the two can no longer disagree about an
+// option they are both looking at.
 // The gate still fails OPEN for an option belonging to NO scene of this leg: it
-// resolves no species, so `teaches` is allowed and `requires` refused. Nothing
-// can be bought on the strength of that — `CHOOSE_ENCOUNTER_OPTION` looks the
-// option up in the same scenes and refuses it outright one line later.
+// resolves no species and no rung, so it reads as depth 0 at rung 1 — `teaches`
+// allowed, `requires` refused. Nothing can be bought on the strength of that —
+// `CHOOSE_ENCOUNTER_OPTION` looks the option up in the same scenes and refuses
+// it outright one line later.
 // A place carries no `codex` on any option (pinned in content.test.ts), so both
 // codex clauses are vacuous for a place's options either way — what the
 // traveler knows about the animal standing beside it changes nothing about what
@@ -300,7 +361,9 @@ export function canChooseOption(
   state: GameState,
   option: EncounterOption,
 ): boolean {
-  const known = isKnown(state, owningScene(state, option.id)?.id ?? null);
+  const sceneId = owningScene(state, option.id)?.id ?? null;
+  const depth = speciesDepth(state, speciesOf(sceneId));
+  const layer = codexLayerOf(sceneId) ?? 1;
   const effective = effectiveOption(
     option,
     weatherAt(state.seed, state.legIndex),
@@ -310,8 +373,8 @@ export function canChooseOption(
     state.food + effective.foodDelta >= 0 &&
     state.preparation + effective.preparationDelta >= 0 &&
     state.preparation >= (option.requiresPreparation ?? 0) &&
-    (option.codex !== "teaches" || !known) &&
-    (option.codex !== "requires" || known)
+    (option.codex !== "teaches" || depth === layer - 1) &&
+    (option.codex !== "requires" || depth >= layer)
   );
 }
 
@@ -421,14 +484,17 @@ export function reduce(state: GameState, action: GameAction): GameState {
         ...state,
         food: state.food + option.foodDelta,
         preparation: state.preparation + option.preparationDelta,
-        // Exactly the field carried by the option resolved above — the
-        // reducer's own copy of the offer, not the screen's. The button named
-        // the same animal because it read the same function on the same
-        // state. No dedupe is needed either way: a known species is never in
-        // the pool `offeredVillageOptions` picks from.
+        // One RUNG of exactly the species carried by the option resolved above
+        // — the reducer's own copy of the offer, not the screen's. The button
+        // named the same animal because it read the same function on the same
+        // state. Through `withRungLearned` for the same reason the road's
+        // observation is: a morning spent on an animal already in the notebook
+        // deepens its entry rather than adding a second one, and no dedupe is
+        // needed either way, since a species at full depth is never in the pool
+        // `offeredVillageOptions` picks from.
         known:
           option.teachesSpecies !== undefined
-            ? [...state.known, option.teachesSpecies]
+            ? withRungLearned(state.known, option.teachesSpecies)
             : state.known,
         // Whatever the villager says, and nothing composed on top of it. The
         // shepherd's forecast used to be appended here; he was measured and
@@ -619,15 +685,16 @@ export function reduce(state: GameState, action: GameAction): GameState {
         secondSceneId: null,
         lastEncounterResult: effective.resultText,
         // Watching the animal is what teaches you about it — and what is
-        // learned is the SPECIES, so meeting it in another situation later
-        // offers what the knowledge buys rather than the lesson again. No
-        // dedupe is needed: a "teaches" option stops being choosable the moment
-        // the species is known, so this can never append the same id twice. A
-        // place carries no `codex` on any option, so this branch never fires for
-        // one, which is why the non-null assertion is sound.
+        // learned is one RUNG of the SPECIES, so meeting it in another
+        // situation later offers what that rung buys, or the next rung, and
+        // never the lesson just learned. No dedupe is needed: a "teaches"
+        // option stops being choosable the moment depth reaches its rung, so
+        // this can never record the same rung twice. A place carries no `codex`
+        // on any option, so this branch never fires for one, which is why the
+        // non-null assertion is sound.
         known:
           option.codex === "teaches"
-            ? [...state.known, speciesOf(scene.id)!]
+            ? withRungLearned(state.known, speciesOf(scene.id)!)
             : state.known,
         log: [...state.log, `${scene.title} — ${option.label}`],
       };

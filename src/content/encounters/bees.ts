@@ -4,18 +4,26 @@ import type { Encounter, Species } from "./types";
 export const bees: Species = {
   id: "bees",
   name: "Wild Bees",
-  fieldNote:
-    // Says nothing about WHERE the comb is. Knowledge is stored per species, so
-    // this one line is what the codex shows whether the traveler learned it at
-    // the split oak, at the wreck of it, or at a straw skep in a garden — and a
-    // note naming a hollow would have the codex describe a place they never saw.
+  // Neither note says WHERE the comb is. Knowledge is stored per species, so
+  // these are what the codex shows whether the traveler learned them at the
+  // split oak, at the wreck of it, or at a straw skep in a garden — and a note
+  // naming a hollow would have the codex describe a place they never saw.
+  //
+  // Two rungs, and the second is the first one's REASON. The wrecked hollow's
+  // observation already carried it: knowing where the guards stand is worth a
+  // meal, knowing what they are standing over is worth a way past them when
+  // there is no meal left to take.
+  fieldNotes: [
     "The pale comb is this season's, still being drawn, and there are always bees standing at it doing nothing but standing. The dark comb, capped and finished, sits deepest and is barely watched at all.",
+    "What they stand over is never the honey. It is the brood in the new pale comb, and that is what the standing about was always for — so a colony with its honey already taken still holds the pale half and has given up the deep end entirely.",
+  ],
 };
 
 export const beesEncounters: readonly Encounter[] = [
   {
     id: "bee-hollow",
     speciesId: "bees",
+    codexLayer: 1,
     title: "A Humming Hollow",
     description:
       "A split oak beside the road hums like a struck fence post. Dark comb glistens in the crack, and the air around it is thick with slow, heavy bees.",
@@ -94,13 +102,22 @@ export const beesEncounters: readonly Encounter[] = [
   // where the road sat before this run of work, with no need to touch the
   // arrival gate. See docs/CONTENT.md.
   //
-  // This is the situation that pays nothing, and it is the sow-and-litter
-  // shape: the same knowledge with its usual use taken away. What the traveler
-  // learns from bees is where the guards are and are not — and here the honey
-  // is already gone, so knowing it buys passage instead of a meal.
+  // It SHIPPED as the situation that pays nothing, in the sow-and-litter shape:
+  // the same knowledge with its usual use taken away. What the traveler learned
+  // from bees was where the guards are and are not — and here the honey is
+  // already gone, so knowing it bought passage instead of a meal. That is the
+  // authoring reason, kept as history; the paragraph below is what the scene is
+  // now, and the two disagree on purpose.
+  //
+  // It is the bees' SECOND rung, and the observation below is the evidence for
+  // that: with the honey gone, what it reports is what the guards were ever
+  // for. A traveler who has only ever watched a working hollow knows where they
+  // stand and not why, so here the observation is on the menu and LOCKED —
+  // visibly more to read than they can read yet.
   {
     id: "robbed-hollow",
     speciesId: "bees",
+    codexLayer: 2,
     title: "A Hollow Already Taken",
     description:
       "Something has been at the split oak before you and made no attempt to be quiet about it. The crack is torn wide, pale comb lies about the roots in trodden pieces, and there is not a drop of honey left anywhere in it. The bees are still here, homeless and past reasoning with, and the road runs directly under the tree.",
@@ -166,6 +183,7 @@ export const beesEncounters: readonly Encounter[] = [
   {
     id: "old-skep",
     speciesId: "bees",
+    codexLayer: 1,
     title: "A Skep in a Ruined Garden",
     description:
       "A cottage came down here long enough ago that the garden has gone to seed over the top of it, and on a stone shelf built into the one standing wall there is a straw bee skep. Half of it has collapsed and stands dry and empty. The colony has drawn itself into the other half and is getting on with the season regardless.",
