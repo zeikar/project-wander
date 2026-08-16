@@ -140,7 +140,9 @@ No global clock, no daylight meter, no separate time resource. The existing shap
 
 This was an argument. It has now been tested once, in its smallest form: some legs put a place beside the animal and the traveler answers only one of them. Over 300 seeds the place takes that leg on **83.9%–85.8%** of eligible decisions — under the 90% line that would have called it a non-decision, but only just, and one policy fails outright. Give a scorer an explicit price on knowledge — roughly one and a third meals — and the same leg goes to **about half**. So the mechanism works and nothing in the game currently makes it work: a traveler who values only resources walks past the animal almost every time.
 
-Read that against what it could not reach. A place teaches nothing, so what was priced was knowledge against a **resource**, not knowledge against other knowledge — the thing this section actually asks for. The argument survived its first contact; it has not yet been tested where it matters.
+A place teaches nothing, though, so what that priced was knowledge against a **resource**. So a second leg shape was built where both sides teach: two animals of different species, answer one, the other is gone. Neither side wins it — no slot takes more than 57% of those legs, and where a scorer prices knowledge at all the two observations split it near evenly at every price tested. **What the pillar asks for holds, as far as this can see it.**
+
+How far that is, said plainly: every instrument here puts the same price on every species' knowledge, so it can only tell the two observations apart by what they cost in food and blood. **Wanting the boar more than the bees is not something anything in this game can yet express** — and until it can, "knowledge against other knowledge" is being tested with the interesting half held constant. That is the next thing to build, not a footnote on this one.
 
 ### The trap: an answer key ends the game
 

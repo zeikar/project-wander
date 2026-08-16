@@ -49,6 +49,15 @@ describe("encounters content", () => {
     }
   });
 
+  // A leg that holds two animals draws the second out of `speciesList` with the
+  // first's species filtered OUT, and indexes the result with a non-null
+  // assertion. With one species that filtered pool is empty and the draw is
+  // unsound — so what this pins is the assumption behind "the second animal is
+  // always a different one", not the size of the roster.
+  it("holds enough species for a second animal to be a different one", () => {
+    expect(speciesList.length).toBeGreaterThanOrEqual(2);
+  });
+
   // The species pick is uniform over `speciesList`, so giving one animal more
   // situations must not make that animal commoner — it splits its own share.
   // This is what lets the boar carry three situations without moving any of the

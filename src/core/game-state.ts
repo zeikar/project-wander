@@ -27,12 +27,17 @@ export interface GameState {
   seed: number;
   activeEncounterId: string | null;
   // The second thing standing on this leg, when the leg holds two. Null on
-  // every other leg. THE FIRST SLOT IS ALWAYS THE ANIMAL and this one is
-  // always the place — not a convention, a load-bearing invariant:
-  // `canChooseOption` resolves the codex gate through `activeEncounterId`, so
-  // the species it reads is the animal whose options carry `codex`. A place
-  // carries none, so the gate is vacuous for its options either way. Pinned by
-  // test in reducer.test.ts; swapping the slots makes the gate lie.
+  // every other leg. A leg holding one of each shows the animal before the
+  // place, and that is a RENDERING ORDER: nothing resolves through the slot any
+  // more. The codex gate used to — it read the species off `activeEncounterId`
+  // — and that dependency was removed before the shape that breaks it existed.
+  // That shape exists now, and "watching one animal learns that one and not the
+  // other" in reducer.test.ts walks it: on a leg holding two ANIMALS the first
+  // slot would have gated the second animal's options on the wrong species.
+  // What is load-bearing instead is that OPTION IDS ARE UNIQUE ACROSS SCENES
+  // (pinned in content.test.ts): that is what lets `canChooseOption` and
+  // CHOOSE_ENCOUNTER_OPTION both find the scene that owns an option from its id
+  // alone, whichever slot that scene sits in.
   secondSceneId: string | null;
   lastEncounterResult: string | null;
   // What the ROAD just charged, kept separate from what an animal just did.
