@@ -86,6 +86,29 @@ describe("core salts", () => {
     // scan may silently lose before anything says so.
     expect(declarations.length).toBeGreaterThanOrEqual(9);
 
+    // The floor above only guards the salts that ship TODAY, and that is not
+    // enough on its own. Add a TENTH in a shape the strict pattern cannot read
+    // — a type annotation, a numeric separator, a value built rather than
+    // written — and nine are still found, nine still clears the floor, and the
+    // new salt sits outside the collision check with nothing to say so. So the
+    // strict scan is checked against a second, deliberately loose one that has
+    // to recognise only that a salt is being DECLARED and never what it is
+    // worth. Anything the loose scan sees and the strict scan could not parse
+    // is reported by name, which is the failure the count alone cannot give.
+    // This is what keeps the guard honest as the file grows, rather than
+    // exporting the constants away from the comments that explain them.
+    const declared = Object.entries(sources)
+      .filter(([path]) => !path.endsWith(".test.ts"))
+      .flatMap(([, source]) => [
+        ...source.matchAll(/\b(\w*SALT)\b\s*(?::[^=;]+)?=(?!=)/g),
+      ])
+      .map((match) => match[1]!);
+    expect(
+      declared.filter(
+        (name) => !declarations.some((parsed) => parsed.name === name),
+      ),
+    ).toEqual([]);
+
     const byValue = new Map<number, string[]>();
     for (const { name, value } of declarations) {
       byValue.set(value, [...(byValue.get(value) ?? []), name]);
