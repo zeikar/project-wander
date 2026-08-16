@@ -62,6 +62,8 @@ It says what KIND of thing is there. Never which animal.
 
 The sign names the place and says nothing about what is standing at it. A leg signed as a place may hold an animal too, and the sign will not have told you.
 
+The sign names an animal and does not say how many. A leg signed as an animal may hold two, and you find that out on arrival.
+
 The two ways still meet the same animals in the same proportion, and charge the same toll. One is more likely to turn something up than the other, and that is the only standing difference between them.
 
 Open ground turns up less than thick cover. The rule never changes, so it can be learned.
@@ -93,6 +95,8 @@ Every animal can be watched instead of answered well.
 Watching costs more than the good answer does — an afternoon, a meal, sometimes blood.
 
 What you get is knowledge of how that animal works.
+
+Some legs put two animals in front of you at once, and watching one is not watching the other. You answer one of them, the other is gone, and only the one you answered goes in the book.
 
 Meet the same animal again on the same journey and it offers an answer a first meeting does not.
 
