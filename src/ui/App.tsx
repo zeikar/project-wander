@@ -489,8 +489,10 @@ function EncounterScreen({
       {scenes.map((scene) => {
         // Only an animal has anything to know about it, and only once it is
         // known. A place is just a place, and `speciesOf` returns undefined for
-        // one — so on a paired leg this note belongs to the animal's block and
-        // never to the place's.
+        // one — so on a leg holding an animal and a place the note belongs to
+        // the animal's block and never to the place's, while on a leg holding
+        // two animals both blocks can carry one. Asked per scene rather than
+        // per leg, which is what makes that fall out.
         const speciesId = speciesOf(scene.id);
         const fieldNote =
           speciesId !== undefined && state.known.includes(speciesId)

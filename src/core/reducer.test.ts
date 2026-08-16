@@ -188,6 +188,42 @@ function findPlaceRngState(
   );
 }
 
+// An ANIMAL on the given way of the shape asked for: standing alone, or with a
+// SECOND animal beside it. Same relationship to the reducer that
+// `findPlaceRngState` has — it walks the way and looks at what the leg held,
+// rather than reimplementing the salt that decided it.
+// No `mustFork` parameter, unlike its place-band twin, and that is a property
+// of the bands rather than an omission: below the quiet way's odds BOTH ways
+// read "animal", so they lead to the same leg and it does not fork at all. A
+// forking animal leg is always a busy-way one, and nothing below needs one.
+function findAnimalRngState(
+  which: Which,
+  { second }: { second: boolean },
+): number {
+  const chance = routeFor(0, which).encounterChance;
+  const wanted = routeFor(0, which).id;
+  for (let rngState = 1; rngState <= 100000; rngState++) {
+    if (rollRandom(rngState).value >= chance) {
+      continue;
+    }
+    const state = makeTravelingState({ rngState });
+    // The way asked for has to be one this leg actually offers, or the walk
+    // below would be down the other road.
+    if (!offeredRoutes(state).some((route) => route.id === wanted)) {
+      continue;
+    }
+    const next = reduce(state, { type: "TRAVEL", routeId: wanted });
+    if ((next.secondSceneId !== null) === second) {
+      return rngState;
+    }
+  }
+  throw new Error(
+    `no rng state in 1..100000 turns up ${
+      second ? "two animals" : "a lone animal"
+    } on the ${which} way`,
+  );
+}
+
 // What the leg is actually holding, asked of BOTH slots: a leg can hold a place
 // and an animal at once, so "is there a place here" stopped being a question
 // about `activeEncounterId` alone.
@@ -667,15 +703,13 @@ describe("route branches", () => {
   // fork at all.
   it("reads one roll as three bands, and only forks where the bands differ", () => {
     // Below both ways' odds: the same animal either way, so there is nothing to
-    // choose between and the leg runs on one road.
+    // choose between and the leg runs on one road. The animal is looked for
+    // across BOTH slots, for the same reason the place clause below already is:
+    // an animal-band leg may hold a second animal, which is a subdivision of
+    // this band and not a fourth one.
     const animalOnBoth = makeTravelingState({ rngState: findRngState(true) });
     expect(offeredRoutes(animalOnBoth)).toHaveLength(1);
-    expect(
-      encounters.some(
-        (e) =>
-          e.id === reduce(animalOnBoth, travel(animalOnBoth)).activeEncounterId,
-      ),
-    ).toBe(true);
+    expect(holdsAnimal(reduce(animalOnBoth, travel(animalOnBoth)))).toBe(true);
 
     // Between the two ways' odds: a place one way, an animal the other. The
     // place is looked for across BOTH slots, because a place-band leg may also
@@ -717,6 +751,12 @@ describe("route branches", () => {
       // can now land on the same animal — and they are still different legs,
       // because only one of them has a place standing beside it. Comparing
       // `activeEncounterId` alone would call that a fake choice.
+      // Two animals on one leg do not threaten this either, and the reason is
+      // the same one the fork rule already turns on. Below both roads' odds the
+      // two ways draw the same animal AND read the same salt, so a two-animal
+      // leg would be identical down both — but that leg never forks, because
+      // `peekRoad` agrees on the two ways there. Where a fork DOES exist the
+      // signs differ, so one way is animal-band and the other is not.
       expect([first!.activeEncounterId, first!.secondSceneId]).not.toEqual([
         second!.activeEncounterId,
         second!.secondSceneId,
@@ -789,12 +829,14 @@ describe("route branches", () => {
   // what they read, and the road has to then do that — so the sign and the
   // transition are computed from one place. This walks a wide cohort and
   // demands they never disagree.
-  // "place" is the one sign that does not say everything: a place-band leg may
-  // hold an animal as well, and the sign does not mention it. That is the
-  // deliberate under-report (see `RoadSign`), so this test can only demand the
-  // place it named is there. The weakening is not left as the only record of
-  // it — "the sign under-reports, on purpose" below asserts the pair case
-  // directly, so a sign that stopped under-reporting would still be caught.
+  // NEITHER sign says everything, and both weakenings are deliberate (see
+  // `RoadSign`). A place-band leg may hold an animal beside the place, and an
+  // animal-band leg may hold a second animal — each band has its own
+  // subdivision now — so all this can demand is that the KIND named is there
+  // and that the other kind is not. Neither weakening is left as the only
+  // record of itself: the two "the sign under-reports, on purpose" tests below
+  // assert both shapes directly, so a sign that stopped under-reporting would
+  // still be caught.
   it("never shows a sign the road then contradicts", () => {
     const tally = { quiet: 0, animal: 0, place: 0 };
     for (let rngState = 1; rngState <= 400; rngState++) {
@@ -811,8 +853,10 @@ describe("route branches", () => {
 
         expect(next.phase).toBe("encounter");
         if (sign === "animal") {
-          // An animal and NOTHING else: the pair is carved out of the place
-          // band, so an animal-band leg is always a lone animal.
+          // At least one animal, and never a place. It used to be "an animal
+          // and NOTHING else"; the animal band's own subdivision is what
+          // weakened it, and only that far — a second animal is still an
+          // animal, and a place is still drawn out of the other band entirely.
           expect(holdsAnimal(next)).toBe(true);
           expect(holdsPlace(next)).toBe(false);
         } else {
@@ -958,7 +1002,7 @@ describe("a leg that holds two things", () => {
   // that never makes one. The sky is pinned clear because several of these
   // choose an option, and a rain-closed answer would make the assertion below
   // it vacuous.
-  function makePairState(overrides: Partial<GameState> = {}): GameState {
+  function makePlacePairState(overrides: Partial<GameState> = {}): GameState {
     const before = makeTravelingState({
       rngState: findPlaceRngState("quiet", false, { paired: true }),
       seed: findSeedWith("clear", 0),
@@ -968,10 +1012,49 @@ describe("a leg that holds two things", () => {
       type: "TRAVEL",
       routeId: routeFor(before.legIndex, "quiet").id,
     });
-    if (next.secondSceneId === null) {
-      throw new Error("that state did not turn up a pair");
+    if (!holdsAnimal(next) || !holdsPlace(next)) {
+      throw new Error(
+        `that state did not turn up a place and an animal: ${sceneIdsOf(next)}`,
+      );
     }
     return next;
+  }
+
+  // The other shape a leg with two things on it can take, built exactly the
+  // same way and for the same reason: walked onto off the animal band rather
+  // than fabricated, so a reducer that never puts two animals on a leg cannot
+  // keep the tests below green.
+  function makeTwoAnimalState(overrides: Partial<GameState> = {}): GameState {
+    const before = makeTravelingState({
+      rngState: findAnimalRngState("quiet", { second: true }),
+      seed: findSeedWith("clear", 0),
+      ...overrides,
+    });
+    const next = reduce(before, {
+      type: "TRAVEL",
+      routeId: routeFor(before.legIndex, "quiet").id,
+    });
+    if (animalsOn(next).length !== 2) {
+      throw new Error(
+        `that state did not turn up two animals: ${sceneIdsOf(next)}`,
+      );
+    }
+    return next;
+  }
+
+  function sceneIdsOf(state: GameState): string {
+    return activeScenes(state)
+      .map((scene) => scene.id)
+      .join(" + ");
+  }
+
+  // Every animal standing on the leg, in slot order. Filtered out of the leg's
+  // own scenes rather than found in `encounters`, because `encounters` order is
+  // not slot order and a leg can now hold two of them.
+  function animalsOn(state: GameState) {
+    return activeScenes(state).flatMap((scene) =>
+      encounters.filter((candidate) => candidate.id === scene.id),
+    );
   }
 
   // The two things standing on this leg, resolved by KIND rather than by which
@@ -979,20 +1062,34 @@ describe("a leg that holds two things", () => {
   // that took the animal to BE the first slot would make every test using it
   // fail for that one reason, and stop saying anything about resolution or
   // about the codex gate.
+  // It THROWS on any leg that is not one animal and one place, which is not
+  // defensiveness: `find` over `encounters` returns the first match in
+  // ENCOUNTERS order, so handed a two-animal leg it would silently name an
+  // arbitrary one of the two "the animal" and the non-null assertion on the
+  // place would hand back `undefined`. A caller that routes the wrong shape in
+  // here has to fail loudly rather than measure the wrong thing.
   function animalAndPlace(state: GameState) {
     const scenes = activeScenes(state);
-    const animal = encounters.find((candidate) =>
+    const animals = encounters.filter((candidate) =>
       scenes.some((scene) => scene.id === candidate.id),
-    )!;
-    const place = roadEvents.find((candidate) =>
+    );
+    const places = roadEvents.filter((candidate) =>
       scenes.some((scene) => scene.id === candidate.id),
-    )!;
-    return { animal, place };
+    );
+    if (animals.length !== 1 || places.length !== 1) {
+      throw new Error(
+        `not one animal and one place on this leg: ${sceneIdsOf(state)}`,
+      );
+    }
+    return { animal: animals[0]!, place: places[0]! };
   }
 
   it("reads everything standing on the leg, animal first", () => {
     const animal = encounters[0]!;
     const place = roadEvents[0]!;
+    const otherAnimal = encounters.find(
+      (candidate) => candidate.speciesId !== animal.speciesId,
+    )!;
 
     expect(activeScenes(makeTravelingState())).toEqual([]);
     expect(
@@ -1009,6 +1106,17 @@ describe("a leg that holds two things", () => {
         }),
       ),
     ).toEqual([animal, place]);
+    // Both shapes of a leg holding two things, so the contract is stated for
+    // both in one place: the function reads the slots and does not care what
+    // KIND stands in either of them.
+    expect(
+      activeScenes(
+        makeTravelingState({
+          activeEncounterId: animal.id,
+          secondSceneId: otherAnimal.id,
+        }),
+      ),
+    ).toEqual([animal, otherAnimal]);
   });
 
   // The only guard on PAIR_CHANCE's value, and deliberately the only one: a
@@ -1036,11 +1144,15 @@ describe("a leg that holds two things", () => {
     expect(paired).toBeGreaterThan(0);
   });
 
-  // The order the screen shows a pair in: the animal first, the place beside
-  // it. Rendering only — no rule reads the slot, and the codex gate resolves
-  // the scene that owns each option rather than inheriting anything from this.
-  it("always puts the animal in the first slot and the place in the second", () => {
+  // What survives of "the animal goes first and the place goes second" now
+  // that a leg can hold two animals: the FIRST slot is never a place. The other
+  // half of that old claim — that slot 2 is always a place — is simply false
+  // today, and is replaced below by tallying what actually turns up there.
+  // Slot order is rendering order and no rule reads it, which is exactly what
+  // makes this easy to lose by accident, so it keeps a test of its own.
+  it("never puts a place in the first slot beside something else", () => {
     let pairs = 0;
+    const secondSlot = { place: 0, animal: 0 };
     for (let rngState = 1; rngState <= 400; rngState++) {
       const state = makeTravelingState({ rngState });
       for (const route of offeredRoutes(state)) {
@@ -1054,13 +1166,19 @@ describe("a leg that holds two things", () => {
             (candidate) => candidate.id === next.activeEncounterId,
           ),
         ).toBe(true);
-        expect(
-          roadEvents.some((candidate) => candidate.id === next.secondSceneId),
-        ).toBe(true);
+        if (roadEvents.some((c) => c.id === next.secondSceneId)) {
+          secondSlot.place += 1;
+        } else {
+          secondSlot.animal += 1;
+        }
       }
     }
 
     expect(pairs).toBeGreaterThan(0);
+    // Both kinds have to actually stand in the second slot over this scan, or
+    // the dead half of the old assertion was dropped rather than replaced.
+    expect(secondSlot.place).toBeGreaterThan(0);
+    expect(secondSlot.animal).toBeGreaterThan(0);
   });
 
   // Both questions a pair asks — whether there is an animal here as well, and
@@ -1084,7 +1202,7 @@ describe("a leg that holds two things", () => {
   });
 
   it("answering the animal ends the day and leaves the place standing", () => {
-    const state = makePairState({ food: 3, preparation: 3 });
+    const state = makePlacePairState({ food: 3, preparation: 3 });
     const { animal, place } = animalAndPlace(state);
     const option = animal.options.find(
       (candidate) =>
@@ -1118,7 +1236,7 @@ describe("a leg that holds two things", () => {
   });
 
   it("answering the place ends the day, leaves the animal standing, and teaches nothing", () => {
-    const state = makePairState({ food: 3, preparation: 3 });
+    const state = makePlacePairState({ food: 3, preparation: 3 });
     const { animal, place } = animalAndPlace(state);
     const option = place.options.find((candidate) =>
       canChooseOption(state, candidate),
@@ -1143,7 +1261,7 @@ describe("a leg that holds two things", () => {
   });
 
   it("ignores an option belonging to neither thing on this leg, returning the same state reference", () => {
-    const state = makePairState();
+    const state = makePlacePairState();
     const elsewhere = [...encounters, ...roadEvents].find(
       (scene) =>
         scene.id !== state.activeEncounterId &&
@@ -1164,7 +1282,7 @@ describe("a leg that holds two things", () => {
   // of `rngState`, so the two compose freely and this can be pinned to a clear
   // sky without disturbing the pair.
   it("reads the codex gate off the animal, and leaves the place's options alone", () => {
-    const unknown = makePairState({ food: 3, preparation: 3 });
+    const unknown = makePlacePairState({ food: 3, preparation: 3 });
     const { animal, place } = animalAndPlace(unknown);
     const teaches = animal.options.find(
       (option) => option.codex === "teaches",
@@ -1188,47 +1306,32 @@ describe("a leg that holds two things", () => {
     }
   });
 
-  // Hand-built rather than walked, unlike everything else in this block: the
-  // gate is pure in `(state, option)`, and no leg the reducer builds today
-  // holds two ANIMALS — a pair is always a place and an animal. So this state
-  // is unreachable until the task that puts two animals on one leg arrives, and
-  // that task re-pins this on a walked leg. What it checks is exactly what
-  // would break then: an option belonging to the second animal has to be gated
-  // on the SECOND animal's species, not on the first slot's.
+  // WALKED, not hand-built. This was fabricated when it was written, because
+  // no leg the reducer built then held two animals; the state it described is
+  // now one TRAVEL produces, so it is produced that way and the test says
+  // something about the game rather than about the gate in isolation. What it
+  // checks is unchanged: an option belonging to the second animal has to be
+  // gated on the SECOND animal's species, not on the first slot's.
   it("reads the codex gate off the scene that owns the option, not off the first slot", () => {
-    const first = encounters.find((scene) => scene.id === "ford-boar")!;
-    const second = encounters.find((scene) => scene.id === "pine-shadows")!;
-    const firstTeaches = first.options.find(
+    // Clear sky and resources to spare, so the codex gate is the only thing
+    // that can refuse any of these options.
+    const state = makeTwoAnimalState({ food: 3, preparation: 3 });
+    const [first, second] = animalsOn(state);
+    const firstTeaches = first!.options.find(
       (option) => option.codex === "teaches",
     )!;
-    const firstRequires = first.options.find(
+    const firstRequires = first!.options.find(
       (option) => option.codex === "requires",
     )!;
-    const secondTeaches = second.options.find(
+    const secondTeaches = second!.options.find(
       (option) => option.codex === "teaches",
     )!;
-    const secondRequires = second.options.find(
+    const secondRequires = second!.options.find(
       (option) => option.codex === "requires",
     )!;
 
-    // Clear sky and resources to spare, so the codex gate is the only thing
-    // that can refuse any of these options.
-    const base: Partial<GameState> = {
-      phase: "encounter",
-      activeEncounterId: first.id,
-      secondSceneId: second.id,
-      food: 3,
-      preparation: 3,
-      seed: findSeedWith("clear", 0),
-    };
-    const knowsFirst = makeTravelingState({
-      ...base,
-      known: [first.speciesId],
-    });
-    const knowsSecond = makeTravelingState({
-      ...base,
-      known: [second.speciesId],
-    });
+    const knowsFirst = { ...state, known: [first!.speciesId] };
+    const knowsSecond = { ...state, known: [second!.speciesId] };
 
     expect(canChooseOption(knowsFirst, firstTeaches)).toBe(false);
     expect(canChooseOption(knowsFirst, firstRequires)).toBe(true);
@@ -1246,15 +1349,15 @@ describe("a leg that holds two things", () => {
     // scenes. That agreement is the whole point: `offeredOptions` is handed the
     // scene and was always right, so a gate reading the first slot would show
     // the second animal's observation and then refuse the click.
-    for (const state of [knowsFirst, knowsSecond]) {
-      for (const scene of [first, second]) {
-        const shown = offeredOptions(state, scene);
+    for (const knowing of [knowsFirst, knowsSecond]) {
+      for (const scene of [first!, second!]) {
+        const shown = offeredOptions(knowing, scene);
         // Each scene hides exactly one option here — the spent observation in
         // the known one, the locked answer in the unknown one — so the
         // comparison below is not two all-true lists agreeing with each other.
         expect(shown.length).toBe(scene.options.length - 1);
         for (const option of scene.options) {
-          expect(canChooseOption(state, option)).toBe(shown.includes(option));
+          expect(canChooseOption(knowing, option)).toBe(shown.includes(option));
         }
       }
     }
@@ -1282,6 +1385,11 @@ describe("a leg that holds two things", () => {
   // salted stream that has gone constant looks exactly like a working one from
   // any single sample. Every species has to turn up, and at least one of them
   // in more than one of its situations.
+  // Its subject is the PLACE pair's animal specifically, so the walk is guarded
+  // on the leg holding a place: a two-animal leg has no "paired animal" to
+  // speak of, and feeding one to `animalAndPlace` would tally an arbitrary one
+  // of the two and quietly pollute the very figures this exists to check. The
+  // second animal's own draw is measured by its own test below.
   it("draws the paired animal off a real stream, not a constant", () => {
     const species = new Set<string>();
     const situations = new Map<string, Set<string>>();
@@ -1289,7 +1397,7 @@ describe("a leg that holds two things", () => {
       const state = makeTravelingState({ rngState });
       for (const route of offeredRoutes(state)) {
         const next = reduce(state, { type: "TRAVEL", routeId: route.id });
-        if (next.secondSceneId === null) {
+        if (next.secondSceneId === null || !holdsPlace(next)) {
           continue;
         }
         const { animal } = animalAndPlace(next);
@@ -1304,6 +1412,215 @@ describe("a leg that holds two things", () => {
       speciesList.map((candidate) => candidate.id).sort(),
     );
     expect([...situations.values()].some((seen) => seen.size > 1)).toBe(true);
+  });
+
+  // The other shape: two ANIMALS on one leg, where what the traveler gives up
+  // by answering one of them is the other one's field note rather than a
+  // resource. Everything above this line is the place pair.
+
+  // The only guard on TWO_ANIMAL_CHANCE's value, and deliberately the only one,
+  // for the reason its place-band twin gives: a bounds assertion on the
+  // constant cannot fail, and this goes red at 0 and at 1.
+  it("turns up both shapes on the animal band: some legs hold one animal, some hold two", () => {
+    let lone = 0;
+    let two = 0;
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      const state = makeTravelingState({ rngState });
+      for (const route of offeredRoutes(state)) {
+        const next = reduce(state, { type: "TRAVEL", routeId: route.id });
+        if (!holdsAnimal(next) || holdsPlace(next)) {
+          continue;
+        }
+        if (animalsOn(next).length === 2) {
+          two += 1;
+        } else {
+          lone += 1;
+        }
+      }
+    }
+
+    expect(lone).toBeGreaterThan(0);
+    expect(two).toBeGreaterThan(0);
+  });
+
+  // Two of the same species would be one codex entry standing on the leg
+  // twice, so answering either would cost the traveler no knowledge at all —
+  // which is the entire thing this shape exists to charge them.
+  it("never puts the same species twice on one leg", () => {
+    let two = 0;
+    for (let rngState = 1; rngState <= 400; rngState++) {
+      const state = makeTravelingState({ rngState });
+      for (const route of offeredRoutes(state)) {
+        const animals = animalsOn(
+          reduce(state, { type: "TRAVEL", routeId: route.id }),
+        );
+        if (animals.length < 2) {
+          continue;
+        }
+        two += 1;
+        expect(animals[0]!.speciesId).not.toBe(animals[1]!.speciesId);
+      }
+    }
+
+    expect(two).toBeGreaterThan(0);
+  });
+
+  // The second animal rides a salt rather than the journey's own stream, and a
+  // salted stream that has gone constant, or that has quietly correlated with
+  // the band roll that decided there would be two, looks exactly like a working
+  // one from any single sample. So: every species has to reach slot 2, at least
+  // one of them in more than one situation, and every ORDERED pair of distinct
+  // species has to occur — the last of those being what a correlation between
+  // the two salts would break, since it would tie slot 2's draw to slot 1's.
+  it("draws the second animal off a real stream, independent of the first", () => {
+    const slotTwo = new Map<string, Set<string>>();
+    const orderedPairs = new Set<string>();
+    for (let rngState = 1; rngState <= 5000; rngState++) {
+      const state = makeTravelingState({ rngState });
+      for (const route of offeredRoutes(state)) {
+        const animals = animalsOn(
+          reduce(state, { type: "TRAVEL", routeId: route.id }),
+        );
+        if (animals.length < 2) {
+          continue;
+        }
+        const [first, second] = animals;
+        const seen = slotTwo.get(second!.speciesId) ?? new Set<string>();
+        seen.add(second!.id);
+        slotTwo.set(second!.speciesId, seen);
+        orderedPairs.add(`${first!.speciesId} then ${second!.speciesId}`);
+      }
+    }
+
+    expect([...slotTwo.keys()].sort()).toEqual(
+      speciesList.map((candidate) => candidate.id).sort(),
+    );
+    expect([...slotTwo.values()].some((seen) => seen.size > 1)).toBe(true);
+    // All twenty of them, measured: 20/20 at this scan size, and 20/20 at 400
+    // states as well, so this is not sitting on the edge of its own cohort.
+    const everyOrderedPair = speciesList.flatMap((first) =>
+      speciesList
+        .filter((second) => second.id !== first.id)
+        .map((second) => `${first.id} then ${second.id}`),
+    );
+    expect([...orderedPairs].sort()).toEqual(everyOrderedPair.sort());
+  });
+
+  // Both questions — whether a second animal is here, and which one — are read
+  // off salts, so a leg holding two animals spends exactly the rolls a leg
+  // holding one spends. That is what keeps every existing seed's road script
+  // intact, and the golden trace is the other half of the proof.
+  it("spends no extra roll on the second animal", () => {
+    const before = makeTravelingState({
+      rngState: findAnimalRngState("quiet", { second: true }),
+    });
+    const route = routeFor(before.legIndex, "quiet");
+    const sign = peekRoad(before, route);
+    const next = reduce(before, { type: "TRAVEL", routeId: route.id });
+
+    expect(animalsOn(next)).toHaveLength(2);
+    expect(next.rngState).toBe(
+      rollRandom(rollRandom(before.rngState).nextState).nextState,
+    );
+    // And asking twice is the same question.
+    expect(peekRoad(before, route)).toBe(sign);
+  });
+
+  // The other half of "no seed's script moved", and the half the rolls above do
+  // not cover: WHICH slot each animal stands in. The leg's own draw keeps slot
+  // 1 and the second animal is added beside it — the rule the golden trace's
+  // comment block reads a two-animal row by (may GAIN a second id, never change
+  // its first), which until this test was prose nothing checked: seed 1's line
+  // never holds two animals, so swapping the two slots left the whole suite
+  // green.
+  // Recorded ids rather than a derived expectation, because the counterfactual
+  // — what this rngState draws when the salt says no second animal — is not
+  // reachable from here without reimplementing the draw. The first id is not a
+  // snapshot of whatever the current code happens to do: it is what the reducer
+  // drew at this rngState BEFORE an animal leg could hold two, read off the
+  // pre-change reducer at the same state (rngState 28, `thorn-hedge-flock`,
+  // second slot empty). So this pins the claim rather than restating it.
+  it("keeps the leg's own draw in the first slot and adds the second animal beside it", () => {
+    const before = makeTravelingState({
+      rngState: findAnimalRngState("quiet", { second: true }),
+    });
+    const route = routeFor(before.legIndex, "quiet");
+    const next = reduce(before, { type: "TRAVEL", routeId: route.id });
+
+    expect(next.activeEncounterId).toBe("thorn-hedge-flock");
+    expect(next.secondSceneId).toBe("walled-lane-stag");
+  });
+
+  // Answering EITHER of them, in turn: the whole cost of the shape is that the
+  // other one is left where it stands.
+  it("answering one animal ends the day and leaves the other standing", () => {
+    const state = makeTwoAnimalState({ food: 3, preparation: 3 });
+    const animals = animalsOn(state);
+    const weather = weatherAt(state.seed, state.legIndex);
+
+    for (const [index, answered] of animals.entries()) {
+      const other = animals[1 - index]!;
+      const option = answered.options.find(
+        (candidate) =>
+          canChooseOption(state, candidate) &&
+          state.hp + effectiveOption(candidate, weather).hpDelta > 0,
+      )!;
+      const effective = effectiveOption(option, weather);
+
+      const next = reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: option.id,
+      });
+
+      expect(next.activeEncounterId).toBeNull();
+      expect(next.secondSceneId).toBeNull();
+      expect(next.legIndex).toBe(state.legIndex + 1);
+      // The road charges for the leg once, not once per animal standing on it.
+      expect(next.food).toBe(state.food + effective.foodDelta - 1);
+      expect(next.lastRoadToll).toBe(journey.road.fed);
+      expect(next.log).toEqual([
+        ...state.log,
+        `${answered.title} — ${option.label}`,
+      ]);
+      expect(next.log.at(-1)).not.toContain(other.title);
+    }
+  });
+
+  // Knowledge against other knowledge, which is the reason this shape exists.
+  // Watching the SECOND animal has to learn the second animal: a gate or a
+  // reward resolved through `activeEncounterId` would learn the first one's
+  // species here and leave the traveler with an entry they did not choose.
+  it("watching one animal learns that one and not the other", () => {
+    const state = makeTwoAnimalState({ food: 3, preparation: 3 });
+    const [first, second] = animalsOn(state);
+    const watch = second!.options.find((option) => option.codex === "teaches")!;
+
+    expect(canChooseOption(state, watch)).toBe(true);
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: watch.id,
+    });
+
+    expect(next.known).toEqual([second!.speciesId]);
+    expect(next.known).not.toContain(first!.speciesId);
+  });
+
+  // The sign is read BEFORE the walk, for the reason the place-band version of
+  // this gives: `peekRoad` is a function of `state.rngState`, which TRAVEL has
+  // advanced by two rolls by the time the leg exists.
+  it("shows the sign of an animal and says nothing about the second — the sign under-reports, on purpose", () => {
+    const before = makeTravelingState({
+      rngState: findAnimalRngState("quiet", { second: true }),
+    });
+    const route = routeFor(before.legIndex, "quiet");
+
+    expect(peekRoad(before, route)).toBe("animal");
+
+    const next = reduce(before, { type: "TRAVEL", routeId: route.id });
+
+    expect(animalsOn(next)).toHaveLength(2);
+    expect(holdsPlace(next)).toBe(false);
   });
 });
 
@@ -2248,7 +2565,11 @@ describe("full journeys", () => {
     // it had to: a pair only ever ADDS options to a leg that already had some,
     // and this line takes the best hpDelta among them, so more to choose from
     // can only help. 21 seeds it used to lose it now survives.
-    // The floor stays 125 — deliberately well under the measured 164, because
+    // 170 of 200 once an animal leg could hold a SECOND animal, and the easy
+    // way again for exactly the same reason — six more seeds survive, and no
+    // mechanism here can push the other way, since a second animal is a second
+    // menu on a leg that already had one.
+    // The floor stays 125 — deliberately well under the measured 170, because
     // a simple policy's exact score is brittle to content retuning. What it
     // guards is a collapse, not a wobble, and the headroom it keeps over the
     // measurement is the same headroom it kept at 145.
@@ -2418,7 +2739,9 @@ describe("full journeys", () => {
     // (10.0%). Same reason as every other change that could only widen the
     // walk — a pair adds a whole second scene's options to a leg that already
     // had one scene's worth, and the exhaustive walk tries all of them.
-    // The cap stays 0.4, and it is slack at 10.0% — this has been a collapse
+    // A second ANIMAL on an animal leg is the same widening on the other band:
+    // 16/200 (8.0%).
+    // The cap stays 0.4, and it is slack at 8.0% — this has been a collapse
     // guard rather than a tuning target since the village halved the figure it
     // watches. Recorded rather than tightened to fit: a cap re-derived from
     // each measurement is a record of the measurement, not a bound on it.
@@ -2528,6 +2851,17 @@ describe("full journeys", () => {
   // what this line picked. A change on a leg that turned up an animal, or any
   // movement in `legIndex`/`phase`, would have meant the roll discipline broke,
   // and there is none.
+  // Re-run when an ANIMAL leg gained the ability to hold a second animal, and
+  // NOT re-recorded: not one cell moved. Two things had to hold for that and
+  // both did. This line meets the animal band on legs 3, 6 and 7, and the salt
+  // says no on all three — three quarters of animal legs hold one animal, so
+  // three in a row is the common case rather than a surprise. And the pair on
+  // leg 0 is a PLACE-band leg, which the animal band's subdivision does not
+  // touch at all. An unmoved trace is the expected outcome here, not a
+  // suspicious one: the two shapes are pinned reachable by their own tests, and
+  // what this file's silence adds is that no roll was consumed anywhere — a
+  // spent roll would have shifted the later legs' draws and shown up as a
+  // changed `activeEncounterId` further down.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {

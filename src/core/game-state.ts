@@ -30,9 +30,10 @@ export interface GameState {
   // every other leg. A leg holding one of each shows the animal before the
   // place, and that is a RENDERING ORDER: nothing resolves through the slot any
   // more. The codex gate used to — it read the species off `activeEncounterId`
-  // — and that dependency was removed before it could break, because on a leg
-  // holding two ANIMALS the first slot would gate the second animal's options
-  // on the wrong species.
+  // — and that dependency was removed before the shape that breaks it existed.
+  // That shape exists now, and "watching one animal learns that one and not the
+  // other" in reducer.test.ts walks it: on a leg holding two ANIMALS the first
+  // slot would have gated the second animal's options on the wrong species.
   // What is load-bearing instead is that OPTION IDS ARE UNIQUE ACROSS SCENES
   // (pinned in content.test.ts): that is what lets `canChooseOption` and
   // CHOOSE_ENCOUNTER_OPTION both find the scene that owns an option from its id

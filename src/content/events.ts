@@ -13,6 +13,10 @@
 // the route's own odds plus EVENT_CHANCE x PAIR_CHANCE — not a sample; a sweep
 // over 2,000,000 rng states reproduces them, which is evidence that the salts
 // do not correlate with the band roll rather than evidence of the rate itself.
+// The animal band has since gained a subdivision of its own
+// (`TWO_ANIMAL_CHANCE` in encounters/index.ts) and those four figures are
+// unchanged by it, because subdividing a band moves no boundary: an
+// animal-band leg holds one animal or two, and either way it holds one.
 // More meetings is not the danger; fewer of them is.
 
 // Deliberately its own type rather than a shared one with encounters. A place
