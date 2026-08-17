@@ -96,11 +96,13 @@ Watching costs more than the good answer does — an afternoon, a meal, sometime
 
 What you get is knowledge of how that animal works.
 
-Knowing an animal comes in layers. Watching teaches the next thing you do not know about it, so a second afternoon with the same animal is not the first one over again.
+Knowing an animal comes in layers, and each scene teaches one particular layer of it — not whatever you happen to be missing. So a second afternoon with the same animal is not always the first one over again, and it is the scene that decides which.
 
 The notebook says when there is more to an animal than you have worked out. It does not say how much more.
 
-Some situations sit deeper than what you know. The watching is still on the menu there, with a line saying you cannot read it yet — the animal is doing something you have no way to follow. Learn the layer under it and the same scene opens.
+Some scenes sit deeper than what you know. The watching is still on the menu there, with a line saying you cannot read it yet — the animal is doing something you have no way to follow. Learn the layer under it and the same scene opens.
+
+A scene whose layer you already have does not teach it twice. It shows you what that knowledge buys instead.
 
 What a layer opens is an answer you did not have. It still costs something; knowing more never makes an encounter free.
 
