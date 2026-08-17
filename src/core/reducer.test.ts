@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
-import type { GameState } from "./game-state";
+import type { GameState, KnownSpecies } from "./game-state";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "./game-state";
 import {
   activeScenes,
   canChooseOption,
+  codexLayerOf,
   findScene,
   offeredOptions,
   offeredRoutes,
   offeredVillageOptions,
   peekRoad,
   reduce,
+  speciesDepth,
   speciesOf,
 } from "./reducer";
 import type { GameAction } from "./actions";
@@ -45,6 +47,16 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     log: [],
     ...overrides,
   };
+}
+
+// One species' entry in `known`, at the depth this fixture means. Local to this
+// file, where its thirty-odd fixture sites are the repetition that earns a
+// helper; spread two calls together for a traveler who knows two animals.
+// Deliberately not exported and deliberately not a shared test-utils module:
+// this repo has none, and a fixture in another file that needs a graded codex
+// should state its own depth as a literal, where the reader can see it.
+function knownToDepth(speciesId: string, depth: number): KnownSpecies[] {
+  return [{ speciesId, depth }];
 }
 
 // Which of a leg's two ways is which. Every leg carries the same pair of odds
@@ -340,12 +352,18 @@ function bakerMorning(state: GameState): GameAction {
 
 // Plays a whole journey from a seed and returns every state along the way. The
 // step bound doubles as a proof that no state can leave the player stuck.
+// `from` is what a CHAIN of journeys is played out of: START_JOURNEY keeps the
+// codex and resets everything else, so handing it the end state of the last
+// journey is how a traveler carries what they learned into the next one. It
+// defaults to a fresh page load, which is what every single-journey caller
+// wants.
 function playJourney(
   seed: number,
   pickOptionId: OptionPolicy,
   which: Which = "quiet",
+  from: GameState = createInitialState(),
 ): GameState[] {
-  let state = reduce(createInitialState(), { type: "START_JOURNEY", seed });
+  let state = reduce(from, { type: "START_JOURNEY", seed });
   const trace: GameState[] = [state];
 
   // Exhaustive on the phase, and only `arrived` and `defeated` end a journey.
@@ -1253,7 +1271,9 @@ describe("a leg that holds two things", () => {
     // The animal was there and was not answered, so nothing was learned from
     // it: what the traveler gave up is exactly this.
     expect(next.known).toEqual(state.known);
-    expect(next.known).not.toContain(animal.speciesId);
+    expect(next.known.map((entry) => entry.speciesId)).not.toContain(
+      animal.speciesId,
+    );
     expect(next.log).toEqual([
       ...state.log,
       `${place.title} — ${option.label}`,
@@ -1282,26 +1302,39 @@ describe("a leg that holds two things", () => {
   // of `rngState`, so the two compose freely and this can be pinned to a clear
   // sky without disturbing the pair.
   it("reads the codex gate off the animal, and leaves the place's options alone", () => {
-    const unknown = makePlacePairState({ food: 3, preparation: 3 });
-    const { animal, place } = animalAndPlace(unknown);
+    const walked = makePlacePairState({ food: 3, preparation: 3 });
+    const { animal, place } = animalAndPlace(walked);
     const teaches = animal.options.find(
       (option) => option.codex === "teaches",
     )!;
     const requires = animal.options.find(
       (option) => option.codex === "requires",
     )!;
-    const known = { ...unknown, known: [animal.speciesId] };
+    // Both states named against THIS SITUATION'S OWN RUNG rather than against a
+    // flat known/unknown: one rung short is where its observation is live, and
+    // at its rung is where what the observation buys opens. At rung 1 "one
+    // short" is an empty notebook, which is the shape `known` has before an
+    // animal has been studied at all.
+    const layer = codexLayerOf(animal.id)!;
+    const belowTheRung = {
+      ...walked,
+      known: layer > 1 ? knownToDepth(animal.speciesId, layer - 1) : [],
+    };
+    const atTheRung = {
+      ...walked,
+      known: knownToDepth(animal.speciesId, layer),
+    };
 
-    expect(canChooseOption(unknown, teaches)).toBe(true);
-    expect(canChooseOption(unknown, requires)).toBe(false);
-    expect(canChooseOption(known, teaches)).toBe(false);
-    expect(canChooseOption(known, requires)).toBe(true);
+    expect(canChooseOption(belowTheRung, teaches)).toBe(true);
+    expect(canChooseOption(belowTheRung, requires)).toBe(false);
+    expect(canChooseOption(atTheRung, teaches)).toBe(false);
+    expect(canChooseOption(atTheRung, requires)).toBe(true);
 
     // And the place is untouched by any of it: what you know about the animal
     // standing beside it cannot change what the place costs.
     for (const option of place.options) {
-      expect(canChooseOption(known, option)).toBe(
-        canChooseOption(unknown, option),
+      expect(canChooseOption(atTheRung, option)).toBe(
+        canChooseOption(belowTheRung, option),
       );
     }
   });
@@ -1330,8 +1363,31 @@ describe("a leg that holds two things", () => {
       (option) => option.codex === "requires",
     )!;
 
-    const knowsFirst = { ...state, known: [first!.speciesId] };
-    const knowsSecond = { ...state, known: [second!.speciesId] };
+    // Each state knows ONE of the two to its own situation's rung and leaves
+    // the other one rung short, where that other one's observation is still
+    // live. Depths per situation rather than a flat known/unknown, because a
+    // rung-2 situation met by an ignorant traveler has a LOCKED observation,
+    // and this test is about which scene the gate reads — not about what a
+    // locked rung does, which has its own test.
+    // One rung short of a rung-1 situation is an empty notebook, which is
+    // exactly what an unstudied animal looks like.
+    const rungOf = (animal: (typeof encounters)[number]) =>
+      codexLayerOf(animal.id)!;
+    const liveObservation = (animal: (typeof encounters)[number]) =>
+      rungOf(animal) > 1
+        ? knownToDepth(animal.speciesId, rungOf(animal) - 1)
+        : [];
+    const atItsRung = (animal: (typeof encounters)[number]) =>
+      knownToDepth(animal.speciesId, rungOf(animal));
+
+    const knowsFirst = {
+      ...state,
+      known: [...atItsRung(first!), ...liveObservation(second!)],
+    };
+    const knowsSecond = {
+      ...state,
+      known: [...liveObservation(first!), ...atItsRung(second!)],
+    };
 
     expect(canChooseOption(knowsFirst, firstTeaches)).toBe(false);
     expect(canChooseOption(knowsFirst, firstRequires)).toBe(true);
@@ -1353,8 +1409,9 @@ describe("a leg that holds two things", () => {
       for (const scene of [first!, second!]) {
         const shown = offeredOptions(knowing, scene);
         // Each scene hides exactly one option here — the spent observation in
-        // the known one, the locked answer in the unknown one — so the
-        // comparison below is not two all-true lists agreeing with each other.
+        // the one known to its rung, the not-yet-earned answer in the one a
+        // rung short — so the comparison below is not two all-true lists
+        // agreeing with each other.
         expect(shown.length).toBe(scene.options.length - 1);
         for (const option of scene.options) {
           expect(canChooseOption(knowing, option)).toBe(shown.includes(option));
@@ -1591,8 +1648,16 @@ describe("a leg that holds two things", () => {
   // reward resolved through `activeEncounterId` would learn the first one's
   // species here and leave the traveler with an entry they did not choose.
   it("watching one animal learns that one and not the other", () => {
-    const state = makeTwoAnimalState({ food: 3, preparation: 3 });
-    const [first, second] = animalsOn(state);
+    const [first, second] = animalsOn(makeTwoAnimalState());
+    // Set out one rung short of the SECOND animal's situation, so the thing
+    // being watched here is a live observation. A rung-2 situation met by an
+    // ignorant traveler shows a LOCKED one instead, which is a different test.
+    const layer = codexLayerOf(second!.id)!;
+    const state = makeTwoAnimalState({
+      food: 3,
+      preparation: 3,
+      known: layer > 1 ? knownToDepth(second!.speciesId, layer - 1) : [],
+    });
     const watch = second!.options.find((option) => option.codex === "teaches")!;
 
     expect(canChooseOption(state, watch)).toBe(true);
@@ -1602,8 +1667,12 @@ describe("a leg that holds two things", () => {
       optionId: watch.id,
     });
 
-    expect(next.known).toEqual([second!.speciesId]);
-    expect(next.known).not.toContain(first!.speciesId);
+    expect(next.known).toEqual([
+      { speciesId: second!.speciesId, depth: layer },
+    ]);
+    expect(next.known.map((entry) => entry.speciesId)).not.toContain(
+      first!.speciesId,
+    );
   });
 
   // The sign is read BEFORE the walk, for the reason the place-band version of
@@ -1782,7 +1851,7 @@ describe("encounter choices", () => {
       optionId: "watch-from-the-reeds",
     });
 
-    expect(taught.known).toEqual(["boar"]);
+    expect(taught.known).toEqual(knownToDepth("boar", 1));
 
     // Now the same animal, a different situation.
     const atTheWallow = {
@@ -1815,7 +1884,7 @@ describe("encounter choices", () => {
       activeEncounterId: "pine-shadows",
       // Milestone 5 put this option behind the codex too. Knowing the wolves
       // already keeps this test on the preparation gate it was written for.
-      known: ["wolves"],
+      known: knownToDepth("wolves", 1),
     });
 
     expect(
@@ -1839,7 +1908,7 @@ describe("encounter choices", () => {
       preparation: carried,
       legIndex: 1,
       // As above: isolates the requirement from the codex gate.
-      known: ["wolves"],
+      known: knownToDepth("wolves", 1),
     });
 
     const next = reduce(state, {
@@ -1863,7 +1932,7 @@ describe("encounter choices", () => {
       preparation: showYourKit.requiresPreparation! - 1,
       // As above: without this the option would be refused for being unknown,
       // and this test would stop saying anything about preparation.
-      known: ["wolves"],
+      known: knownToDepth("wolves", 1),
     });
 
     expect(
@@ -2006,9 +2075,12 @@ describe("codex knowledge", () => {
     });
 
     expect(canChooseOption(base, showYourKit)).toBe(false);
-    expect(canChooseOption({ ...base, known: ["wolves"] }, showYourKit)).toBe(
-      true,
-    );
+    expect(
+      canChooseOption(
+        { ...base, known: knownToDepth("wolves", 1) },
+        showYourKit,
+      ),
+    ).toBe(true);
   });
 
   it("closes the observation once there is nothing left to learn", () => {
@@ -2019,12 +2091,17 @@ describe("codex knowledge", () => {
     });
 
     expect(canChooseOption(base, readThePack)).toBe(true);
-    expect(canChooseOption({ ...base, known: ["wolves"] }, readThePack)).toBe(
-      false,
-    );
+    // The pines sit at the wolves' first rung, so one rung is all it takes to
+    // spend this observation.
+    expect(
+      canChooseOption(
+        { ...base, known: knownToDepth("wolves", 1) },
+        readThePack,
+      ),
+    ).toBe(false);
   });
 
-  it("watching an animal costs the afternoon and teaches exactly one species", () => {
+  it("watching an animal costs the afternoon and teaches exactly one rung", () => {
     const state = makeTravelingState({
       phase: "encounter",
       activeEncounterId: "pine-shadows",
@@ -2038,7 +2115,7 @@ describe("codex knowledge", () => {
       optionId: "read-the-pack",
     });
 
-    expect(next.known).toEqual(["wolves"]);
+    expect(next.known).toEqual(knownToDepth("wolves", 1));
     // One hp, not two: `read-the-pack` was cheapened when the road went to
     // eight legs and five species made a second wolf meeting rarer. See the
     // note at the option itself.
@@ -2062,7 +2139,16 @@ describe("codex knowledge", () => {
     ).toBe(state);
   });
 
-  it("swaps the observation for what it unlocks, in both directions", () => {
+  // Replaces the old known/unknown swap test rather than sitting beside it.
+  // That one asserted the observation is shown to an ignorant traveler and the
+  // unlocked answer to a knowing one, which is true of a rung-1 situation and
+  // wrong by design for a rung-2 one: met ignorant, a rung-2 situation shows
+  // its observation LOCKED. This generalizes the same guarantee to every depth.
+  it("shows exactly one codex option at every depth, and never a longer menu", () => {
+    let locked = 0;
+    let live = 0;
+    let unlocked = 0;
+
     for (const encounter of encounters) {
       const teaches = encounter.options.find(
         (option) => option.codex === "teaches",
@@ -2070,26 +2156,50 @@ describe("codex knowledge", () => {
       const requires = encounter.options.find(
         (option) => option.codex === "requires",
       )!;
-      const base = makeTravelingState({
-        phase: "encounter",
-        activeEncounterId: encounter.id,
-      });
+      const species = speciesList.find(
+        (candidate) => candidate.id === encounter.speciesId,
+      )!;
+      const layer = codexLayerOf(encounter.id)!;
 
-      const unknown = offeredOptions(base, encounter).map(
-        (option) => option.id,
-      );
-      const known = offeredOptions(
-        { ...base, known: [encounter.speciesId] },
-        encounter,
-      ).map((option) => option.id);
+      for (let depth = 0; depth <= species.fieldNotes.length; depth++) {
+        const state = makeTravelingState({
+          phase: "encounter",
+          activeEncounterId: encounter.id,
+          known: depth > 0 ? knownToDepth(species.id, depth) : [],
+        });
+        const shown = offeredOptions(state, encounter).map(
+          (option) => option.id,
+        );
 
-      expect(unknown).toContain(teaches.id);
-      expect(unknown).not.toContain(requires.id);
-      expect(known).toContain(requires.id);
-      expect(known).not.toContain(teaches.id);
-      // One for one: learning swaps an answer in, it does not lengthen the menu.
-      expect(known.length).toBe(unknown.length);
+        // The same length at every depth: the codex slot holds exactly one of
+        // its two options and never both, and never neither.
+        expect(shown.length).toBe(encounter.options.length - 1);
+
+        if (depth >= layer) {
+          expect(shown).toContain(requires.id);
+          expect(shown).not.toContain(teaches.id);
+          unlocked += 1;
+          continue;
+        }
+
+        expect(shown).toContain(teaches.id);
+        expect(shown).not.toContain(requires.id);
+        // Shown either way; whether it can be TAKEN is the whole difference
+        // between a live observation and a locked door.
+        expect(canChooseOption(state, teaches)).toBe(depth === layer - 1);
+        if (depth === layer - 1) {
+          live += 1;
+        } else {
+          locked += 1;
+        }
+      }
     }
+
+    // All three faces have to have actually occurred, or this scan is checking
+    // a road with no ladder on it.
+    expect(locked).toBeGreaterThan(0);
+    expect(live).toBeGreaterThan(0);
+    expect(unlocked).toBeGreaterThan(0);
   });
 
   // Reversed deliberately. This test used to assert the opposite — that a new
@@ -2099,14 +2209,19 @@ describe("codex knowledge", () => {
   // Priced, the knowledge answers run 20-60% of their offers and no situation
   // resolves to one option even when every animal is known.
   it("carries what was learned into the next journey", () => {
+    // Two species at two different depths, so a crossing that dropped the grade
+    // and kept the ids would be caught as well as one that dropped an entry.
     const state = makeTravelingState({
       phase: "arrived",
-      known: ["wolves", "bees"],
+      known: [...knownToDepth("wolves", 2), ...knownToDepth("bees", 1)],
     });
 
     const next = reduce(state, { type: "START_JOURNEY", seed: 5 });
 
-    expect(next.known).toEqual(["wolves", "bees"]);
+    expect(next.known).toEqual([
+      ...knownToDepth("wolves", 2),
+      ...knownToDepth("bees", 1),
+    ]);
     // Everything else still resets, which is what makes this a new journey
     // rather than a continued one.
     expect(next.hp).toBe(journey.start.hp);
@@ -2141,7 +2256,14 @@ describe("codex knowledge", () => {
         hp: 10,
         food: 2,
         preparation: carried,
-        known: [speciesOf(encounterId)!],
+        // Known to this situation's own rung, which is what its unlocked answer
+        // asks for — both of these sit at rung 1, and reading the rung off the
+        // situation is what keeps that a fact about the content rather than an
+        // assumption in the fixture.
+        known: knownToDepth(
+          speciesOf(encounterId)!,
+          codexLayerOf(encounterId)!,
+        ),
         legIndex: 1,
         // bait-a-trace is rain-closed; pinned clear so the reducer actually
         // applies it here rather than refusing it and passing vacuously.
@@ -2156,6 +2278,342 @@ describe("codex knowledge", () => {
       expect(next.preparation).toBe(carried);
       expect(next.hp).toBe(10);
     }
+  });
+
+  // The two readings every layered gate is built out of, pinned on their own
+  // rather than only through the gates that call them.
+  it("reads a species' depth off its own entry, and nothing off anyone else's", () => {
+    const ignorant = makeTravelingState();
+    const oneRung = makeTravelingState({ known: knownToDepth("boar", 1) });
+    const twoRungs = makeTravelingState({ known: knownToDepth("boar", 2) });
+
+    expect(speciesDepth(ignorant, "boar")).toBe(0);
+    expect(speciesDepth(oneRung, "boar")).toBe(1);
+    expect(speciesDepth(twoRungs, "boar")).toBe(2);
+    // Another animal's entry says nothing about this one.
+    expect(speciesDepth(twoRungs, "wolves")).toBe(0);
+    // And a place resolves no species at all.
+    expect(speciesDepth(twoRungs, undefined)).toBe(0);
+  });
+
+  it("reads a situation's rung off the content, and none for a place", () => {
+    expect(codexLayerOf("ford-boar")).toBe(1);
+    expect(codexLayerOf("sow-and-litter")).toBe(2);
+    expect(codexLayerOf(roadEvents[0]!.id)).toBeUndefined();
+    expect(codexLayerOf(null)).toBeUndefined();
+  });
+
+  // The locked door itself: a rung met too early stays on the menu — that is
+  // what makes the ignorance visible — and cannot be taken.
+  it("shows a rung met too early and refuses it", () => {
+    const sow = findScene("sow-and-litter")!;
+    const watch = sow.options.find((option) => option.codex === "teaches")!;
+    const state = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "sow-and-litter",
+      hp: 10,
+      food: 2,
+      preparation: 2,
+      legIndex: 1,
+      seed: findSeedWith("clear", 1),
+    });
+
+    expect(offeredOptions(state, sow).map((option) => option.id)).toContain(
+      watch.id,
+    );
+    expect(canChooseOption(state, watch)).toBe(false);
+    expect(
+      reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: watch.id,
+      }),
+    ).toBe(state);
+  });
+
+  // The whole ladder, walked on one animal with real states: locked, learned,
+  // live, learned again, and what the second rung then opens.
+  it("learns rungs in order, and each one opens the next door", () => {
+    const wallow = findScene("wallow-boar")!;
+    const sow = findScene("sow-and-litter")!;
+    const sowWatch = sow.options.find((option) => option.codex === "teaches")!;
+    const sowAnswer = sow.options.find((option) => option.codex === "requires")!;
+    const atTheWallow = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "wallow-boar",
+      hp: 10,
+      food: 2,
+      preparation: 1,
+      legIndex: 1,
+      seed: findSeedWith("clear", 1),
+    });
+
+    // Rung 1, taken at the situation that teaches it.
+    const oneRung = reduce(atTheWallow, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: wallow.options.find((option) => option.codex === "teaches")!.id,
+    });
+    expect(oneRung.known).toEqual(knownToDepth("boar", 1));
+
+    // The sow, with that one rung in hand: her observation has come live and
+    // what it buys is still shut.
+    const atTheSow: GameState = {
+      ...oneRung,
+      phase: "encounter",
+      activeEncounterId: "sow-and-litter",
+      hp: 10,
+      food: 2,
+      preparation: 1,
+      legIndex: 1,
+      seed: findSeedWith("clear", 1),
+    };
+    expect(canChooseOption(atTheSow, sowWatch)).toBe(true);
+    expect(canChooseOption(atTheSow, sowAnswer)).toBe(false);
+
+    // Rung 2 — one entry, deepened where it stood, not a second one beside it.
+    const twoRungs = reduce(atTheSow, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: sowWatch.id,
+    });
+    expect(twoRungs.known).toEqual([{ speciesId: "boar", depth: 2 }]);
+
+    const deepened = { ...atTheSow, known: twoRungs.known };
+    expect(canChooseOption(deepened, sowAnswer)).toBe(true);
+    expect(canChooseOption(deepened, sowWatch)).toBe(false);
+  });
+
+  // The other branch of the same learning rule. A first lesson APPENDS, after
+  // whatever is already in the notebook, and a deeper one deepens in place — so
+  // the codex stays in the order the animals were first met however often the
+  // traveler goes back for a second look.
+  it("appends a newly met animal and deepens an old one where it stands", () => {
+    const atTheWallow = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "wallow-boar",
+      hp: 10,
+      food: 2,
+      preparation: 1,
+      legIndex: 1,
+      seed: findSeedWith("clear", 1),
+      known: knownToDepth("wolves", 1),
+    });
+
+    const oneRung = reduce(atTheWallow, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: findScene("wallow-boar")!.options.find(
+        (option) => option.codex === "teaches",
+      )!.id,
+    });
+    expect(oneRung.known).toEqual([
+      ...knownToDepth("wolves", 1),
+      ...knownToDepth("boar", 1),
+    ]);
+
+    const twoRungs = reduce(
+      {
+        ...oneRung,
+        phase: "encounter",
+        activeEncounterId: "sow-and-litter",
+        hp: 10,
+        food: 2,
+        legIndex: 1,
+        seed: findSeedWith("clear", 1),
+      },
+      {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: findScene("sow-and-litter")!.options.find(
+          (option) => option.codex === "teaches",
+        )!.id,
+      },
+    );
+
+    // Still wolves-then-boar: deepening does not move an entry to the end.
+    expect(twoRungs.known).toEqual([
+      ...knownToDepth("wolves", 1),
+      ...knownToDepth("boar", 2),
+    ]);
+  });
+
+  it("keeps depth per species: knowing the boar to the bottom moves no wolves gate", () => {
+    const pines = findScene("pine-shadows")!;
+    const ignorant = makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: "pine-shadows",
+      hp: 10,
+      food: 2,
+      preparation: 2,
+      legIndex: 1,
+      seed: findSeedWith("clear", 1),
+    });
+    const knowsTheBoar = { ...ignorant, known: knownToDepth("boar", 2) };
+    const knowsTheWolves = { ...ignorant, known: knownToDepth("wolves", 1) };
+
+    for (const option of pines.options) {
+      expect(canChooseOption(knowsTheBoar, option)).toBe(
+        canChooseOption(ignorant, option),
+      );
+      expect(offeredOptions(knowsTheBoar, pines)).toEqual(
+        offeredOptions(ignorant, pines),
+      );
+    }
+
+    // And not because nothing here moves: this animal's OWN knowledge moves it.
+    expect(
+      pines.options.some(
+        (option) =>
+          canChooseOption(knowsTheWolves, option) !==
+          canChooseOption(ignorant, option),
+      ),
+    ).toBe(true);
+  });
+
+  // The ceiling, scanned rather than argued: at full depth a species has no
+  // situation left that will teach anything.
+  it("offers no choosable observation once a species is known to the bottom", () => {
+    let scanned = 0;
+
+    for (const species of speciesList) {
+      const known = knownToDepth(species.id, species.fieldNotes.length);
+      for (const situation of encounters.filter(
+        (encounter) => encounter.speciesId === species.id,
+      )) {
+        const state = makeTravelingState({
+          phase: "encounter",
+          activeEncounterId: situation.id,
+          hp: 10,
+          food: 3,
+          preparation: 3,
+          legIndex: 1,
+          seed: findSeedWith("clear", 1),
+          known,
+        });
+        const teaches = situation.options.find(
+          (option) => option.codex === "teaches",
+        )!;
+
+        expect(canChooseOption(state, teaches)).toBe(false);
+        expect(
+          offeredOptions(state, situation).map((option) => option.id),
+        ).not.toContain(teaches.id);
+        scanned += 1;
+      }
+    }
+
+    expect(scanned).toBe(encounters.length);
+  });
+
+  // What the deeper rung actually buys, priced at the exact state binary
+  // knowledge used to open it in: one rung down is no longer enough.
+  it("keeps a deeper rung's answer shut to a traveler one rung short", () => {
+    let checked = 0;
+
+    for (const situation of encounters.filter(
+      (encounter) => encounter.codexLayer > 1,
+    )) {
+      const requires = situation.options.find(
+        (option) => option.codex === "requires",
+      )!;
+      const oneShort = makeTravelingState({
+        phase: "encounter",
+        activeEncounterId: situation.id,
+        hp: 10,
+        food: 3,
+        preparation: 3,
+        legIndex: 1,
+        seed: findSeedWith("clear", 1),
+        known: knownToDepth(situation.speciesId, situation.codexLayer - 1),
+      });
+
+      expect(canChooseOption(oneShort, requires)).toBe(false);
+      expect(
+        reduce(oneShort, {
+          type: "CHOOSE_ENCOUNTER_OPTION",
+          optionId: requires.id,
+        }),
+      ).toBe(oneShort);
+
+      // And it is the RUNG refusing it, not the sky or the pack: one rung
+      // deeper, on the same state, it opens.
+      expect(
+        canChooseOption(
+          {
+            ...oneShort,
+            known: knownToDepth(situation.speciesId, situation.codexLayer),
+          },
+          requires,
+        ),
+      ).toBe(true);
+      checked += 1;
+    }
+
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  // Journeys chained through the codex, played by a traveler who watches
+  // whatever is watchable. What it pins is the shape of `known` under a real
+  // line of play: one entry per species, inside its own ceiling, deepening a
+  // rung at a time and never two, and the ladder actually gets climbed.
+  it("climbs the ladder across journeys and stops at the bottom of it", () => {
+    const watchFirst: OptionPolicy = (state) => {
+      const watching = affordableOptions(state).find(
+        (option) => option.codex === "teaches",
+      );
+      return watching ? watching.id : prudent(state);
+    };
+
+    let carried = createInitialState();
+    let deepest = 0;
+
+    for (let seed = 1; seed <= 40; seed++) {
+      const trace = playJourney(seed, watchFirst, "quiet", carried);
+
+      for (let step = 1; step < trace.length; step++) {
+        const before = trace[step - 1]!.known;
+        const after = trace[step]!.known;
+
+        // One entry per species, always.
+        const ids = after.map((entry) => entry.speciesId);
+        expect(new Set(ids).size).toBe(ids.length);
+
+        for (const entry of after) {
+          const ceiling = speciesList.find(
+            (species) => species.id === entry.speciesId,
+          )!.fieldNotes.length;
+          expect(entry.depth).toBeGreaterThanOrEqual(1);
+          expect(entry.depth).toBeLessThanOrEqual(ceiling);
+
+          const earlier = before.find(
+            (candidate) => candidate.speciesId === entry.speciesId,
+          );
+          // A species new to this step arrives at the first rung; one already
+          // there gains at most one rung, so no step can skip one.
+          if (earlier === undefined) {
+            expect(entry.depth).toBe(1);
+            continue;
+          }
+          expect(entry.depth - earlier.depth).toBeGreaterThanOrEqual(0);
+          expect(entry.depth - earlier.depth).toBeLessThanOrEqual(1);
+        }
+
+        // Nothing is ever forgotten mid-chain either.
+        for (const entry of before) {
+          expect(
+            after.some((candidate) => candidate.speciesId === entry.speciesId),
+          ).toBe(true);
+        }
+      }
+
+      carried = trace.at(-1)!;
+      deepest = Math.max(
+        deepest,
+        ...carried.known.map((entry) => entry.depth),
+        0,
+      );
+    }
+
+    // The chain has to actually get somewhere, or every invariant above holds
+    // vacuously on an empty notebook.
+    expect(carried.known.length).toBeGreaterThan(0);
+    expect(deepest).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -2273,6 +2731,18 @@ describe("the village morning", () => {
     return { ...started, ...overrides };
   }
 
+  // One species with nothing left to learn about it — every rung of its own
+  // ladder, read off the content rather than typed as a number, so a species
+  // that gains a note does not leave these fixtures quietly saying "nearly
+  // everything" while they claim to say "everything".
+  function fullDepth(speciesId: string): KnownSpecies[] {
+    return knownToDepth(
+      speciesId,
+      speciesList.find((species) => species.id === speciesId)!.fieldNotes
+        .length,
+    );
+  }
+
   // Villagers are resolved by WHAT THEY GIVE, never by a hardcoded id, so
   // renaming one does not quietly point a test at a different person.
   function villager(
@@ -2366,37 +2836,78 @@ describe("the village morning", () => {
       makeVillageState(),
       (option) => option.teaches === true,
     ).teachesSpecies!;
-    const state = makeVillageState({ known: [alreadyKnown] });
+    // Known to the BOTTOM of its ladder, which is what takes a species out of
+    // the pool now — a species with a rung still to go is exactly the kind he
+    // has something left to say about.
+    const state = makeVillageState({ known: fullDepth(alreadyKnown) });
     const trapper = villager(state, (option) => option.teaches === true);
 
     expect(trapper.teachesSpecies).toBeDefined();
     expect(speciesList.map((species) => species.id)).toContain(
       trapper.teachesSpecies,
     );
-    expect(state.known).not.toContain(trapper.teachesSpecies);
+    expect(state.known.map((entry) => entry.speciesId)).not.toContain(
+      trapper.teachesSpecies,
+    );
 
     const next = reduce(state, {
       type: "CHOOSE_VILLAGE_OPTION",
       optionId: trapper.id,
     });
 
-    // Exactly the id the offer named, appended to what was already known.
-    // This is the agreement itself under test: `trapper` is what a screen
-    // rendering this state would show, and `next.known` is what the reducer
-    // decided when handed only the id — one `offeredVillageOptions` away on
-    // each side, and they land on the same animal.
-    expect(next.known).toEqual([alreadyKnown, trapper.teachesSpecies]);
+    // Exactly the species the offer named, at its first rung, appended after
+    // what was already known. This is the agreement itself under test:
+    // `trapper` is what a screen rendering this state would show, and
+    // `next.known` is what the reducer decided when handed only the id — one
+    // `offeredVillageOptions` away on each side, and they land on the same
+    // animal.
+    expect(next.known).toEqual([
+      ...fullDepth(alreadyKnown),
+      ...knownToDepth(trapper.teachesSpecies!, 1),
+    ]);
     expect(next.food).toBe(state.food);
     expect(next.preparation).toBe(state.preparation);
   });
 
   it("has only the animal still missing left to talk about", () => {
-    const allButOne = speciesList.slice(0, -1).map((species) => species.id);
+    // Full knowledge is full DEPTH: every rung of every species but the last.
+    const allButOne = speciesList
+      .slice(0, -1)
+      .flatMap((species) => fullDepth(species.id));
     const state = makeVillageState({ known: allButOne });
 
     expect(
       villager(state, (option) => option.teaches === true).teachesSpecies,
     ).toBe(speciesList.at(-1)!.id);
+  });
+
+  // What he has left to say about an animal already in the notebook. The pool
+  // is species below FULL depth, so a traveler one rung down is exactly the
+  // kind he can still deepen — and the lesson lands on that species' entry
+  // rather than beside it.
+  it("teaches the next rung of an animal already in the notebook", () => {
+    const deepening = speciesList.find(
+      (species) => species.fieldNotes.length > 1,
+    )!;
+    const maxed = speciesList
+      .filter((species) => species.id !== deepening.id)
+      .flatMap((species) => fullDepth(species.id));
+    const state = makeVillageState({
+      known: [...knownToDepth(deepening.id, 1), ...maxed],
+    });
+    const trapper = villager(state, (option) => option.teaches === true);
+
+    // He is there at all, and the only animal with a rung left is the one he
+    // names.
+    expect(trapper.teachesSpecies).toBe(deepening.id);
+
+    const next = reduce(state, {
+      type: "CHOOSE_VILLAGE_OPTION",
+      optionId: trapper.id,
+    });
+
+    expect(next.known).toEqual([...knownToDepth(deepening.id, 2), ...maxed]);
+    expect(next.known).toHaveLength(state.known.length);
   });
 
   it("picks the animal off the seed, so two journeys hear about different ones", () => {
@@ -2425,10 +2936,12 @@ describe("the village morning", () => {
   });
 
   // The recorded limitation, pinned as behaviour and deliberately left
-  // uncompensated: with every animal known the trapper simply is not there.
+  // uncompensated, and now restated at the new ceiling: with every RUNG of
+  // every animal known the trapper simply is not there. Layers moved the
+  // condition from five facts to nine; they did not answer it.
   it("withdraws the trapper once there is nothing left to learn, and refuses him anyway", () => {
     const state = makeVillageState({
-      known: speciesList.map((species) => species.id),
+      known: speciesList.flatMap((species) => fullDepth(species.id)),
     });
     const options = offeredVillageOptions(state);
     const withheld = village.options.find(
@@ -2503,11 +3016,16 @@ describe("the village morning", () => {
       { ...afterVillage, phase: "arrived" },
       { type: "START_JOURNEY", seed: 6 },
     );
-    expect(nextJourney.known).toEqual([taught]);
+    // One rung, which is what a morning with him is worth.
+    expect(nextJourney.known).toEqual(knownToDepth(taught, 1));
 
+    // A situation at the rung he actually taught. Any deeper one would still
+    // refuse its unlocked answer here, correctly, and this test would then be
+    // pinning the wrong thing.
     const situation = encounters.find(
       (encounter) =>
         encounter.speciesId === taught &&
+        encounter.codexLayer === 1 &&
         encounter.options.some((option) => option.codex === "requires"),
     )!;
     const unlocked = situation.options.find(
@@ -2569,6 +3087,14 @@ describe("full journeys", () => {
     // way again for exactly the same reason — six more seeds survive, and no
     // mechanism here can push the other way, since a second animal is a second
     // menu on a leg that already had one.
+    // Re-run when the codex went to layers, and it did not move at all: still
+    // 170 of 200. Four observations now sit a rung above an ignorant traveler
+    // and are refused, which is the one mechanism here that could have pushed
+    // the hard way — and this line never takes an observation anyway. It
+    // reduces over `hpDelta` and every observation on the road is beaten there
+    // by some always-offered answer (the domination rule in content.test.ts),
+    // so what a locked rung removes from its menu is an option this policy was
+    // never going to pick.
     // The floor stays 125 — deliberately well under the measured 170, because
     // a simple policy's exact score is brittle to content retuning. What it
     // guards is a collapse, not a wobble, and the headroom it keeps over the
@@ -2652,7 +3178,13 @@ describe("full journeys", () => {
         state.seed,
         state.activeEncounterId,
         state.secondSceneId,
-        [...state.known].sort().join("+"),
+        // Keyed on the species AND the depth: sorting the entry objects
+        // themselves would compare "[object Object]" against itself and collide
+        // every codex state in the walk onto one cached answer.
+        state.known
+          .map((entry) => `${entry.speciesId}:${entry.depth}`)
+          .sort()
+          .join("+"),
       ].join(",");
       const hit = seen.get(key);
       if (hit !== undefined) {
@@ -2741,7 +3273,12 @@ describe("full journeys", () => {
     // had one scene's worth, and the exhaustive walk tries all of them.
     // A second ANIMAL on an animal leg is the same widening on the other band:
     // 16/200 (8.0%).
-    // The cap stays 0.4, and it is slack at 8.0% — this has been a collapse
+    // Layers then pushed it the HARD way, and by almost nothing: 17/200
+    // (8.5%), one seed worse. That direction was expected — four situations now
+    // meet an ignorant traveler with their observation locked, so the exhaustive
+    // walk has strictly fewer lines of play at depth 0 than it had — and the
+    // size of it says how little of the walk those four options were carrying.
+    // The cap stays 0.4, and it is slack at 8.5% — this has been a collapse
     // guard rather than a tuning target since the village halved the figure it
     // watches. Recorded rather than tightened to fit: a cap re-derived from
     // each measurement is a record of the measurement, not a bound on it.
@@ -2862,6 +3399,19 @@ describe("full journeys", () => {
   // what this file's silence adds is that no roll was consumed anywhere — a
   // spent roll would have shifted the later legs' draws and shown up as a
   // changed `activeEncounterId` further down.
+  // Re-run when the codex went to LAYERS, and again NOT re-recorded: not one
+  // cell moved. Checked rather than assumed, and wider than this row: the same
+  // line was replayed on 200 seeds against the tree before the change, printing
+  // `rngState` as well as the six columns below, and all 3216 rows are
+  // byte-identical. `rngState` matters most of the three things that could not
+  // move here — this change reads `known` and content only, so it must consume
+  // no randomness at all — and `project` cannot see it, which is why it was
+  // compared out of band.
+  // Nothing moved in the resource columns either, and the reason is `prudent`:
+  // it reduces over `hpDelta`, and every observation is strictly dominated by
+  // some always-offered answer (content.test.ts), so an observation this line
+  // never picks is one a locked rung can remove without being noticed. A policy
+  // that wanted entries would meet four newly locked doors on this road.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {

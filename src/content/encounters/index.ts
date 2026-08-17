@@ -54,10 +54,18 @@ export const encounters: readonly Encounter[] = [
 //
 // The two animals are always DIFFERENT SPECIES, which is the whole point
 // rather than a tidiness rule: what the traveler gives up by answering one of
-// them has to be the OTHER one's field note. Two situations of the same
-// species offer one codex entry between them, so choosing would cost no
+// them has to be the OTHER one's next rung. Two situations of the same
+// species offer one rung of one ladder between them, so choosing would cost no
 // knowledge at all and the leg would collapse back into the resource
 // comparison a place beside an animal already makes.
+//
+// Layers did not disturb either half of that. Re-measured across `11e5d97` →
+// `1e97dcd` on 300 seeds: every closed-form band share is byte-identical, so
+// the 0.625/0.875 above is untouched — a road property — and under the
+// calibrated scorer at K* = 4 the two observations still split this leg 49.7% /
+// 50.3% on the two tie salts, so neither animal's knowledge wins on a laddered
+// road either. What DID move is that the thing given up can now be a rung of an
+// animal already in the notebook rather than only a first entry.
 //
 // A lone animal stays three legs in four, deliberately. That is where a first
 // meeting is FORCED — nothing else on the leg to weigh it against, so a

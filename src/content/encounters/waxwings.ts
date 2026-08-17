@@ -4,11 +4,21 @@ import type { Encounter, Species } from "./types";
 export const waxwings: Species = {
   id: "waxwings",
   name: "Waxwing Flock",
-  fieldNote:
-    // Names no particular tree, for the reason given on the bees' note: this is
-    // what the codex shows whether the flock was watched in a rowan or along a
-    // thorn hedge.
+  // ONE rung, deliberately, and the only species that stops at one. Names no
+  // particular tree, for the reason given on the bees' notes: this is what the
+  // codex shows whether the flock was watched in a rowan or along a thorn
+  // hedge.
+  //
+  // A second note was refused rather than overlooked, and for the reason
+  // recorded below this: the two situations pose the same lesson twice, so a
+  // deeper note here would have to be written about a scene that already says
+  // everything it has to say. It would change no readable decision, and it
+  // would put `work-the-shaded-foot` behind a rung whose lesson the first note
+  // already teaches — a tollbooth wearing knowledge's name. The ladder is as
+  // deep as the content honestly is, per species, and this animal is one deep.
+  fieldNotes: [
     "A flock works the sunlit face first, where the fruit reddens soonest. Whatever hangs in the shade ripens later and is still hanging when they have finished, with nobody left to argue about it.",
+  ],
 };
 
 export const waxwingsEncounters: readonly Encounter[] = [
@@ -19,6 +29,7 @@ export const waxwingsEncounters: readonly Encounter[] = [
   {
     id: "rowan-flock",
     speciesId: "waxwings",
+    codexLayer: 1,
     title: "A Flock in the Rowan",
     description:
       "A rowan by the road is loud with waxwings, forty or fifty of them working the berries in a rolling scrum. They take no notice of you at all. The ground underneath is scattered with what they have dropped.",
@@ -110,6 +121,10 @@ export const waxwingsEncounters: readonly Encounter[] = [
   {
     id: "thorn-hedge-flock",
     speciesId: "waxwings",
+    // Rung 1, like the rowan, because it teaches the same lesson the rowan
+    // does — which is exactly why the species stops one deep. See the note on
+    // `waxwings` above.
+    codexLayer: 1,
     title: "The Flock Moved On to the Thorn",
     description:
       "The rowans along this stretch have been stripped to the twig and the flock has shifted to a hawthorn hedge running the length of the field — a wall of thorn a man deep, with the haws hanging well inside it and forty birds working the top of it in a rolling scrum. What they knock loose falls into the grass at the foot.",

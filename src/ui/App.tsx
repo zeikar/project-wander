@@ -3,11 +3,13 @@ import type { Dispatch } from "react";
 import {
   activeScenes,
   canChooseOption,
+  codexLayerOf,
   offeredOptions,
   offeredRoutes,
   offeredVillageOptions,
   peekRoad,
   reduce,
+  speciesDepth,
   speciesOf,
 } from "../core/reducer";
 import { HUNGRY_TRAVEL_HP_LOSS, createInitialState } from "../core/game-state";
@@ -228,10 +230,13 @@ function StatRow({ state }: { state: GameState }) {
   );
 }
 
-// What this journey has learned, in the order it was learned. Three screens show
-// it, so the lookup and the markup live in one place. The ids in `known` are put
-// there by the reducer from this same list, so a miss is a broken invariant
-// rather than a state the player can reach.
+// What the traveler has learned, one species at a time, in the order the
+// species were first learned. Three screens show it, so the lookup and the
+// markup live in one place. The ids in `known` are put there by the reducer
+// from this same list, so a miss is a broken invariant rather than a state the
+// player can reach.
+// `known` is already one entry per species, so this maps it directly: an entry
+// at depth 2 shows two lines, not two entries.
 function FieldNotes({ state }: { state: GameState }) {
   if (state.known.length === 0) {
     return null;
@@ -239,14 +244,32 @@ function FieldNotes({ state }: { state: GameState }) {
 
   return (
     <div>
-      {state.known.map((id) => {
+      {state.known.map((entry) => {
         // Keyed on the species, which is what the codex learns — the notebook
         // names the animal, not the afternoon it was watched.
-        const species = speciesList.find((candidate) => candidate.id === id)!;
+        const species = speciesList.find(
+          (candidate) => candidate.id === entry.speciesId,
+        )!;
         return (
-          <p key={id} className="field-note">
-            {species.name}: {species.fieldNote}
-          </p>
+          <div key={entry.speciesId}>
+            {species.fieldNotes.slice(0, entry.depth).map((note) => (
+              <p key={note} className="field-note">
+                {species.name}: {note}
+              </p>
+            ))}
+            {/* The codex's own locked door, and the reason it names nothing and
+                counts nothing: a notebook that said "1 of 2" would turn the
+                thing left to find out into a thing left to collect, which is
+                the retention mechanism this game's success metric refuses. What
+                the traveler is owed is only that there IS more, so that the
+                next meeting is worth having. */}
+            {entry.depth < species.fieldNotes.length && (
+              <p className="field-note">
+                {species.name}: there is more to this animal than you have
+                worked out yet.
+              </p>
+            )}
+          </div>
         );
       })}
     </div>
@@ -487,28 +510,35 @@ function EncounterScreen({
         </p>
       )}
       {scenes.map((scene) => {
-        // Only an animal has anything to know about it, and only once it is
-        // known. A place is just a place, and `speciesOf` returns undefined for
-        // one — so on a leg holding an animal and a place the note belongs to
-        // the animal's block and never to the place's, while on a leg holding
-        // two animals both blocks can carry one. Asked per scene rather than
-        // per leg, which is what makes that fall out.
+        // Only an animal has anything to know about it, and only as deep as it
+        // has been studied. A place is just a place, and `speciesOf` returns
+        // undefined for one — so on a leg holding an animal and a place the
+        // notes belong to the animal's block and never to the place's, while on
+        // a leg holding two animals both blocks can carry them. Asked per scene
+        // rather than per leg, which is what makes that fall out.
         const speciesId = speciesOf(scene.id);
-        const fieldNote =
-          speciesId !== undefined && state.known.includes(speciesId)
-            ? speciesList.find((candidate) => candidate.id === speciesId)!
-                .fieldNote
-            : undefined;
+        const depth = speciesDepth(state, speciesId);
+        // EVERY note held on this animal, not one: a traveler two rungs down
+        // knows both things and the deeper one is usually what the scene in
+        // front of them is about.
+        const fieldNotes =
+          speciesId !== undefined
+            ? speciesList
+                .find((candidate) => candidate.id === speciesId)!
+                .fieldNotes.slice(0, depth)
+            : [];
 
         return (
           <section className="scene" key={scene.id}>
             <h2>{scene.title}</h2>
             <p>{scene.description}</p>
-            {/* The single entry for the animal in front of you, not the whole
+            {/* The entries for the animal in front of you, not the whole
                 notebook: what you know is only actionable here. */}
-            {fieldNote && (
-              <p className="field-note">What you know: {fieldNote}</p>
-            )}
+            {fieldNotes.map((note) => (
+              <p key={note} className="field-note">
+                What you know: {note}
+              </p>
+            ))}
             <div className="encounter-options">
               {offeredOptions(state, scene).map((option) => {
                 // The one place this component asks what the sky did to an
@@ -519,6 +549,20 @@ function EncounterScreen({
                   option,
                   weather,
                 ).closedReason;
+                // An observation that is on the menu but below its situation's
+                // rung: the traveler can see there is something here and cannot
+                // read it yet. `offeredOptions` is what keeps it on the menu and
+                // `canChooseOption` is what refuses the click — both pinned in
+                // reducer.test.ts — so all this adds is the reason, the same way
+                // a weather-closed button carries one.
+                // Compared inline rather than through a helper of its own: one
+                // caller, and it reads the depth this scene already resolved.
+                // The `codex` test comes first, which is what makes the
+                // assertion beside it sound: only an animal carries a codex
+                // option, and only an animal has a rung.
+                const lockedRung =
+                  option.codex === "teaches" &&
+                  depth < codexLayerOf(scene.id)! - 1;
                 return (
                   <button
                     key={option.id}
@@ -550,6 +594,16 @@ function EncounterScreen({
                     )}
                     {closedReason && (
                       <span className="warning"> — {closedReason}</span>
+                    )}
+                    {/* Names no animal and gives no number, for the reason the
+                        notebook's own version of this line does: what makes a
+                        locked door worth opening is that the traveler can see
+                        it, not that they can price it. */}
+                    {lockedRung && (
+                      <span className="warning">
+                        {" "}
+                        — there is more going on here than you can read yet
+                      </span>
                     )}
                   </button>
                 );

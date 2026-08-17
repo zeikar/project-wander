@@ -20,7 +20,7 @@
 // More meetings is not the danger; fewer of them is.
 
 // Deliberately its own type rather than a shared one with encounters. A place
-// has no species to learn, so it carries neither `codex` nor `fieldNote`, and
+// has no species to learn, so it carries neither `codex` nor `codexLayer`, and
 // the two shapes are close enough that a common abstraction would be bigger
 // than the duplication it removes. The field NAMES match `EncounterOption` on
 // purpose, so the reducer's affordability check reads both.

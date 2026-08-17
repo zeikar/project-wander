@@ -211,10 +211,11 @@ describe("costHint", () => {
     const state = makeEncounterState({
       activeEncounterId: "pine-shadows",
       preparation: showYourKit.requiresPreparation! - 1,
-      // `show-your-kit` now also needs the wolves to be known. Without this the
-      // option would be refused for being UNKNOWN and the test would pass while
-      // saying nothing about a short kit.
-      known: ["wolves"],
+      // `show-your-kit` also needs the wolves known to the pines' own rung,
+      // which is their first. Without this the option would be refused for
+      // being unlearned and the test would pass while saying nothing about a
+      // short kit.
+      known: [{ speciesId: "wolves", depth: 1 }],
     });
 
     expect(canChooseOption(state, showYourKit)).toBe(false);
@@ -374,13 +375,15 @@ describe("costHint", () => {
       preparation: 2,
       food: 2,
       activeEncounterId: "bee-hollow",
-      known: ["bees"],
+      // The hollow is the bees' first rung, so one is what it asks for.
+      known: [{ speciesId: "bees", depth: 1 }],
     });
     const atBoar = makeEncounterState({
       preparation: 2,
       food: 2,
       activeEncounterId: "ford-boar",
-      known: ["boar"],
+      // The ford is the boar's first rung.
+      known: [{ speciesId: "boar", depth: 1 }],
     });
     const atWolves = makeEncounterState({
       preparation: 2,
@@ -520,7 +523,7 @@ describe("labels on a leg that holds two things", () => {
     const beside = makeEncounterState({
       activeEncounterId: "pine-shadows",
       secondSceneId: place.id,
-      known: ["wolves"],
+      known: [{ speciesId: "wolves", depth: 1 }],
       food: 1,
       preparation: 1,
     });

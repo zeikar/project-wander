@@ -142,7 +142,9 @@ This was an argument. It has now been tested once, in its smallest form: some le
 
 A place teaches nothing, though, so what that priced was knowledge against a **resource**. So a second leg shape was built where both sides teach: two animals of different species, answer one, the other is gone. Neither side wins it — no slot takes more than 57% of those legs, and where a scorer prices knowledge at all the two observations split it near evenly at every price tested. **What the pillar asks for holds, as far as this can see it.**
 
-How far that is, said plainly: every instrument here puts the same price on every species' knowledge, so it can only tell the two observations apart by what they cost in food and blood. **Wanting the boar more than the bees is not something anything in this game can yet express** — and until it can, "knowledge against other knowledge" is being tested with the interesting half held constant. That is the next thing to build, not a footnote on this one.
+How far that is, said plainly: every instrument here puts the same price on every species' knowledge, so it can only tell the two observations apart by what they cost in food and blood. **Wanting the boar more than the bees is not something anything in this game can yet express** — and until it can, "knowledge against other knowledge" is being tested with the interesting half held constant.
+
+That was the next thing to build, and the half of it that gives knowledge somewhere to differ now exists: the codex learns a species in **rungs**, so a price finally has a cell — a (species, rung) — to attach to. A probe that pays a scorer a premium for one cell moves that cell's uptake by 55-66pp while leaving the same species' other cell bit-identical to the anchor, which is locality with a mechanism behind it rather than luck — but at the 300 seeds the test declared, the four rung-2 cohorts were 8 to 26 decisions wide, so **the declared gate could not be powered and the verdict is inconclusive-for-size**; a supplementary 3000-seed run, outside the declared set and so supporting evidence rather than a pass, clears the bar on every rung-2 cell on both salts. Scope that for exactly what it is: two rungs is the mechanism shown to be expressible, not the tenth journey delivered, and the deeper authoring that would deliver it is the named follow-on — itself a road rebalance, with every baseline in `docs/CONTENT.md` to measure again.
 
 ### The trap: an answer key ends the game
 
@@ -319,7 +321,7 @@ So the saturated state has to be **designed for, and it has to be the best versi
 
 So the full codex does not empty the *What is Lost* pillar — it is what finally makes it bite. Early journeys lose things vaguely: you knew you were passing something. Late journeys lose them **exactly, on purpose, and that is the harder game.** What varies underneath is the seed: which villages, which weather, which animals in which situations, what work was going.
 
-There is already a counterexample shipping. Learn all five species and the departure morning **withdraws** the trapper, offering two choices instead of three — the saturated state is strictly worse than the ignorant one. That is the failure this section exists to forbid. Every system should be checked against a full codex before it ships.
+There is already a counterexample shipping. Learn every rung of every animal — nine of them, since the codex went layered — and the departure morning **withdraws** the trapper, offering two choices instead of three, so the saturated state is strictly worse than the ignorant one. Layers moved that state further off (a measured median of journey five instead of journey three) without removing it, which is the point worth keeping: **postponing the failure is not fixing it.** That is the failure this section exists to forbid. Every system should be checked against a full codex before it ships.
 
 ---
 

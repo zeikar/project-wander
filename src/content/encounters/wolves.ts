@@ -4,14 +4,21 @@ import type { Encounter, Species } from "./types";
 export const wolves: Species = {
   id: "wolves",
   name: "Gray Wolves",
-  fieldNote:
+  // Two rungs. The second is what the kill's observation already said and the
+  // pines' could not: the first note explains what they are weighing you
+  // against when they have nothing, and this one what happens to that sum when
+  // they already have their evening.
+  fieldNotes: [
     "Wolves are not weighing whether they can take you. They are weighing whether you are worth an evening, and they read what you carry to decide it. Look equipped and they will usually go and be hungry somewhere else.",
+    "A pack that has already eaten prices you against what it is standing on, not against its hunger, and the sum is nearly always no. What changes their minds is being crept up on, because creeping is what a thing worth chasing does. Go at them openly and they give ground.",
+  ],
 };
 
 export const wolvesEncounters: readonly Encounter[] = [
   {
     id: "pine-shadows",
     speciesId: "wolves",
+    codexLayer: 1,
     title: "Gray Shapes Between the Pines",
     description:
       "Two lean gray shapes keep pace with you just off the road. When you stop, they stop. One lifts its nose and tests the air for a long moment.",
@@ -114,9 +121,18 @@ export const wolvesEncounters: readonly Encounter[] = [
   // It also gives the wolves their first weather interaction: until now rain and
   // wind touched the boar, the bees, the rowan and the stag, and this animal
   // played identically under every sky.
+  //
+  // It is also the wolves' SECOND rung, and its own observation is the evidence
+  // — "they are pricing you against what they have already got" is a different
+  // fact from the pines' "they read what you carry", and it is only readable
+  // where they have something. Met at depth 0 the observation is on the menu
+  // and LOCKED: the traveler can see there is a reckoning going on here that
+  // they cannot follow yet, which is the point of showing it rather than
+  // teaching the ladder out of order.
   {
     id: "wolves-at-a-kill",
     speciesId: "wolves",
+    codexLayer: 2,
     title: "A Kill Off the Road",
     description:
       "Forty yards off the road the gorse is moving, and the sound coming out of it is wet and businesslike. The pack has pulled down a young hind and is working on her. Not one of them has looked up since you stopped, and nothing here is between you and where you are going.",

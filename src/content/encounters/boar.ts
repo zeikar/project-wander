@@ -6,14 +6,20 @@ import type { Encounter, Species } from "./types";
 export const boar: Species = {
   id: "boar",
   name: "Marsh Boar",
-  fieldNote:
+  // Two rungs. The second was already written into `sow-and-litter`'s
+  // observation and was doing nothing there but explaining why the first
+  // lesson fails; it is a rung now rather than flavour.
+  fieldNotes: [
     "A marsh boar goes where its nose goes, and it never looks up. Give it something better to smell and it takes itself off the road.",
+    "A sow with a litter is the one that will not follow her nose, and no bait moves her: she keeps her own body between the young and whatever is coming. Give ground away from the litter rather than away from her, and she walks herself off your way keeping station on them.",
+  ],
 };
 
 export const boarEncounters: readonly Encounter[] = [
   {
     id: "ford-boar",
     speciesId: "boar",
+    codexLayer: 1,
     title: "A Boar in the Ford",
     description:
       "Where the road crosses the stream, a marsh boar stands mid-current ripping at reed roots. Mud steams on its shoulders, and there is no way across that does not pass within arm's reach of it.",
@@ -97,6 +103,7 @@ export const boarEncounters: readonly Encounter[] = [
   {
     id: "wallow-boar",
     speciesId: "boar",
+    codexLayer: 1,
     title: "A Boar in the Wallow",
     description:
       "Off the road, down in a churned black hollow, a marsh boar lies on its side in the mud with its eyes shut. It has been rooting: the ground for ten yards around is turned over as though somebody had put a plough through it badly. Nothing here is in your way.",
@@ -174,9 +181,18 @@ export const boarEncounters: readonly Encounter[] = [
       },
     ],
   },
+  // The boar's SECOND rung, and the evidence for that is the observation
+  // below: what it reports is not "it goes where its nose goes" again but the
+  // one case where that fails, and why. It has always read as the deeper
+  // lesson; it is now priced as one.
+  // Met at depth 0 this situation shows the observation LOCKED rather than
+  // teaching out of order — a traveler who has never watched a boar can see
+  // there is more in a sow than they can read, which is the whole reason the
+  // rung is visible at all.
   {
     id: "sow-and-litter",
     speciesId: "boar",
+    codexLayer: 2,
     title: "A Sow Across the Path",
     description:
       "The sow is standing in the middle of the path and she has seen you first. Behind her, six striped piglets are working the leaf litter, paying attention to nothing. She does not root, and she does not look away.",
