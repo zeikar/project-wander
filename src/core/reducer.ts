@@ -296,15 +296,22 @@ export function offeredVillageOptions(
     (species) => speciesDepth(state, species.id) < species.fieldNotes.length,
   );
 
-  // Nothing left to learn ANYWHERE: the trapper is simply not on the menu, the
-  // same idiom a spent `teaches` option follows at an encounter. Withdrawing
-  // the option is also what keeps the transition free of any dedupe code — the
-  // button that would teach a species nothing is left to say about does not
-  // exist.
-  // The withdrawal is still a recorded limitation and still uncompensated: a
-  // full codex makes the morning offer two choices instead of three, which is
-  // strictly worse than ignorance. Layers moved the condition from five facts
-  // to nine and no further; they did not answer it.
+  // Nothing left to learn ANYWHERE: the trapper stays, and what he has to give
+  // changes. His lesson comes off the menu — the same idiom a spent `teaches`
+  // option follows at an encounter, and what keeps the transition free of any
+  // dedupe code, since the button that would teach a species nothing is left to
+  // say about does not exist — and his `craft` goes up in its place. Authored
+  // last, so it lands in his slot, third, where he has always stood.
+  // This branch used to RETURN the other two and nothing else, and that was a
+  // recorded, uncompensated limitation: a full codex made the morning offer two
+  // choices instead of three, so the saturated state was strictly worse than the
+  // ignorant one. Layers moved the condition from five facts to nine and no
+  // further; they did not answer it. `VISION.md` § The full codex names that
+  // exact shape as the failure it exists to forbid.
+  // What is fixed here is the MENU: the morning no longer thins. It is not a
+  // claim that a full codex is now the better game — nothing has measured that,
+  // and the size of what the craft is worth is a starting value (see
+  // CHOOSE_ENCOUNTER_OPTION).
   if (teachable.length === 0) {
     return village.options.filter((option) => !option.teaches);
   }
@@ -315,9 +322,13 @@ export function offeredVillageOptions(
   const roll = rollRandom((state.seed ^ VILLAGE_SALT) >>> 0);
   const picked = teachable[Math.floor(roll.value * teachable.length)]!;
 
-  return village.options.map((option) =>
-    option.teaches ? { ...option, teachesSpecies: picked.id } : option,
-  );
+  // The trapper has a rung to give, so he gives it, and his craft is not on this
+  // morning at all — the two are one villager and he is only ever in one mood.
+  return village.options
+    .filter((option) => !option.craft)
+    .map((option) =>
+      option.teaches ? { ...option, teachesSpecies: picked.id } : option,
+    );
 }
 
 // An option is only offered when the player can actually pay for it. HP is not
@@ -451,6 +462,11 @@ export function reduce(state: GameState, action: GameAction): GameState {
         // Reset happens where it should: `createInitialState` is ignorant, so
         // the first journey after the page loads starts with nothing.
         known: state.known,
+        // And the trapper's craft does NOT survive it. It was bought at this
+        // morning, on this journey, with the loaf and the strap it was taken
+        // instead of; the next traveler out of Ashfold buys it again or does
+        // without. A provision, like the food and the gear reset above it.
+        restCraft: false,
         log: [],
       };
     }
@@ -477,7 +493,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
       }
 
       // hp is deliberately not touched. No villager carries an hpDelta (pinned
-      // on all three in content.test.ts), so there is no clamp here and no
+      // on all four in content.test.ts), so there is no clamp here and no
       // branch that cannot fire. A villager who draws blood is a design change
       // that comes back through review, not through a latent code path.
       return {
@@ -496,6 +512,19 @@ export function reduce(state: GameState, action: GameAction): GameState {
           option.teachesSpecies !== undefined
             ? withRungLearned(state.known, option.teachesSpecies)
             : state.known,
+        // The other thing the trapper can hand over, read off the same resolved
+        // option as the lesson above — the reducer's own copy of what the
+        // morning offered, never the screen's. Same re-derivation rule, and it
+        // buys the same thing here: a state where the craft is not on the menu
+        // cannot set this, because `offeredVillageOptions` never handed the
+        // marker back.
+        // A plain SET rather than an or-with-the-old-value, and that is a claim
+        // about the shape of a journey: `village` is reachable only from
+        // START_JOURNEY, which sets this false four lines up, so the morning
+        // happens once and there is no earlier true to preserve. An `||` here
+        // would be a branch that cannot fire — the same latent code path this
+        // handler already refuses to carry for hp.
+        restCraft: option.craft === true,
         // Whatever the villager says, and nothing composed on top of it. The
         // shepherd's forecast used to be appended here; he was measured and
         // cut (content/village.ts), so the morning's result line is now
@@ -663,6 +692,62 @@ export function reduce(state: GameState, action: GameAction): GameState {
         weatherAt(state.seed, state.legIndex),
       );
 
+      // What the trapper's craft is worth, and the ONE place it is worth
+      // anything: an option that gives hp back gives one more while the traveler
+      // is carrying it.
+      // Why the night and not something else. Everything else the morning could
+      // have handed over has already been measured and refused — a second loaf
+      // or strap is the baker and the smith again ("two buttons doing one thing
+      // are not a choice"), a bigger gift is the 99.8% cargo ("whatever gives
+      // the binding resource wins everything"), and a reading of the road ahead
+      // has now failed all three information gates this project has ever
+      // declared (+0.3pp for the per-leg cue, +1.3pp for the shepherd against
+      // the 7.4pp his slot cost, the species-naming sign at 51.7% against 48.3%
+      // for the kind). What was left is the axis content/events.ts already
+      // names: "only the night can vary, because it is the one axis food does
+      // not bind."
+      // Why one point. It is a STARTING VALUE, not a measured one — said plainly
+      // rather than dressed up, the way PAIR_CHANCE and TWO_ANIMAL_CHANCE are.
+      // It takes the three authored sleeps from 3/2/2 to 4/3/3, which is inside
+      // the clamp below and keeps the camp's night the best one on the road. The
+      // nearest measured figure is the FLOOR of a rest — a night worth 1 hp was
+      // taken on 2.3% of its offers, which is why 2 is the floor — and that
+      // prices a whole rest, not a marginal point on top of one. So it is
+      // evidence that a night this shallow is not worth taking, and it is not
+      // evidence about the size of this step. Whether a point is the right step
+      // is unmeasured.
+      // It has no printed number to move, which is what lets it be retuned
+      // without rewriting a label: hp gains are named and never priced
+      // (docs/CONTENT.md § Labels), so the button still reads "gains some of
+      // yourself back" and the craft's own label promises "more" and no amount.
+      // Only a POSITIVE delta, and BOTH sides of that are load-bearing.
+      // Softening a wound would make this a defence, and the craft would start
+      // paying at the boar and the bees as well as at the lean-to. Loosened the
+      // other way, to `>= 0`, it would pay on every option in the game that
+      // leaves hp alone — a cache traded, a lean-to stripped, every observation
+      // — which is a flat point per encounter rather than a night bonus, and it
+      // would re-tune the road rather than deepen a rest. The strictness is
+      // pinned from both directions: "never softens a wound" and "pays nothing
+      // on an option that moves no hp at all" in reducer.test.ts, each of which
+      // was watched going red before it was believed.
+      // The EFFECTIVE delta, not the authored one, because the sky can
+      // reprice what a night is worth and the bonus has to key on what the
+      // traveler actually receives.
+      // That last requirement is currently UNOBSERVABLE BY TEST, and it is
+      // written down rather than left as a silent gap: swapping both operands
+      // below to the authored `option.hpDelta` passes the whole suite, because
+      // no shipped content tells the two apart. The only hp reprice in the game
+      // is `reach-in` (-3 to -1, negative under either sky), and the three
+      // positive-hp options — `sleep-under-it`, `sleep-in-the-bed`,
+      // `sleep-in-the-shieling` — carry no `weatherDeltas` at all. Content was
+      // NOT invented to cover it. The first positive-hp option to gain a
+      // `weatherDeltas` entry must ship with the test that pins this, or the
+      // requirement stays an argument in a comment.
+      const appliedHpDelta =
+        state.restCraft && effective.hpDelta > 0
+          ? effective.hpDelta + 1
+          : effective.hpDelta;
+
       const resolved: GameState = {
         ...state,
         // Clamped at both ends. The floor has always been here; the ceiling
@@ -671,11 +756,10 @@ export function reduce(state: GameState, action: GameAction): GameState {
         // an hp-greedy line took that option every time it appeared and walked
         // into the village with more of itself than it set out with, which also
         // quietly moves every arrival threshold, since those are fractions of
-        // the starting pool.
-        hp: Math.min(
-          journey.start.hp,
-          Math.max(0, state.hp + effective.hpDelta),
-        ),
+        // the starting pool. The craft is inside that ceiling and not beside it:
+        // a deeper night still cannot carry anyone past the pool they set out
+        // with.
+        hp: Math.min(journey.start.hp, Math.max(0, state.hp + appliedHpDelta)),
         food: state.food + effective.foodDelta,
         preparation: state.preparation + effective.preparationDelta,
         // BOTH slots, always. Answering one thing on a leg that held two is

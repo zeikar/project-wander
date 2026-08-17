@@ -44,6 +44,10 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     lastEncounterResult: null,
     lastRoadToll: null,
     known: [],
+    // The road's default is a traveler who spent the morning on something else:
+    // the craft is the trapper's saturated-codex option, so a fixture that
+    // carries it says so.
+    restCraft: false,
     log: [],
     ...overrides,
   };
@@ -2779,6 +2783,10 @@ describe("the village morning", () => {
     expect(next.preparation).toBe(state.preparation + 1);
     expect(next.food).toBe(state.food);
     expect(next.hp).toBe(state.hp);
+    // A morning spent on the smith is a morning NOT spent on the trapper's
+    // craft. The handler sets that flag from the chosen option's own marker, so
+    // a villager who carries none must leave it where it was.
+    expect(next.restCraft).toBe(false);
     expect(next.phase).toBe("traveling");
     expect(next.legIndex).toBe(0);
     // No leg was walked, so the road took nothing. This is the whole reason
@@ -2813,7 +2821,9 @@ describe("the village morning", () => {
     const state = makeVillageState();
     const options = offeredVillageOptions(state);
 
-    expect(options).toHaveLength(village.options.length);
+    // Three of the four authored: this traveler knows nothing, so the trapper
+    // has a rung to give and his craft is not on the menu.
+    expect(options).toHaveLength(3);
     for (const option of options) {
       const next = reduce(state, {
         type: "CHOOSE_VILLAGE_OPTION",
@@ -2935,11 +2945,11 @@ describe("the village morning", () => {
     expect(taught(1)).toBe(first);
   });
 
-  // The recorded limitation, pinned as behaviour and deliberately left
-  // uncompensated, and now restated at the new ceiling: with every RUNG of
-  // every animal known the trapper simply is not there. Layers moved the
-  // condition from five facts to nine; they did not answer it.
-  it("withdraws the trapper once there is nothing left to learn, and refuses him anyway", () => {
+  // This used to pin the WITHDRAWAL — at a full codex the morning offered two —
+  // and that half is the behaviour this change deletes. The refusal half stays
+  // exactly as it was: the lesson is off the menu, so its id has to be ignored
+  // like any other id the screen never showed.
+  it("keeps three people at a full codex, with the craft where the lesson stood, and refuses the lesson anyway", () => {
     const state = makeVillageState({
       known: speciesList.flatMap((species) => fullDepth(species.id)),
     });
@@ -2948,14 +2958,108 @@ describe("the village morning", () => {
       (option) => option.teaches === true,
     )!;
 
-    expect(options).toHaveLength(village.options.length - 1);
+    expect(options).toHaveLength(3);
     expect(options.some((option) => option.teaches === true)).toBe(false);
+    // Third, which is where the trapper has always stood. Not decoration: the
+    // morning is read top to bottom and a villager who moves position between
+    // journeys is a different villager as far as the player is concerned.
+    expect(options.at(-1)!.craft).toBe(true);
     expect(
       reduce(state, {
         type: "CHOOSE_VILLAGE_OPTION",
         optionId: withheld.id,
       }),
     ).toBe(state);
+  });
+
+  // The menu is three at BOTH ends of the codex, which is the whole of what this
+  // change fixes. Read the two halves together: the saturated morning is not
+  // short a person, and the ignorant one has not quietly gained a fourth.
+  it("offers three whether the codex is full or empty, swapping which trapper turns up", () => {
+    const saturated = offeredVillageOptions(
+      makeVillageState({
+        known: speciesList.flatMap((species) => fullDepth(species.id)),
+      }),
+    );
+    const ignorant = offeredVillageOptions(makeVillageState());
+
+    expect(saturated).toHaveLength(3);
+    expect(saturated.filter((option) => option.craft === true)).toHaveLength(1);
+    expect(saturated.some((option) => option.teaches === true)).toBe(false);
+
+    expect(ignorant).toHaveLength(3);
+    expect(ignorant.some((option) => option.craft === true)).toBe(false);
+    expect(ignorant.filter((option) => option.teaches === true)).toHaveLength(1);
+  });
+
+  // The withheld-option idiom, pointed the other way: the craft is the one
+  // authored villager option a traveler with something left to learn was never
+  // shown, so naming its id is ignored exactly as naming the withdrawn lesson is
+  // at the other end.
+  it("refuses the craft on a morning that did not offer it", () => {
+    const state = makeVillageState();
+    const craft = village.options.find((option) => option.craft === true)!;
+    const offered = offeredVillageOptions(state).map((option) => option.id);
+
+    expect(offered).not.toContain(craft.id);
+    expect(
+      reduce(state, {
+        type: "CHOOSE_VILLAGE_OPTION",
+        optionId: craft.id,
+      }),
+    ).toBe(state);
+  });
+
+  // What taking it does at the morning, which is nothing the stat row can see:
+  // the craft is a provision for the road, and every figure the traveler sets
+  // out with is exactly what it was.
+  it("takes the craft for the journey without moving the ledger", () => {
+    const state = makeVillageState({
+      known: speciesList.flatMap((species) => fullDepth(species.id)),
+    });
+    const craft = villager(state, (option) => option.craft === true);
+
+    const next = reduce(state, {
+      type: "CHOOSE_VILLAGE_OPTION",
+      optionId: craft.id,
+    });
+
+    expect(state.restCraft).toBe(false);
+    expect(next.restCraft).toBe(true);
+    expect(next.hp).toBe(state.hp);
+    expect(next.food).toBe(state.food);
+    expect(next.preparation).toBe(state.preparation);
+    expect(next.known).toEqual(state.known);
+    expect(next.log).toEqual([`${village.name} — ${craft.label}`]);
+    expect(next.lastEncounterResult).toBe(craft.resultText);
+    expect(next.lastRoadToll).toBeNull();
+    expect(next.phase).toBe("traveling");
+  });
+
+  // A provision, not knowledge: it dies with the journey that bought it, the
+  // way the loaf and the strap do, and unlike the field note beside it.
+  it("does not carry the craft into the next journey", () => {
+    // Carrying a field note as well, so the second assertion below is a real
+    // comparison rather than two empty lists agreeing with each other.
+    const carried = makeVillageState({
+      phase: "arrived",
+      restCraft: true,
+      known: knownToDepth(speciesList[0]!.id, 1),
+    });
+    const next = reduce(carried, { type: "START_JOURNEY", seed: 9 });
+
+    expect(next.restCraft).toBe(false);
+    // And what the journey DID learn still crosses, so this is a reset of the
+    // provision and not of the notebook beside it.
+    expect(next.known).toEqual(carried.known);
+  });
+
+  // Asserted on the initial state DIRECTLY, unlike `known` two tests up, which
+  // can be read through START_JOURNEY because that action preserves it. This
+  // one it overwrites, so every state a player can reach hides whatever
+  // `createInitialState` says — the field is only visible here.
+  it("holds no craft on a fresh page load", () => {
+    expect(createInitialState().restCraft).toBe(false);
   });
 
   it("ignores the road's actions inside the village and the village's action outside it", () => {
@@ -3048,6 +3152,155 @@ describe("the village morning", () => {
     // carry worth anything.
     expect(canChooseOption({ ...atTheAnimal, known: [] }, unlocked)).toBe(
       false,
+    );
+  });
+});
+
+// What the trapper's craft is actually worth, out where it is spent. The
+// morning is where it is bought and the night is the only place it pays.
+describe("the trapper's craft on the road", () => {
+  // The best night on the road, and the same place's climb — one scene, so the
+  // two halves below differ in the option taken and in nothing else. Both are
+  // resolved by what they DO to the traveler rather than by id, so renaming an
+  // option cannot quietly point this at a different trade. A place carries no
+  // weather rule of any kind, so no sky can reprice either of them out from
+  // under the comparison.
+  const camp = roadEvents.find((event) => event.id === "old-camp")!;
+  const night = camp.options.find((option) => option.hpDelta > 0)!;
+  const wound = camp.options.find((option) => option.hpDelta < 0)!;
+  const bloodless = camp.options.filter((option) => option.hpDelta === 0);
+
+  // Wounded enough that the ceiling is nowhere near, and fed enough that the
+  // leg's toll is paid in food on both sides of every comparison.
+  function atTheCamp(overrides: Partial<GameState> = {}): GameState {
+    return makeTravelingState({
+      phase: "encounter",
+      activeEncounterId: camp.id,
+      hp: journey.start.hp - 6,
+      food: 2,
+      ...overrides,
+    });
+  }
+
+  function choose(state: GameState, optionId: string): GameState {
+    return reduce(state, { type: "CHOOSE_ENCOUNTER_OPTION", optionId });
+  }
+
+  it("gives one more hp back on a night, and nothing else", () => {
+    const plain = atTheCamp();
+    const crafted = atTheCamp({ restCraft: true });
+
+    const slept = choose(plain, night.id);
+    const sleptWithIt = choose(crafted, night.id);
+
+    expect(slept.hp).toBe(plain.hp + night.hpDelta);
+    expect(sleptWithIt.hp).toBe(slept.hp + 1);
+    // The night is the axis; the meal it costs is not.
+    expect(sleptWithIt.food).toBe(slept.food);
+    expect(sleptWithIt.preparation).toBe(slept.preparation);
+  });
+
+  // EVERY night, which is the word the authored label uses and the one doing the
+  // most work in it. The test above walks the camp alone — the best night on the
+  // road at 3 — so a gate written `> 2` would keep it green while paying nothing
+  // at the cart and the shieling, where a night is worth 2. That is two thirds
+  // of the promise, silently broken, and the label would be lying about a road
+  // the player cannot check.
+  // Scanned off the content rather than listed: `content.test.ts` already pins
+  // three places with exactly one hp-giving option each, so the count below is a
+  // second reading of the same fact and goes red if a place is added without one.
+  it("deepens every night on the road, not just the best one", () => {
+    const nights = roadEvents.flatMap((event) =>
+      event.options
+        .filter((option) => option.hpDelta > 0)
+        .map((option) => ({ event, option })),
+    );
+
+    expect(nights).toHaveLength(3);
+    for (const { event, option } of nights) {
+      const plain = makeTravelingState({
+        phase: "encounter",
+        activeEncounterId: event.id,
+        hp: journey.start.hp - 6,
+        food: 2,
+      });
+
+      expect(choose(plain, option.id).hp).toBe(plain.hp + option.hpDelta);
+      expect(choose({ ...plain, restCraft: true }, option.id).hp).toBe(
+        plain.hp + option.hpDelta + 1,
+      );
+    }
+  });
+
+  // It is bought for the JOURNEY, and the click that takes a night also finishes
+  // the leg — so the flag has to survive `completeLeg`, and then every leg after
+  // it. Clearing it there would leave the craft worth exactly one encounter
+  // while every comment about it, and the label itself, promised a road.
+  it("survives the leg it was spent on, and the ones after it", () => {
+    const rested = choose(atTheCamp({ restCraft: true }), night.id);
+
+    // The same click that applied the night also completed the leg, which is
+    // what makes this a test of `completeLeg` and not of the option handler.
+    expect(rested.legIndex).toBe(1);
+    expect(rested.phase).toBe("traveling");
+    expect(rested.restCraft).toBe(true);
+
+    // And on down the road: whatever the next leg turns up, the craft is still
+    // in hand when the traveler gets there.
+    expect(reduce(rested, travel(rested)).restCraft).toBe(true);
+  });
+
+  // The rule that keeps this a craft for sleeping rough rather than a suit of
+  // armour: a negative delta is charged in full whether the trapper spent the
+  // morning on it or not.
+  it("never softens a wound", () => {
+    const plain = atTheCamp();
+    const crafted = atTheCamp({ restCraft: true });
+
+    const hurt = choose(plain, wound.id);
+    const hurtWithIt = choose(crafted, wound.id);
+
+    expect(hurt.hp).toBe(plain.hp + wound.hpDelta);
+    expect(hurtWithIt.hp).toBe(hurt.hp);
+  });
+
+  // The other half of "only a positive delta", and the half that decides what
+  // this thing IS. Loosened to `>= 0` the craft pays out on every option in the
+  // game that leaves hp alone — a cache traded, a lean-to stripped, every
+  // observation, every forage — which is not a night bonus at all but a flat
+  // point per encounter, and it would quietly re-tune the whole road. The wound
+  // test above cannot see that; nothing could, until this.
+  it("pays nothing on an option that moves no hp at all", () => {
+    const plain = atTheCamp();
+    const crafted = atTheCamp({ restCraft: true });
+
+    // Derived from the content, and asserted non-empty: if this place ever
+    // stops carrying a bloodless trade, the loop below would pass by doing
+    // nothing at all.
+    expect(bloodless.length).toBeGreaterThan(0);
+    for (const option of bloodless) {
+      const without = choose(plain, option.id);
+      const withIt = choose(crafted, option.id);
+
+      expect(without.hp).toBe(plain.hp);
+      expect(withIt.hp).toBe(without.hp);
+    }
+  });
+
+  // The bonus sits INSIDE the ceiling, not beside it. A deeper night that could
+  // push past the pool the traveler set out with would also move every arrival
+  // threshold, since those are fractions of that pool.
+  // Set exactly `night.hpDelta` below the ceiling, deliberately: the uncrafted
+  // rest then lands ON the ceiling, so the only thing the clamp swallows is the
+  // craft's own point. A shallower wound would have the plain rest overshoot
+  // too, and the test would be pinning the pre-existing clamp rather than this
+  // change's relationship to it.
+  it("cannot carry anyone past the pool they set out with", () => {
+    const nearlyWhole = atTheCamp({ hp: journey.start.hp - night.hpDelta });
+
+    expect(choose(nearlyWhole, night.id).hp).toBe(journey.start.hp);
+    expect(choose({ ...nearlyWhole, restCraft: true }, night.id).hp).toBe(
+      journey.start.hp,
     );
   });
 });
@@ -3412,6 +3665,23 @@ describe("full journeys", () => {
   // some always-offered answer (content.test.ts), so an observation this line
   // never picks is one a locked rung can remove without being noticed. A policy
   // that wanted entries would meet four newly locked doors on this road.
+  // Re-run when the trapper stopped being withdrawn at a full codex and started
+  // offering his craft instead, and NOT re-recorded: not one cell moved, and no
+  // legal change existed for it to make. This line walks a FIRST journey from a
+  // fresh page load, so `known` is empty, the trapper has rungs to give, and the
+  // saturated branch of `offeredVillageOptions` is never reached; the morning it
+  // spends is the baker's, exactly as before. The craft's own rule is gated on
+  // `restCraft`, which is false on every row here, so the hp column cannot move
+  // either. Checked the same way the layered codex was, and wider than this row:
+  // the same line was replayed on 200 seeds against the tree before the change,
+  // printing `rngState` and `known` as well as the six columns below, and all
+  // 3214 rows are byte-identical.
+  // `project()` deliberately did NOT gain a `restCraft` column. Seed 1's single
+  // journey can never hold a true value, so the column would pin nothing — it
+  // would read `false` on all sixteen rows whatever the reducer did with the
+  // flag, which is the shape of a cell that cannot fail. What pins the flag is
+  // the village-morning and craft tests above, where a state can actually carry
+  // it.
   it("matches the recorded trace for seed 1", () => {
     expect(playJourney(1, prudent).map(project)).toEqual([
       {

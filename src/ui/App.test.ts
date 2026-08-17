@@ -58,6 +58,7 @@ function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
     lastEncounterResult: null,
     lastRoadToll: null,
     known: [],
+    restCraft: false,
     log: [],
     ...overrides,
   };
@@ -576,6 +577,11 @@ describe("knowledgeHint", () => {
   // — only the offered copy does — so every villager as written is silent here,
   // and a hint that appeared before the pick was made would be a claim about an
   // animal nobody chose.
+  // Every authored option, which now includes the trapper's craft: that one
+  // names no animal and must not be made to, since it is offered exactly when
+  // there is no animal left to name. What taking it does is carried by his own
+  // authored label — see the costHint test below for the other half of that
+  // button.
   it("says nothing for a villager who teaches nothing", () => {
     for (const option of village.options) {
       expect(knowledgeHint(option)).toBe("");
@@ -588,16 +594,29 @@ describe("knowledgeHint", () => {
 // contract for food and preparation holds across the module boundary between
 // `VillageOption` and `EncounterOption`, without a line of new label code.
 describe("costHint on the village screen", () => {
+  const villageState = makeEncounterState({
+    phase: "village",
+    activeEncounterId: null,
+  });
+
   it("names what a villager gives, exactly", () => {
-    const villageState = makeEncounterState({
-      phase: "village",
-      activeEncounterId: null,
-    });
     const smith = village.options.find(
       (option) => option.preparationDelta > 0,
     )!;
 
     expect(costHint(villageState, smith)).toBe(" — gains 1 preparation");
+  });
+
+  // The craft moves no delta, so the shared label function has nothing to add to
+  // it — and that is deliberate rather than an oversight. What it gives is
+  // applied out on the road, and what it PROMISES is written into the authored
+  // label itself, where the player reads it before an irreversible click. This
+  // pins that the button is that label and nothing invented beside it.
+  it("adds nothing to the trapper's craft, whose promise is its own label", () => {
+    const craft = village.options.find((option) => option.craft === true)!;
+
+    expect(costHint(villageState, craft)).toBe("");
+    expect(knowledgeHint(craft)).toBe("");
   });
 });
 
