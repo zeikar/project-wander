@@ -40,15 +40,15 @@ The journey starts in the village, not on the road. One morning, three people, a
 
 Nobody charges anything. The morning itself is the price — meeting one means the other two go unmet.
 
-The three give in three different currencies, never two from the same person: a point of gear, a point of food, and knowledge of one animal.
+The three give in three different currencies, never two from the same person: a point of gear, a point of food, and one more thing known about one animal.
 
-You set out one meal short of what the road used to give you, and the morning is where that meal is decided. The baker hands it straight back and you leave on the old starting line. The smith trades it for a point of gear instead. The trapper spends it and names an animal you have not met, which is worth nothing at all this morning and may be worth a great deal on the fourth leg. Which one you give the morning to is the first real decision of the journey.
+You set out one meal short of what the road used to give you, and the morning is where that meal is decided. The baker hands it straight back and you leave on the old starting line. The smith trades it for a point of gear instead. The trapper spends it and tells you the next thing you do not know about one animal — a species you have never met, or the one you have already watched once — which is worth nothing at all this morning and may be worth a great deal on the fourth leg. Which one you give the morning to is the first real decision of the journey.
 
 There was a fourth who read out the sky ahead. He was measured against the other three and cut.
 
-The knowledge is the same knowledge watching an animal earns on the road, and it opens the same doors: an animal named this way is already known before you have met it face to face.
+The knowledge is the same knowledge watching an animal earns on the road — one layer of it — and it opens the same doors: a layer heard this way counts exactly as if you had watched for it.
 
-Know every animal already and that conversation is not on offer. The morning shows two people instead of three, and nothing stands in for it.
+With nothing left he can teach you — every animal known to the bottom — that conversation is not on offer. The morning shows two people instead of three, and nothing stands in for it.
 
 ---
 
@@ -95,6 +95,14 @@ Every animal can be watched instead of answered well.
 Watching costs more than the good answer does — an afternoon, a meal, sometimes blood.
 
 What you get is knowledge of how that animal works.
+
+Knowing an animal comes in layers. Watching teaches the next thing you do not know about it, so a second afternoon with the same animal is not the first one over again.
+
+The notebook says when there is more to an animal than you have worked out. It does not say how much more.
+
+Some situations sit deeper than what you know. The watching is still on the menu there, with a line saying you cannot read it yet — the animal is doing something you have no way to follow. Learn the layer under it and the same scene opens.
+
+What a layer opens is an answer you did not have. It still costs something; knowing more never makes an encounter free.
 
 Some legs put two animals in front of you at once, and watching one is not watching the other. You answer one of them, the other is gone, and only the one you answered goes in the book.
 

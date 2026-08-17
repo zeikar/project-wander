@@ -77,6 +77,18 @@ export interface GameState {
   // knowing an animal ENDED its encounter rather than informing it. See the
   // note on `START_JOURNEY` in reducer.ts for what changed and what was
   // re-measured before this was turned on.
+  // What making `depth` a COUNT rather than a boolean measured on this
+  // structure (300 seeds, tie instrument `historical`, `11e5d97` → `1e97dcd`,
+  // the `learner` policy — the only one of the five that prices knowledge, and
+  // the only one either tree moves at all): the share of encounters still
+  // offering a LIVE observation on a third journey went 0.0% → 16.1% — the old
+  // shape left 299 of 300 seeds with nothing to learn by then — and rungs held
+  // at journey end went 3.44 → 4.82 → 5.00 (the old ceiling) to 3.26 → 5.78 →
+  // 7.63 of 9. The first journey pays for it, which was predicted before it was
+  // run: species known at arrival 3.47 → 2.89, but rungs held 3.47 → 3.31.
+  // Fewer animals, nearly as many facts. That is exhaustion moved from five
+  // facts to nine and no further; the full figures, their instruments and what
+  // the per-cell probe could NOT power are in docs/CONTENT.md § Animals.
   known: readonly KnownSpecies[];
   log: readonly string[];
 }
