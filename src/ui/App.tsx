@@ -248,28 +248,17 @@ function FieldNotes({
     return null;
   }
 
-  // Folded shut, and this is the fix for a measured harm rather than tidiness.
-  // Three fresh-eyes persona sessions (seeds 0-2, recorded in docs/CONTENT.md
-  // § Encounters) independently stopped reading this block: it reprints every
-  // note the traveler has ever learned under EVERY travel screen, so by the
-  // third journey it was ten lines of already-read text. One session missed the
-  // only live thing in it — a "there is more to this animal" line appearing for
-  // the first time, which is a door half-opening — because it sat in the pile
-  // formatted exactly like the nine lines they had read a dozen times. What is
-  // ACTIONABLE is already elsewhere: the encounter screen prints "What you
-  // know" for the animal standing in front of you, and that is where the same
-  // sessions said they actually read it. So the notebook keeps everything and
-  // stops competing with it.
-  // `<details>` rather than a button and a piece of state: the browser owns the
-  // open/shut, which is one less thing to hold in `GameState` — and nothing
-  // about whether a list is unfolded belongs in the game's state anyway.
-  // `open` is passed on the two END-OF-RUN screens and nowhere else. The block
-  // is clutter under a screen the traveler is still playing and reads eight
-  // times a journey; at the end of one it is the thing they came back with, so
-  // folding it there would hide the payoff rather than uncover the screen.
-  // The summary counts NOTHING, for the reason the locked line below counts
-  // nothing: a notebook that said "7 of 9" would turn what is left to find out
-  // into what is left to collect.
+  // Folded shut on the screens the traveler is still playing. Three fresh-eyes
+  // persona sessions independently stopped reading this block: it reprints
+  // every note ever learned under every travel screen, so by a third journey it
+  // is ten lines of already-read text, and one session missed the only live
+  // thing in it — a "there is more to this animal" line appearing for the first
+  // time — because it sat among nine lines formatted exactly like it. What is
+  // actionable is already elsewhere: the encounter screen prints "What you
+  // know" for the animal in front of you. `open` is passed by the two
+  // end-of-run screens and nowhere else, where the notebook is the payoff
+  // rather than clutter. The summary counts nothing, for the same reason the
+  // locked line below does.
   return (
     <details className="notebook" open={open}>
       <summary>Field notes</summary>
