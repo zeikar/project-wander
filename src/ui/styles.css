@@ -118,3 +118,12 @@ button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* The notebook folds shut so it stops competing with the screen it sits under;
+   see the comment on FieldNotes for the persona sessions that measured why.
+   The summary is a control, so it reads as one — the notes inside keep the
+   .field-note voice they always had. */
+.notebook > summary {
+  cursor: pointer;
+  color: #8faf95;
+}
