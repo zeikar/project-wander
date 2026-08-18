@@ -27,7 +27,6 @@ function arrived(overrides: Partial<GameState> = {}): GameState {
     lastEncounterResult: null,
     lastRoadToll: null,
     known: [],
-    restCraft: false,
     log: [],
     ...overrides,
   };

@@ -90,14 +90,6 @@ export interface GameState {
   // facts to nine and no further; the full figures, their instruments and what
   // the per-cell probe could NOT power are in docs/CONTENT.md § Animals.
   known: readonly KnownSpecies[];
-  // Whether the trapper spent this morning on how the traveler will sleep out
-  // there, instead of on an animal. Set only by his `craft` option — the one he
-  // has left once every rung is known — and reset by `START_JOURNEY`, so it is a
-  // PROVISION for this journey exactly as the smith's point of preparation is,
-  // and not a stat that grows. That is why it does not persist the way `known`
-  // does: what the traveler carries out of Ashfold never survives the road, and
-  // only what they understood does.
-  restCraft: boolean;
   log: readonly string[];
 }
 
@@ -119,7 +111,6 @@ export function createInitialState(): GameState {
     lastEncounterResult: null,
     lastRoadToll: null,
     known: [],
-    restCraft: false,
     log: [],
   };
 }

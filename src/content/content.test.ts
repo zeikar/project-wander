@@ -813,13 +813,8 @@ describe("road events content", () => {
 });
 
 describe("village content", () => {
-  // FOUR authored, and exactly THREE ever offered: the trapper's lesson and his
-  // craft are one villager in two moods, and `offeredVillageOptions` puts up
-  // whichever one the codex has left room for. That the offered roster is three
-  // at every depth is a rule about state and is pinned in reducer.test.ts, where
-  // there is a state to read; what is pinned here is the shape it swaps between.
-  it("has exactly four options, with unique non-empty ids, labels, and result text", () => {
-    expect(village.options.length).toBe(4);
+  it("has exactly three options, with unique non-empty ids, labels, and result text", () => {
+    expect(village.options.length).toBe(3);
 
     const ids = village.options.map((option) => option.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -871,39 +866,16 @@ describe("village content", () => {
     expect(knowledgeGivers[0]!.preparationDelta).toBe(0);
   });
 
-  // The craft is the trapper's other mood and carries no ledger delta either —
-  // what it gives is a provision for the journey, applied by the reducer, and
-  // nothing on this option may quietly move a resource as well. It teaches
-  // nothing: a morning spent on how to camp is the morning NOT spent on an
-  // animal, which is the whole cost of taking it.
-  it("gives the craft from exactly one villager, who moves no resource and teaches nothing", () => {
-    const craftGivers = village.options.filter((option) => option.craft);
-
-    expect(craftGivers).toHaveLength(1);
-    expect(craftGivers[0]!.hpDelta).toBe(0);
-    expect(craftGivers[0]!.foodDelta).toBe(0);
-    expect(craftGivers[0]!.preparationDelta).toBe(0);
-    expect(craftGivers[0]!.teaches).toBeUndefined();
-    expect(craftGivers[0]!.teachesSpecies).toBeUndefined();
-  });
-
-  // The four currencies — a point of gear, a point of food, one rung of what is
-  // known about an animal, and the night — are pairwise distinct: no villager
-  // hands over more than one. It was four villagers once, until the sky was
-  // measured and cut; it is now four OPTIONS over three villagers, and what the
-  // count guards is unchanged, which is that meeting one forgoes what every
-  // other one carries.
-  // The night is read off the `craft` marker rather than off the deltas for the
-  // reason the marker exists at all (content/village.ts): both of the trapper's
-  // options move nothing in the ledger, so a derivation from deltas would hand
-  // this test the same answer for both and could not tell them apart.
-  it("keeps the four currencies pairwise distinct across the authored options", () => {
+  // The three currencies — a point of gear, a point of food, and knowledge —
+  // are pairwise distinct: no villager hands over more than one. It was four
+  // until the sky was measured and cut; what the count guards is unchanged,
+  // which is that meeting one villager forgoes what every other one carries.
+  it("keeps the three currencies pairwise distinct across the three villagers", () => {
     const currenciesOf = (option: VillageOption): string[] => {
       const carried: string[] = [];
       if (option.preparationDelta > 0) carried.push("gear");
       if (option.foodDelta > 0) carried.push("food");
       if (option.teaches) carried.push("knowledge");
-      if (option.craft) carried.push("night");
       return carried;
     };
 
@@ -911,7 +883,7 @@ describe("village content", () => {
       expect(currenciesOf(option)).toHaveLength(1);
     }
 
-    expect(new Set(village.options.flatMap(currenciesOf)).size).toBe(4);
+    expect(new Set(village.options.flatMap(currenciesOf)).size).toBe(3);
   });
 
   // `teachesSpecies` is materialized on the offered copy at runtime (core), the
