@@ -118,3 +118,10 @@ button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* The summary is a control, so it reads as one; the notes inside keep the
+   .field-note voice. Why the notebook folds at all is on FieldNotes. */
+.notebook > summary {
+  cursor: pointer;
+  color: #8faf95;
+}

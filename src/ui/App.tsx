@@ -237,13 +237,24 @@ function StatRow({ state }: { state: GameState }) {
 // player can reach.
 // `known` is already one entry per species, so this maps it directly: an entry
 // at depth 2 shows two lines, not two entries.
-function FieldNotes({ state }: { state: GameState }) {
+function FieldNotes({
+  state,
+  open = false,
+}: {
+  state: GameState;
+  open?: boolean;
+}) {
   if (state.known.length === 0) {
     return null;
   }
 
+  // Folded on the screens still being played: it reprints every note ever
+  // learned, so it grew to ten lines of read text and three persona sessions
+  // stopped reading it — including past a line that had just changed. The
+  // end-of-run screens pass `open`, where it is the payoff rather than clutter.
   return (
-    <div>
+    <details className="notebook" open={open}>
+      <summary>Field notes</summary>
       {state.known.map((entry) => {
         // Keyed on the species, which is what the codex learns — the notebook
         // names the animal, not the afternoon it was watched.
@@ -272,7 +283,7 @@ function FieldNotes({ state }: { state: GameState }) {
           </div>
         );
       })}
-    </div>
+    </details>
   );
 }
 
@@ -639,7 +650,7 @@ function JourneyCompleteScreen({
       {state.log.length > 0 && (
         <p>The road behind you: {state.log.join("; ")}.</p>
       )}
-      <FieldNotes state={state} />
+      <FieldNotes state={state} open />
       <StatRow state={state} />
       <button
         onClick={() => dispatch({ type: "START_JOURNEY", seed: newSeed() })}
@@ -679,7 +690,7 @@ function DefeatedScreen({
       {/* Shown here too, and not as an afterthought: a toll-caused defeat clears
           `lastEncounterResult`, so without this a lesson learned on the last leg
           would vanish on the one screen that ends the run. */}
-      <FieldNotes state={state} />
+      <FieldNotes state={state} open />
       <StatRow state={state} />
       <button
         onClick={() => dispatch({ type: "START_JOURNEY", seed: newSeed() })}
