@@ -523,109 +523,114 @@ function EncounterScreen({
           other is left standing.
         </p>
       )}
-      {scenes.map((scene) => {
-        // Only an animal has anything to know about it, and only as deep as it
-        // has been studied. A place is just a place, and `speciesOf` returns
-        // undefined for one — so on a leg holding an animal and a place the
-        // notes belong to the animal's block and never to the place's, while on
-        // a leg holding two animals both blocks can carry them. Asked per scene
-        // rather than per leg, which is what makes that fall out.
-        const speciesId = speciesOf(scene.id);
-        const depth = speciesDepth(state, speciesId);
-        // EVERY note held on this animal, not one: a traveler two rungs down
-        // knows both things and the deeper one is usually what the scene in
-        // front of them is about.
-        const fieldNotes =
-          speciesId !== undefined
-            ? speciesList
-                .find((candidate) => candidate.id === speciesId)!
-                .fieldNotes.slice(0, depth)
-            : [];
+      {/* One wrapper, so the pair can stand as a row above a width. On a leg
+          holding one scene it wraps one section and changes nothing; which
+          scenes are here and what answering one costs are not its business. */}
+      <div className="scene-row">
+        {scenes.map((scene) => {
+          // Only an animal has anything to know about it, and only as deep as it
+          // has been studied. A place is just a place, and `speciesOf` returns
+          // undefined for one — so on a leg holding an animal and a place the
+          // notes belong to the animal's block and never to the place's, while on
+          // a leg holding two animals both blocks can carry them. Asked per scene
+          // rather than per leg, which is what makes that fall out.
+          const speciesId = speciesOf(scene.id);
+          const depth = speciesDepth(state, speciesId);
+          // EVERY note held on this animal, not one: a traveler two rungs down
+          // knows both things and the deeper one is usually what the scene in
+          // front of them is about.
+          const fieldNotes =
+            speciesId !== undefined
+              ? speciesList
+                  .find((candidate) => candidate.id === speciesId)!
+                  .fieldNotes.slice(0, depth)
+              : [];
 
-        return (
-          <section className="scene" key={scene.id}>
-            <h2>{scene.title}</h2>
-            <p>{scene.description}</p>
-            {/* The entries for the animal in front of you, not the whole
-                notebook: what you know is only actionable here. */}
-            {fieldNotes.map((note) => (
-              <p key={note} className="field-note">
-                What you know: {note}
-              </p>
-            ))}
-            <div className="encounter-options">
-              {offeredOptions(state, scene).map((option) => {
-                // The one place this component asks what the sky did to an
-                // option: the same rule canChooseOption already refused it by,
-                // so a closed button's own reason can never disagree with why
-                // it is disabled.
-                const closedReason = effectiveOption(
-                  option,
-                  weather,
-                ).closedReason;
-                // An observation that is on the menu but below its situation's
-                // rung: the traveler can see there is something here and cannot
-                // read it yet. `offeredOptions` is what keeps it on the menu and
-                // `canChooseOption` is what refuses the click — both pinned in
-                // reducer.test.ts — so all this adds is the reason, the same way
-                // a weather-closed button carries one.
-                // Compared inline rather than through a helper of its own: one
-                // caller, and it reads the depth this scene already resolved.
-                // The `codex` test comes first, which is what makes the
-                // assertion beside it sound: only an animal carries a codex
-                // option, and only an animal has a rung.
-                const lockedRung =
-                  option.codex === "teaches" &&
-                  depth < codexLayerOf(scene.id)! - 1;
-                return (
-                  <button
-                    key={option.id}
-                    disabled={!canChooseOption(state, option)}
-                    onClick={() =>
-                      dispatch({
-                        type: "CHOOSE_ENCOUNTER_OPTION",
-                        optionId: option.id,
-                      })
-                    }
-                  >
-                    {option.label}
-                    {costHint(state, option)}
-                    {/* "as well" and "then" are load-bearing. A playtester could
-                        not tell whether this figure replaced the option's own
-                        cost, was added to it, or only applied depending on
-                        something later in the leg, and worked the rule out by
-                        trial instead: it "fires when food hits/stays at 0 at
-                        leg-end, but the game never stated that rule directly on
-                        screen." Banding the option's own hp cost put a worded
-                        price next to a numbered one, which made saying which is
-                        which more urgent, not less. */}
-                    {leavesNoFood(state, option) && (
-                      <span className="warning">
-                        {" "}
-                        — and then, with nothing left to eat, finishing the leg
-                        will cost you {HUNGRY_TRAVEL_HP_LOSS} HP as well
-                      </span>
-                    )}
-                    {closedReason && (
-                      <span className="warning"> — {closedReason}</span>
-                    )}
-                    {/* Names no animal and gives no number, for the reason the
-                        notebook's own version of this line does: what makes a
-                        locked door worth opening is that the traveler can see
-                        it, not that they can price it. */}
-                    {lockedRung && (
-                      <span className="warning">
-                        {" "}
-                        — there is more going on here than you can read yet
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
+          return (
+            <section className="scene" key={scene.id}>
+              <h2>{scene.title}</h2>
+              <p>{scene.description}</p>
+              {/* The entries for the animal in front of you, not the whole
+                  notebook: what you know is only actionable here. */}
+              {fieldNotes.map((note) => (
+                <p key={note} className="field-note">
+                  What you know: {note}
+                </p>
+              ))}
+              <div className="encounter-options">
+                {offeredOptions(state, scene).map((option) => {
+                  // The one place this component asks what the sky did to an
+                  // option: the same rule canChooseOption already refused it by,
+                  // so a closed button's own reason can never disagree with why
+                  // it is disabled.
+                  const closedReason = effectiveOption(
+                    option,
+                    weather,
+                  ).closedReason;
+                  // An observation that is on the menu but below its situation's
+                  // rung: the traveler can see there is something here and cannot
+                  // read it yet. `offeredOptions` is what keeps it on the menu and
+                  // `canChooseOption` is what refuses the click — both pinned in
+                  // reducer.test.ts — so all this adds is the reason, the same way
+                  // a weather-closed button carries one.
+                  // Compared inline rather than through a helper of its own: one
+                  // caller, and it reads the depth this scene already resolved.
+                  // The `codex` test comes first, which is what makes the
+                  // assertion beside it sound: only an animal carries a codex
+                  // option, and only an animal has a rung.
+                  const lockedRung =
+                    option.codex === "teaches" &&
+                    depth < codexLayerOf(scene.id)! - 1;
+                  return (
+                    <button
+                      key={option.id}
+                      disabled={!canChooseOption(state, option)}
+                      onClick={() =>
+                        dispatch({
+                          type: "CHOOSE_ENCOUNTER_OPTION",
+                          optionId: option.id,
+                        })
+                      }
+                    >
+                      {option.label}
+                      {costHint(state, option)}
+                      {/* "as well" and "then" are load-bearing. A playtester could
+                          not tell whether this figure replaced the option's own
+                          cost, was added to it, or only applied depending on
+                          something later in the leg, and worked the rule out by
+                          trial instead: it "fires when food hits/stays at 0 at
+                          leg-end, but the game never stated that rule directly on
+                          screen." Banding the option's own hp cost put a worded
+                          price next to a numbered one, which made saying which is
+                          which more urgent, not less. */}
+                      {leavesNoFood(state, option) && (
+                        <span className="warning">
+                          {" "}
+                          — and then, with nothing left to eat, finishing the leg
+                          will cost you {HUNGRY_TRAVEL_HP_LOSS} HP as well
+                        </span>
+                      )}
+                      {closedReason && (
+                        <span className="warning"> — {closedReason}</span>
+                      )}
+                      {/* Names no animal and gives no number, for the reason the
+                          notebook's own version of this line does: what makes a
+                          locked door worth opening is that the traveler can see
+                          it, not that they can price it. */}
+                      {lockedRung && (
+                        <span className="warning">
+                          {" "}
+                          — there is more going on here than you can read yet
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </>
   );
 }
@@ -724,7 +729,17 @@ export default function App() {
     }
   }
 
+  // A leg holding two scenes is the one thing a phase asks of the container
+  // itself: the element that owns the width is the only one that can widen to
+  // stand them side by side. Asked here, on the same pure read EncounterScreen
+  // makes to decide it has two to render, so the two cannot disagree — and
+  // asked as a modifier rather than a second container, because the width is
+  // still decided in exactly one place.
+  const paired = state.phase === "encounter" && activeScenes(state).length > 1;
+
   // One container, rendered here alone, so a screen component can never grow
   // a column of its own — see the `.screen` comment in styles.css.
-  return <div className="screen">{renderPhase()}</div>;
+  return (
+    <div className={paired ? "screen paired" : "screen"}>{renderPhase()}</div>
+  );
 }

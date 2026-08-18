@@ -59,11 +59,62 @@ body {
 
 /* Two things can stand on one leg. A rule between them, so the second reads
    as a second thing rather than more of the first. Never matches on a leg
-   holding one, which is most of them. */
+   holding one, which is most of them.
+   That purpose survives the pair standing in columns — it is carried by the
+   gutter there instead, and the media query below is where this rule hands the
+   job over. Same argument, turned ninety degrees. */
 .scene + .scene {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid #333;
+}
+
+/* Stacked, the two scenes of a paired leg arrive one after the other, and the
+   second reads as the next thing that happened — which contradicts the line
+   above them saying either one is still standing there to be dealt with. In
+   columns they read as two things in the same day, which is what the leg is,
+   and the eight buttons a paired leg always puts on screen stop being one
+   column to scroll. The answer is in the framing only: no scene's prose moves,
+   and answering one still loses the other.
+   Only where there is room. Each column has to land at the reading width a
+   lone scene already gets, so the pair needs about twice `.screen`'s 32rem
+   before this is worth doing; under the threshold it goes on stacking with the
+   divider above, because two cramped columns are worse than one honest stack. */
+@media (min-width: 60rem) {
+  /* The second max-width in this file, and it belongs to the same element the
+     first one does: the container still decides its own width, it now has two
+     widths to decide between. At 64rem both columns come out at the 30rem a
+     lone scene already reads at, so the pair gains a column and neither scene
+     gains or loses a line. */
+  .screen.paired {
+    max-width: 64rem;
+  }
+
+  .paired .scene-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* The gutter is built from symmetric padding rather than a grid `gap`, and
+     that is the whole reason it is written this way: the two tracks are always
+     equal, so padding on ONE side of the rule would take its width out of that
+     column alone and leave the pair reading at two different measures. A rem
+     either side keeps both at 30rem, which is the point of the threshold above. */
+  .paired .scene:first-child {
+    padding-right: 1rem;
+  }
+
+  /* A horizontal rule here would cut across the top of the right-hand column
+     and separate nothing. The gutter is what the second scene now stands on
+     the far side of, so the rule moves into it — and there it runs the height
+     of the taller scene, which a border-top never could. */
+  .paired .scene + .scene {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    padding-left: 1rem;
+    border-left: 1px solid #333;
+  }
 }
 
 .encounter-options {
