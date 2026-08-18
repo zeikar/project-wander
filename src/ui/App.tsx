@@ -248,17 +248,10 @@ function FieldNotes({
     return null;
   }
 
-  // Folded shut on the screens the traveler is still playing. Three fresh-eyes
-  // persona sessions independently stopped reading this block: it reprints
-  // every note ever learned under every travel screen, so by a third journey it
-  // is ten lines of already-read text, and one session missed the only live
-  // thing in it — a "there is more to this animal" line appearing for the first
-  // time — because it sat among nine lines formatted exactly like it. What is
-  // actionable is already elsewhere: the encounter screen prints "What you
-  // know" for the animal in front of you. `open` is passed by the two
-  // end-of-run screens and nowhere else, where the notebook is the payoff
-  // rather than clutter. The summary counts nothing, for the same reason the
-  // locked line below does.
+  // Folded on the screens still being played: it reprints every note ever
+  // learned, so it grew to ten lines of read text and three persona sessions
+  // stopped reading it — including past a line that had just changed. The
+  // end-of-run screens pass `open`, where it is the payoff rather than clutter.
   return (
     <details className="notebook" open={open}>
       <summary>Field notes</summary>
