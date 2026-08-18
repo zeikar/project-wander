@@ -5,6 +5,13 @@ body {
   margin: 0;
 }
 
+/* The one root of the layout, rendered by App() alone and never by a screen
+   component — so no phase can grow a second column of its own; there is
+   exactly one place this width and this margin are decided. It holds only
+   the current phase's content and nothing that stands across phases: a
+   persistent panel is the measured defect the FieldNotes fold in App.tsx
+   already fixed once, and a fixed slot here would just give that defect a
+   new coordinate. */
 .screen {
   max-width: 32rem;
   margin: 0 auto;

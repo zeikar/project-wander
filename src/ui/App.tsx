@@ -252,6 +252,9 @@ function FieldNotes({
   // learned, so it grew to ten lines of read text and three persona sessions
   // stopped reading it — including past a line that had just changed. The
   // end-of-run screens pass `open`, where it is the payoff rather than clutter.
+  // A persistent sidebar was considered for this layout and rejected for the
+  // same reason: always-present is the measured defect the fold fixed, and a
+  // fixed panel would just give it a new coordinate.
   return (
     <details className="notebook" open={open}>
       <summary>Field notes</summary>
@@ -289,7 +292,7 @@ function FieldNotes({
 
 function TitleScreen({ dispatch }: { dispatch: Dispatch<GameAction> }) {
   return (
-    <div className="screen">
+    <>
       <h1>Project Wander</h1>
       <p className="premise">
         You leave your hometown simply because the world is larger than you
@@ -300,7 +303,7 @@ function TitleScreen({ dispatch }: { dispatch: Dispatch<GameAction> }) {
       >
         Set out
       </button>
-    </div>
+    </>
   );
 }
 
@@ -330,7 +333,7 @@ function VillageScreen({
   const weather = weatherAt(state.seed, state.legIndex);
 
   return (
-    <div className="screen">
+    <>
       <StatRow state={state} />
       <p className="weather-line">{weatherProse[weather].line}</p>
       {/* How far it is, and what the far end weighs — both stated HERE, because
@@ -374,7 +377,7 @@ function VillageScreen({
           </button>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -396,7 +399,7 @@ function TravelScreen({
   const weather = weatherAt(state.seed, state.legIndex);
 
   return (
-    <div className="screen">
+    <>
       <StatRow state={state} />
       {state.lastEncounterResult && (
         <p className="result-line">{state.lastEncounterResult}</p>
@@ -480,7 +483,7 @@ function TravelScreen({
           </button>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -499,7 +502,7 @@ function EncounterScreen({
   const weather = weatherAt(state.seed, state.legIndex);
 
   return (
-    <div className="screen">
+    <>
       <StatRow state={state} />
       <p className="leg-progress">
         Leg {state.legIndex + 1} of {journey.legs.length}
@@ -623,7 +626,7 @@ function EncounterScreen({
           </section>
         );
       })}
-    </div>
+    </>
   );
 }
 
@@ -637,7 +640,7 @@ function JourneyCompleteScreen({
   const ending = journey.arrival.endings[arrivalEnding(state)];
 
   return (
-    <div className="screen">
+    <>
       <h1>{journey.arrival.name}</h1>
       {state.lastEncounterResult && (
         <p className="result-line">{state.lastEncounterResult}</p>
@@ -657,7 +660,7 @@ function JourneyCompleteScreen({
       >
         Begin another journey
       </button>
-    </div>
+    </>
   );
 }
 
@@ -669,7 +672,7 @@ function DefeatedScreen({
   dispatch: Dispatch<GameAction>;
 }) {
   return (
-    <div className="screen">
+    <>
       <h1>The Road Ends Here</h1>
       {/* Whichever of the two actually finished you says so in its own words:
           an animal death carries the encounter's line, a starvation death
@@ -697,25 +700,31 @@ function DefeatedScreen({
       >
         Set out again
       </button>
-    </div>
+    </>
   );
 }
 
 export default function App() {
   const [state, dispatch] = useReducer(reduce, undefined, createInitialState);
 
-  switch (state.phase) {
-    case "title":
-      return <TitleScreen dispatch={dispatch} />;
-    case "village":
-      return <VillageScreen state={state} dispatch={dispatch} />;
-    case "traveling":
-      return <TravelScreen state={state} dispatch={dispatch} />;
-    case "encounter":
-      return <EncounterScreen state={state} dispatch={dispatch} />;
-    case "arrived":
-      return <JourneyCompleteScreen state={state} dispatch={dispatch} />;
-    case "defeated":
-      return <DefeatedScreen state={state} dispatch={dispatch} />;
+  function renderPhase() {
+    switch (state.phase) {
+      case "title":
+        return <TitleScreen dispatch={dispatch} />;
+      case "village":
+        return <VillageScreen state={state} dispatch={dispatch} />;
+      case "traveling":
+        return <TravelScreen state={state} dispatch={dispatch} />;
+      case "encounter":
+        return <EncounterScreen state={state} dispatch={dispatch} />;
+      case "arrived":
+        return <JourneyCompleteScreen state={state} dispatch={dispatch} />;
+      case "defeated":
+        return <DefeatedScreen state={state} dispatch={dispatch} />;
+    }
   }
+
+  // One container, rendered here alone, so a screen component can never grow
+  // a column of its own — see the `.screen` comment in styles.css.
+  return <div className="screen">{renderPhase()}</div>;
 }
