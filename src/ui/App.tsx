@@ -288,12 +288,29 @@ export function knowledgeHint(option: VillageOption): string {
 // Deliberately kept as local components in this one file: at this size,
 // separate screen files would be fragmentation, not organization.
 
+// Where the traveler is, beside what they are carrying. It used to be emitted
+// at three call sites and landed somewhere different on every screen — third
+// line down at an encounter, ninth on the travel screen with prose either side
+// of it, below the notebook on a defeat. One status number, one place, read
+// with the other three. It keeps its own quieter colour there: the three before
+// it are things that can be spent, and this one is only where you stand.
+// Only while the road is actually being walked, which is why this asks the
+// phase. The village has not started it — leg 0 would print "Leg 1 of 8" over a
+// morning that has not left yet, next to a line already saying how far
+// Alderbrook is. The end screens have finished it, and `completeLeg` steps
+// legIndex past the last leg before switching to `arrived`, so the honest
+// render of this counter on the arrival screen is "Leg 9 of 8".
 function StatRow({ state }: { state: GameState }) {
   return (
     <div className="stat-row">
       <span>HP: {state.hp}</span>
       <span>Food: {state.food}</span>
       <span>Preparation: {state.preparation}</span>
+      {(state.phase === "traveling" || state.phase === "encounter") && (
+        <span className="leg-progress">
+          Leg {state.legIndex + 1} of {journey.legs.length}
+        </span>
+      )}
     </div>
   );
 }
@@ -518,9 +535,6 @@ function TravelScreen({
           repeated here. Repeating it every leg would be nagging about something
           eight legs away, and repeating it once more on leg 1 would be nagging
           about something said ten seconds ago. */}
-      <p className="leg-progress">
-        Leg {state.legIndex + 1} of {journey.legs.length}
-      </p>
       <h2>{leg.name}</h2>
       <p>{leg.description}</p>
       <FieldNotes state={state} />
@@ -572,9 +586,6 @@ function EncounterScreen({
   return (
     <>
       <StatRow state={state} />
-      <p className="leg-progress">
-        Leg {state.legIndex + 1} of {journey.legs.length}
-      </p>
       {/* Above the scene, not below: the disabled reasons on the buttons
           further down name what the sky is doing ("the rain has killed every
           scent"), so their context has to be on screen before the buttons
