@@ -18,10 +18,22 @@ body {
   padding: 2rem 1rem;
 }
 
+/* Four items rather than three since the leg counter moved in here, and on a
+   narrow phone that is one too many for one line: without these two rules the
+   row broke INSIDE each stat — "HP:" above "14", and "Leg 1 of" above "8" —
+   which is the one way a status line must never fail, because a number parted
+   from its label is worse than no number. Wrapping moves whole stats to a
+   second line instead; `nowrap` on the spans is what keeps a stat whole when
+   it does. */
 .stat-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.stat-row > span {
+  white-space: nowrap;
 }
 
 .leg-progress {
