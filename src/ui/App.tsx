@@ -346,7 +346,7 @@ function FieldNotes({
                 the traveler is owed is only that there IS more, so that the
                 next meeting is worth having. */}
             {entry.depth < species.fieldNotes.length && (
-              <p className="field-note">
+              <p className="locked-note">
                 {species.name}: there is more to this animal than you have
                 worked out yet.
               </p>
@@ -699,7 +699,7 @@ function EncounterScreen({
                           locked door worth opening is that the traveler can see
                           it, not that they can price it. */}
                       {lockedRung && (
-                        <span className="warning">
+                        <span className="locked-note">
                           {" "}
                           — there is more going on here than you can read yet
                         </span>

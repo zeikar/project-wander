@@ -57,6 +57,24 @@ body {
   font-style: italic;
 }
 
+/* "there is more to this animal than you have worked out yet" (FieldNotes)
+   and "there is more going on here than you can read yet" (EncounterScreen)
+   are one idea told twice, and neither telling is a fact, a condition, or a
+   result. Not `.field-note` green-italic: that is what a LEARNED note looks
+   like, and this line names the opposite of one — an absence, not a note.
+   Not `.warning` amber: a persona finding recorded in docs/CONTENT.md §
+   *Encounters* is that this line reads as a STATUS that just sits there
+   until the depth changes, while `.warning`'s own uses (a closed sky, an
+   empty pack) are CONDITIONS the sky or the wallet can flip on the very next
+   leg — dressing the standing one in the flipping one's colour is most of
+   why a persona called it "a bookmark without an address." Not `.result-line`
+   grey-italic either: nothing happened, which is the whole point of the
+   line. Its own colour, and upright rather than italic, so it stops reading
+   as a fact before the colour is even read. */
+.locked-note {
+  color: #a3a3d9;
+}
+
 /* Two things can stand on one leg. A rule between them, so the second reads
    as a second thing rather than more of the first. Never matches on a leg
    holding one, which is most of them.
@@ -177,8 +195,10 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* The summary is a control, so it reads as one; the notes inside keep the
-   .field-note voice. Why the notebook folds at all is on FieldNotes. */
+/* The summary is a control, so it reads as one; the learned notes inside keep
+   the .field-note voice — the locked line inside the same notebook deliberately
+   does not, which is what `.locked-note` above is for. Why the notebook folds at
+   all is on FieldNotes. */
 .notebook > summary {
   cursor: pointer;
   color: #8faf95;
