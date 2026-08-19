@@ -164,6 +164,74 @@ export function leavesNoFood(
   );
 }
 
+// What a greyed-out button is short OF. The two refusals the screen already
+// labelled are both facts about the world in front of the traveler — the sky
+// closed the answer ("no tinder will smoke in this rain") and the rung is
+// deeper than the notebook goes — while the refusals about the pack said
+// nothing at all: the button simply went grey. All three playtest personas
+// flagged it, and one named what the silence read as: "that isn't more of the
+// world I can't reach — it's showing me three things I can no longer afford
+// while I watch myself die." Another named the standard the screen had already
+// set for itself: "that bothered me more than the locked ones, because the game
+// had already shown it was willing to tell me why, and then didn't."
+// Exactly three clauses, and that is derived rather than assumed:
+// `canChooseOption` refuses on six, the screen labels the weather one and the
+// unread rung below, and `offeredOptions` filters a `requires` option below its
+// rung out of the menu entirely, so it never reaches a button to be explained.
+// What is left able to reach a rendered button is food, spending preparation,
+// and holding it.
+// No hp clause, because the rules have none: hp never refuses an option, and a
+// shortfall the game cannot produce would be the wrong-model bug costHint's
+// bands exist to prevent, invented from nothing.
+// It only ever adds text to a button the other two labels have already gone
+// quiet on, which is what keeps all three true together and is why neither
+// needed changing: costHint suppresses its "(leaves N in hand)" remainder on
+// exactly this option (a cold reader once saw "costs 1 preparation (-1 left in
+// hand)"), and `leavesNoFood` is canChooseOption-guarded, so on an unaffordable
+// button this is the only one of the three still speaking.
+// Exported for its unit test: this file has no JSX-rendering harness, so the
+// pure string function is tested directly, the same way `costHint` is.
+export function shortfallHint(
+  state: GameState,
+  option: EncounterOption,
+): string {
+  // The EFFECTIVE deltas, the same read `canChooseOption` makes, so the figure
+  // named here is short of the figure costHint printed on the same button and
+  // not of the clear-sky one underneath a reprice.
+  const effective = effectiveOption(
+    option,
+    weatherAt(state.seed, state.legIndex),
+  );
+  // One reason per button, and the sky answers first with a sentence of its
+  // own. On a closed answer what the pack holds would change nothing about the
+  // refusal, so saying it would be a second reason rather than a better one.
+  if (effective.closedReason !== undefined) {
+    return "";
+  }
+
+  // What is HELD, because that is the figure the refusal is missing — and one
+  // figure answers both preparation clauses, whether the option would spend the
+  // point or only wants it in hand. What it costs and what it requires are
+  // already on the same button from costHint; restating either would argue with
+  // that clause instead of completing it.
+  // One clause, not a joined ledger: no shipped option spends both food and
+  // preparation, so a two-resource sentence is a state the catalogue cannot
+  // reach. Building the join anyway would be code written for content that does
+  // not exist, and a test covering it would document a branch that cannot fire
+  // rather than guard one that can.
+  if (state.food + effective.foodDelta < 0) {
+    return ` — you have ${state.food} food`;
+  }
+  if (
+    state.preparation + effective.preparationDelta < 0 ||
+    state.preparation < (option.requiresPreparation ?? 0)
+  ) {
+    return ` — you have ${state.preparation} preparation`;
+  }
+
+  return "";
+}
+
 // Says which way a route leans and never its odds — the same contract costHint
 // keeps for hp, and for the same reason: the player should be able to make the
 // bet, not compute it. Derived from the leg's own numbers rather than authored
@@ -581,6 +649,19 @@ function EncounterScreen({
                   const lockedRung =
                     option.codex === "teaches" &&
                     depth < codexLayerOf(scene.id)! - 1;
+                  // One reason per button, and this is the order they answer
+                  // in: the sky, then the rung, then the pack. The first two
+                  // are facts about the world in front of the traveler and
+                  // hold however full the pack is, so on a button that is both
+                  // closed and unaffordable they are what is worth saying.
+                  // `shortfallHint` refuses a sky-closed option on its own
+                  // account too; the rung is the half it cannot see, so the
+                  // whole precedence is stated here, beside the two labels it
+                  // is deciding against.
+                  const shortfall =
+                    closedReason || lockedRung
+                      ? ""
+                      : shortfallHint(state, option);
                   return (
                     <button
                       key={option.id}
@@ -622,6 +703,9 @@ function EncounterScreen({
                           {" "}
                           — there is more going on here than you can read yet
                         </span>
+                      )}
+                      {shortfall && (
+                        <span className="warning">{shortfall}</span>
                       )}
                     </button>
                   );
