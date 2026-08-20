@@ -128,7 +128,7 @@ Rain and wind each close some answers and open others. Rain closes what needs a 
 
 Clear undoes both: every closed answer opens again, and every price returns to what it was.
 
-A closed answer keeps its button. It only gains a reason it cannot be taken.
+A refused answer keeps its button, whatever refused it. It only gains the reason it cannot be taken, and only one reason at a time: the sky first, then an animal doing something you cannot read yet, then what the pack is short of — that one says what you are holding, no food or no preparation. Blood is never the reason; it closes nothing.
 
 ---
 
