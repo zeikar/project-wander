@@ -5,16 +5,35 @@ body {
   margin: 0;
 }
 
+/* The one root of the layout, rendered by App() alone and never by a screen
+   component — so no phase can grow a second column of its own; there is
+   exactly one place this width and this margin are decided. It holds only
+   the current phase's content and nothing that stands across phases: a
+   persistent panel is the measured defect the FieldNotes fold in App.tsx
+   already fixed once, and a fixed slot here would just give that defect a
+   new coordinate. */
 .screen {
   max-width: 32rem;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
 
+/* Four items rather than three since the leg counter moved in here, and on a
+   narrow phone that is one too many for one line: without these two rules the
+   row broke INSIDE each stat — "HP:" above "14", and "Leg 1 of" above "8" —
+   which is the one way a status line must never fail, because a number parted
+   from its label is worse than no number. Wrapping moves whole stats to a
+   second line instead; `nowrap` on the spans is what keeps a stat whole when
+   it does. */
 .stat-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.stat-row > span {
+  white-space: nowrap;
 }
 
 .leg-progress {
@@ -23,6 +42,21 @@ body {
 
 .warning {
   color: #e0a030;
+}
+
+/* The same warning on the other ground, not a second meaning. The amber above
+   is tuned for the page's #1b1b1b, where it reads at 7.58:1; an ENABLED button
+   is the browser's near-white #efefef, where that same amber falls to 1.98:1 —
+   and the one clause that lands there is the leg-toll warning, on the only
+   option the player can actually press. Same warm hue, dark enough for a light
+   slab: 6.25:1. Scoped to an enabled button because a disabled one is the dark
+   slab further down, where the original amber is already right.
+   `.encounter-options` alone, and that is derived rather than cautious: of the
+   three clauses that wear this colour, `closedReason` and `shortfallHint` only
+   ever speak on a button `canChooseOption` has already refused, and no route
+   button or villager button renders a `.warning` at all. */
+.encounter-options button:not(:disabled) .warning {
+  color: #7a4e08;
 }
 
 .result-line {
@@ -50,13 +84,126 @@ body {
   font-style: italic;
 }
 
+/* "there is more to this animal than you have worked out yet" (FieldNotes)
+   and "there is more going on here than you can read yet" (EncounterScreen)
+   are one idea told twice, and neither telling is a fact, a condition, or a
+   result. Not `.field-note` green-italic: that is what a LEARNED note looks
+   like, and this line names the opposite of one — an absence, not a note.
+   Not `.warning` amber: a persona finding recorded in docs/CONTENT.md §
+   *Encounters* is that this line reads as a STATUS that just sits there
+   until the depth changes, while `.warning`'s own uses (a closed sky, an
+   empty pack) are CONDITIONS the sky or the wallet can flip on the very next
+   leg — dressing the standing one in the flipping one's colour is most of
+   why a persona called it "a bookmark without an address." Not `.result-line`
+   grey-italic either: nothing happened, which is the whole point of the
+   line. Its own colour, and upright rather than italic, so it stops reading
+   as a fact before the colour is even read. */
+.locked-note {
+  color: #a3a3d9;
+}
+
 /* Two things can stand on one leg. A rule between them, so the second reads
    as a second thing rather than more of the first. Never matches on a leg
-   holding one, which is most of them. */
+   holding one, which is most of them.
+   That purpose survives the pair standing in columns — it is carried by the
+   gutter there instead, and the media query below is where this rule hands the
+   job over. Same argument, turned ninety degrees. */
 .scene + .scene {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid #333;
+}
+
+/* Stacked, the two scenes of a paired leg arrive one after the other, and the
+   second reads as the next thing that happened — which contradicts the line
+   above them saying either one is still standing there to be dealt with. In
+   columns they read as two things in the same day, which is what the leg is,
+   and the eight buttons a paired leg always puts on screen stop being one
+   column to scroll. The answer is in the framing only: no scene's prose moves,
+   and answering one still loses the other.
+   Only where there is room. Each column has to land at the reading width a
+   lone scene already gets, so the pair needs about twice `.screen`'s 32rem
+   before this is worth doing; under the threshold it goes on stacking with the
+   divider above, because two cramped columns are worse than one honest stack. */
+@media (min-width: 60rem) {
+  /* The second max-width in this file, and it belongs to the same element the
+     first one does: the container still decides its own width, it now has two
+     widths to decide between. Nothing here is border-box, so 64rem is the
+     CONTENT box: each track is 32rem, and a rem of gutter padding leaves each
+     column reading at 31rem against the 32rem a lone scene gets. One rem
+     narrower each, and equal to each other — the pair gains a column and
+     neither scene gains or loses a line worth noticing. */
+  .screen.paired {
+    max-width: 64rem;
+  }
+
+  /* The lines above the pair — the stats, the sky, the rule about answering one
+     of two — are prose written for one column, and the wider container handed
+     them the whole 64rem: the weather line came out at about 111 characters,
+     sitting directly over body text set at 65. So the header keeps the measure
+     the columns keep and stays left-aligned, which puts it on the left column's
+     own left edge. 31rem is that measure MEASURED rather than assumed: half of
+     this container's 64rem content box, less the rem of gutter padding the
+     first column gives up. No wrapper element: the row is the one child that
+     wants the full width, so everything else here is the header by definition. */
+  .paired > :not(.scene-row) {
+    max-width: 31rem;
+  }
+
+  .paired .scene-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* The gutter is built from symmetric padding rather than a grid `gap`, and
+     that is the whole reason it is written this way: the two tracks are always
+     equal, so padding on ONE side of the rule would take its width out of that
+     column alone and leave the pair reading at two different measures. A rem
+     either side keeps both at 31rem, which is the point of the threshold above. */
+  .paired .scene:first-child {
+    padding-right: 1rem;
+  }
+
+  /* A horizontal rule here would cut across the top of the right-hand column
+     and separate nothing. The gutter is what the second scene now stands on
+     the far side of, so the rule moves into it — and there it runs the height
+     of the taller scene, which a border-top never could. */
+  .paired .scene + .scene {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    padding-left: 1rem;
+    border-left: 1px solid #333;
+  }
+
+  /* The titles align to the pixel and the button stacks did not: whichever
+     scene had the shorter prose started its options about 54px higher, and
+     against a shared top edge that break reads as an accident rather than as
+     two scenes of different lengths. The columns are already the same height,
+     so an auto margin above the options drops both stacks onto the same last
+     line. Bottom rather than top, and that was tried: aligning the TOPS wants
+     the prose in one grid track, which wants a wrapper element around it.
+     `grid-template-rows: subgrid` on the scene alone does not stand in for one
+     — a title, a description, a field note and the options auto-place one per
+     row into the two rows the span allows, and the render came back with the
+     stacks aligned to the pixel and both paragraphs painted over underneath
+     them.
+     Sibling margins do not collapse in a flex column, so every gap inside a
+     scene would open by the smaller of its two margins. Dropping the later
+     margin leaves the earlier one deciding the gap, which is exactly what
+     collapsing was doing: the spacing is unchanged from the stacked layout. */
+  .paired .scene {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .paired .scene > * + * {
+    margin-top: 0;
+  }
+
+  .paired .scene .encounter-options {
+    margin-top: auto;
+  }
 }
 
 .encounter-options {
@@ -114,14 +261,37 @@ button {
   cursor: pointer;
 }
 
+/* A disabled option is still information — this milestone put the REASON for
+   the refusal on the button itself — so it has to stay readable, and `opacity`
+   could not do that: it dimmed the label and the reason together, and it
+   compounded with the browser's own dimming of a disabled control. Measured on
+   the render, the slab came out #3d3d3d under a label at #313131 — 1.20:1, a
+   ghost — while the coloured reason survived at ~1.4:1 and so out-read the
+   option it disqualifies. Dimming everything toward one luminance also
+   collapsed the distinction this milestone is built on: `.warning` at 1.44:1
+   beside `.locked-note` at 1.41:1 is a 1.02:1 ratio between the two registers,
+   and a reader took the periwinkle for amber. Said as a dark slab instead,
+   nothing is dimmed — the label reads at ~5.5:1, the two reasons at 6.83:1 and
+   6.50:1, so a reason is a shade brighter than the label it qualifies and the
+   two registers separate again. Two pixels of border, not one, because that is
+   what the browser gives the enabled button beside it: at 1px a disabled slab
+   came out 2px shorter than the one above it in the same stack. */
 button:disabled {
-  opacity: 0.4;
+  background: #242424;
+  border: 2px solid #3a3a3a;
+  color: #9a9a9a;
   cursor: not-allowed;
 }
 
-/* The summary is a control, so it reads as one; the notes inside keep the
-   .field-note voice. Why the notebook folds at all is on FieldNotes. */
+/* The summary is a control, so it reads as one — in the standing-terms grey,
+   not the green above. It wore `.field-note`'s colour first, which labelled the
+   drawer as a learned fact when what is inside it is a fact AND an absence, and
+   spent the palette's scarcest token on chrome. Green now appears on learned
+   facts and nowhere else, which is the whole of what makes it mean anything.
+   The notes inside keep the .field-note voice; the locked line inside the same
+   notebook deliberately does not, which is what `.locked-note` above is for.
+   Why the notebook folds at all is on FieldNotes. */
 .notebook > summary {
   cursor: pointer;
-  color: #8faf95;
+  color: #9a9a9a;
 }

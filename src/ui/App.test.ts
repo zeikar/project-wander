@@ -4,13 +4,14 @@ import { encounters, speciesList } from "../content/encounters";
 import type { EncounterOption } from "../content/encounters";
 import { roadEvents } from "../content/events";
 import { canChooseOption } from "../core/reducer";
-import { weatherAt } from "../core/weather";
+import { effectiveOption, weatherAt } from "../core/weather";
 import { HUNGRY_TRAVEL_HP_LOSS } from "../core/game-state";
 import {
   costHint,
   knowledgeHint,
   leavesNoFood,
   roadAhead,
+  shortfallHint,
   trafficHint,
 } from "./App";
 import { journey } from "../content/journey";
@@ -410,6 +411,125 @@ describe("costHint", () => {
     // watch-the-flight-line gives up the afternoon and nothing else. An empty
     // clause is the truthful label, not a missing one.
     expect(costHint(state, watchTheFlightLine)).toBe("");
+  });
+});
+
+// The three refusals `canChooseOption` makes that nothing on the screen used to
+// name. Whole strings, not "not empty": the figure in hand IS the label, so a
+// hint naming the cost instead of the holding would satisfy any weaker check.
+describe("shortfallHint", () => {
+  it("names the food in hand when the option would spend more than there is", () => {
+    const state = makeEncounterState({ food: 0 });
+
+    expect(canChooseOption(state, waitItOut)).toBe(false);
+    expect(shortfallHint(state, waitItOut)).toBe(" — you have 0 food");
+  });
+
+  it("names the preparation in hand when the option would spend more than there is", () => {
+    const state = makeEncounterState({
+      activeEncounterId: "bee-hollow",
+      preparation: 0,
+    });
+
+    expect(canChooseOption(state, smokeThem)).toBe(false);
+    expect(shortfallHint(state, smokeThem)).toBe(" — you have 0 preparation");
+  });
+
+  it("names the preparation in hand against a requirement it does not meet", () => {
+    const state = makeEncounterState({
+      activeEncounterId: "ford-boar",
+      preparation: 0,
+      // `bait-a-trace` is a `requires` option, so without the boar known to the
+      // ford's own rung `offeredOptions` would keep it off the menu entirely
+      // and a short kit would never be what refuses it.
+      known: [{ speciesId: "boar", depth: 1 }],
+    });
+
+    expect(canChooseOption(state, baitATrace)).toBe(false);
+    expect(shortfallHint(state, baitATrace)).toBe(" — you have 0 preparation");
+  });
+
+  // The boundary, and the reason it is worth its own test: every test above
+  // still passes with any of the three comparisons off by one — 0 in hand
+  // against a price of 1 is short under `<` and `<=` alike — so this is the
+  // one that refuses that version. The last point in hand covering the price
+  // exactly is an affordable option, and an affordable option says nothing.
+  it("says nothing when the last point in hand covers the price exactly", () => {
+    const atFord = makeEncounterState({
+      food: 1,
+      preparation: 1,
+      known: [{ speciesId: "boar", depth: 1 }],
+    });
+    const atHollow = makeEncounterState({
+      activeEncounterId: "bee-hollow",
+      preparation: 1,
+    });
+
+    expect(canChooseOption(atFord, waitItOut)).toBe(true);
+    expect(shortfallHint(atFord, waitItOut)).toBe("");
+    expect(canChooseOption(atFord, baitATrace)).toBe(true);
+    expect(shortfallHint(atFord, baitATrace)).toBe("");
+    expect(canChooseOption(atHollow, smokeThem)).toBe(true);
+    expect(shortfallHint(atHollow, smokeThem)).toBe("");
+  });
+
+  // hp is not a shortfall, because hp does not gate an option: the traveler can
+  // always take a wound they will not survive. Naming one would invent a
+  // refusal the rules never make, which is the wrong-model bug costHint's
+  // bands exist to prevent, pointing the other way.
+  it("never says anything about hp, however deep the wound", () => {
+    const dying = makeEncounterState({ hp: 1, food: 2, preparation: 2 });
+
+    // wade-past is hpDelta -4 and spends nothing else.
+    expect(canChooseOption(dying, wadePast)).toBe(true);
+    expect(shortfallHint(dying, wadePast)).toBe("");
+  });
+
+  // One reason per button: the sky has already answered this one on screen,
+  // and what the pack holds would not change the refusal. Paired with the same
+  // short kit under a sky that closes nothing, because a helper that had simply
+  // gone silent everywhere would pass the first assertion alone.
+  it("says nothing about an option the sky has already closed", () => {
+    const rained = makeEncounterState({
+      seed: RAIN_SEED,
+      activeEncounterId: "bee-hollow",
+      preparation: 0,
+    });
+
+    expect(
+      effectiveOption(smokeThem, weatherAt(rained.seed, rained.legIndex))
+        .closedReason,
+    ).toBe("no tinder will smoke in this rain");
+    expect(shortfallHint(rained, smokeThem)).toBe("");
+    expect(shortfallHint({ ...rained, seed: CLEAR_SKY_SEED }, smokeThem)).toBe(
+      " — you have 0 preparation",
+    );
+  });
+
+  // The two halves of one sentence on one button. costHint states the price and
+  // then goes deliberately quiet — no "(leaves -1 in hand)" on an option that
+  // cannot be taken — and this is what speaks in that gap; against a
+  // requirement it completes the clause rather than restating it.
+  it("reads as one sentence with the costHint printed beside it", () => {
+    const atHollow = makeEncounterState({
+      activeEncounterId: "bee-hollow",
+      preparation: 0,
+    });
+    const atFord = makeEncounterState({
+      activeEncounterId: "ford-boar",
+      preparation: 0,
+      known: [{ speciesId: "boar", depth: 1 }],
+    });
+
+    expect(costHint(atHollow, smokeThem)).not.toContain("in hand");
+    expect(
+      costHint(atHollow, smokeThem) + shortfallHint(atHollow, smokeThem),
+    ).toBe(" — costs 1 preparation, gains 2 food — you have 0 preparation");
+    expect(
+      costHint(atFord, baitATrace) + shortfallHint(atFord, baitATrace),
+    ).toBe(
+      " — needs 1 preparation in hand, spends none — you have 0 preparation",
+    );
   });
 });
 

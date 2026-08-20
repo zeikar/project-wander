@@ -32,6 +32,8 @@ The journey is eight legs.
 
 Three days of food used to cover a four-leg walk. Three days do not cover eight, and the loaf a baker presses on you in the village only makes it four.
 
+The road takes a meal at the end of every leg — the quiet ones and the last one alike. With nothing left to eat it takes 3 HP instead, and a traveler that toll empties never arrives at all.
+
 ---
 
 Village
@@ -40,9 +42,9 @@ The journey starts in the village, not on the road. One morning, three people, a
 
 Nobody charges anything. The morning itself is the price — meeting one means the other two go unmet.
 
-The three give in three different currencies, never two from the same person: a point of gear, a point of food, and one more thing known about one animal.
+The three give in three different currencies, never two from the same person: a point of preparation, a point of food, and one more thing known about one animal.
 
-You set out one meal short of what the road used to give you, and the morning is where that meal is decided. The baker hands it straight back and you leave on the old starting line. The smith trades it for a point of gear instead. The trapper spends it and tells you the next thing you do not know about one animal — a species you have never met, or the one you have already watched once — which is worth nothing at all this morning and may be worth a great deal on the fourth leg. Which one you give the morning to is the first real decision of the journey.
+You set out one meal short of what the road used to give you, and the morning is where that meal is decided. The baker hands it straight back and you leave on the old starting line. The smith trades it for a point of preparation instead. The trapper spends it and tells you the next thing you do not know about one animal — a species you have never met, or the one you have already watched once — which is worth nothing at all this morning and may be worth a great deal on the fourth leg. Which one you give the morning to is the first real decision of the journey.
 
 There was a fourth who read out the sky ahead. He was measured against the other three and cut.
 
@@ -104,11 +106,11 @@ Some scenes sit deeper than what you know. The watching is still on the menu the
 
 A scene whose layer you already have does not teach it twice. It shows you what that knowledge buys instead.
 
-What a layer opens is an answer you did not have. It still costs something; knowing more never makes an encounter free.
+What a layer opens is an answer you did not have. It is an alternative and not automatically the best one: some ask a price, or something already in the pack, and some are simply free — set against answers that pay differently.
 
-Some legs put two animals in front of you at once, and watching one is not watching the other. You answer one of them, the other is gone, and only the one you answered goes in the book.
+Some legs put two animals in front of you at once, and watching one is not watching the other. You answer one of them and the other is gone — and what goes in the book is the watching, not the answering, so an answer that pays you records neither animal.
 
-Meet the same animal again on the same journey and it offers an answer a first meeting does not.
+Meeting the same animal again is not itself what offers a new answer. A scene changes only once what you know of that animal reaches the layer that scene stands at.
 
 Knowledge survives the journey that earned it, into the next one.
 
@@ -122,8 +124,28 @@ The sky is clear, rain, or wind.
 
 One sky holds two to four legs, and a boundary always changes it — the same sky never runs on into itself.
 
-Rain and wind each close some answers and open others. Rain closes what needs a scent or dry tinder, and opens the hollow: wet bees barely fly, so reaching in for the comb costs a fraction of what it costs on a dry day. Wind closes what needs a downwind angle or a cloth held spread, and opens the rowan: the wind has already shaken the fruit down, so gathering what fell is worth more than it usually is.
+Rain and wind each close some answers and open others. Rain closes what needs a scent or dry tinder, and opens the hollow: wet bees barely fly, so reaching in for the comb costs a fraction of what it costs on a dry day. Wind closes what needs a downwind angle or a cloth held spread, and opens the ground under the rowan and the thorn hedge alike: the wind has already shaken the fruit down, so gathering what fell is worth more than it usually is.
 
 Clear undoes both: every closed answer opens again, and every price returns to what it was.
 
-A closed answer keeps its button. It only gains a reason it cannot be taken.
+A refused answer keeps its button, whatever refused it. It only gains the reason it cannot be taken, and only one reason at a time: the sky first, then an animal doing something you cannot read yet, then what the pack is short of — that one says what you are holding, no food or no preparation. Blood is never the reason; it closes nothing.
+
+---
+
+Destination
+
+The road ends at Alderbrook. However you get there, the town takes you in.
+
+What it makes of you is weighed on two things, and the morning names both before you leave: what is left of you, and what is left in the pack. Food and preparation are added together at the gate — one figure, and it does not care which of the two you kept.
+
+There are four ways to arrive, and the first one that fits is the one you get.
+
+The best of them needs both at once: road still left in your legs AND something still in the pack. Arriving loaded but half-dead does not earn it, and neither does arriving whole with nothing. Weighing the pack alone would make hoarding everything and eating the damage the right way to play; weighing health alone would make spending your last of everything free. Needing both is what sets the two against each other, and that trade is what the choices on the road are for.
+
+Below that, coming in down to a fraction of the health you set out with is arriving barely — whatever is in the pack.
+
+Coming in with nothing to eat and nothing to carry is arriving with nothing left.
+
+Anything else is simply arriving.
+
+Arriving barely and arriving with nothing are not exclusive. Do both and it is the near-death that is told back to you, because it is the louder fact.
