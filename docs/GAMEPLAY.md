@@ -149,3 +149,5 @@ Coming in with nothing to eat and nothing to carry is arriving with nothing left
 Anything else is simply arriving.
 
 Arriving barely and arriving with nothing are not exclusive. Do both and it is the near-death that is told back to you, because it is the louder fact.
+
+If a leg ever held two things at once, arriving also tells you about the most recent one you left standing — what kind of thing it was, and where it stood, never what it was called. A journey that passed nothing by hears nothing about it, and it changes nothing about what you are weighed on.
