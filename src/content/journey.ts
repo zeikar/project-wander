@@ -108,6 +108,38 @@ export interface Journey {
     // Naming the two spoils nothing that was deliberately hidden. It was never
     // decided that these should be secret; they simply were never said.
     departure: string;
+    // The one thing a paired leg was walked past, said at the gate. Three
+    // authored segments around two holes — the KIND of the thing, then the
+    // name of the leg it stands on — filled in by the arrival screen from
+    // `GameState.leftStanding`. One frame rather than a sentence per kind:
+    // two variants are two things to keep in the same voice, and the only
+    // thing that differs between them is a noun.
+    // UNMEASURED, and it must not be described as an improvement. VISION.md
+    // § *What is Lost* says the pressure in this game is passing something by,
+    // and until now nothing on any screen said what was passed. That naming
+    // one of them lands as a regret is a hypothesis for a human playtest; no
+    // sweep can settle it, because nothing about how a run FEELS has ever been
+    // settled by measurement (CLAUDE.md § *Working agreements*).
+    // A KIND and never a species, borrowing the shape of docs/CONTENT.md
+    // § *Forks* and none of its evidence: what a traveler carries away from a
+    // thing they did not go to is that something was there, not what to call
+    // it. And never a count, a price or a total — one thing named reads as a
+    // regret, where a tally reads as the completion score VISION.md
+    // § *Success Metric* refuses.
+    // "left standing" is quoted deliberately: the encounter screen's own
+    // road-rule line promises that whichever scene is dealt with ends the day
+    // "and the other is left standing", so this pays off a sentence the player
+    // was already told. Changing either wording alone breaks that echo.
+    // The leg name goes in VERBATIM, so the frame has to read with all eight —
+    // five of them begin with "The", which is why the hole is prepositioned
+    // with "at" and nothing else ("at The Ferry Crossing", "at Beckwith
+    // Common", "at Crossroads Waymarker").
+    leftStanding: {
+      kind: { animal: string; place: string };
+      before: string;
+      middle: string;
+      after: string;
+    };
     endings: Record<ArrivalEndingId, ArrivalEnding>;
   };
 }
@@ -443,6 +475,28 @@ export const journey: Journey = {
     name: "Alderbrook",
     departure:
       "However you get there, Alderbrook will take you in. What it makes of you comes down to two things: what is left in your pack when you arrive, and what is left of you.",
+    // Composed, it reads: "One day of the road ended with an animal left
+    // standing at The Ferry Crossing, and whatever became of it happened
+    // without you." — or "...with somebody else's work left standing at
+    // Beckwith Common...".
+    // A leg is a day, which the road's own toll line already says out loud, so
+    // "One day of the road ended with" is the same day the encounter screen
+    // called "the end of the day here".
+    // Both nouns sit at the level the road signs speak at, and both end on a
+    // noun so that the segment after them can start with "left standing"
+    // without a verb colliding: "something somebody left" would have put
+    // "left" beside "left". "somebody else's work" covers all three places —
+    // a camp, a wrecked cart, a shieling — as the class of made things found
+    // on the road that are not yours, and says the not-yours part.
+    leftStanding: {
+      kind: {
+        animal: "an animal",
+        place: "somebody else's work",
+      },
+      before: "One day of the road ended with ",
+      middle: " left standing at ",
+      after: ", and whatever became of it happened without you.",
+    },
     endings: {
       travelOn: {
         label: "You arrive with road still left in you",

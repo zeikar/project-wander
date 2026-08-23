@@ -750,6 +750,27 @@ function JourneyCompleteScreen({
       )}
       <h2>{ending.label}</h2>
       <p>{ending.text}</p>
+      {/* Only where a leg actually held two things and one of them was walked
+          past. Absence is AUTHORED: a journey that answered everything it met
+          has nothing to say here, so there is no fallback line — and, on the
+          same `&&` idiom as the two result lines above, no empty element
+          either.
+          The leg is looked up with the index the reducer RECORDED, never with
+          `state.legIndex`, which on this screen has already run off the end of
+          the road; `GameState.leftStanding` says why it stores the pre-choice
+          one. The `!` is the assertion TravelScreen already makes on the same
+          list: the index was written off a leg being walked, so it is in range.
+          Composed here rather than stored. `src/content` holds the frame and
+          the two nouns, and no sentence ever enters state. */}
+      {state.leftStanding !== null && (
+        <p>
+          {journey.arrival.leftStanding.before}
+          {journey.arrival.leftStanding.kind[state.leftStanding.kind]}
+          {journey.arrival.leftStanding.middle}
+          {journey.legs[state.leftStanding.legIndex]!.name}
+          {journey.arrival.leftStanding.after}
+        </p>
+      )}
       {state.log.length > 0 && (
         <p>The road behind you: {state.log.join("; ")}.</p>
       )}
