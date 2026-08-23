@@ -58,6 +58,7 @@ function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
     secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    leftStanding: null,
     known: [],
     log: [],
     ...overrides,

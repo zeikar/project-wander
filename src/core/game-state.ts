@@ -53,6 +53,27 @@ export interface GameState {
   // players attribute the road's hunger damage to the animal — they read the
   // boar as costing 9 when it costs 6.
   lastRoadToll: string | null;
+  // The one thing this journey walked past, and null until it has walked past
+  // anything: which LEG it stood on, and whether it was an animal or a place.
+  // Only a leg holding two writes here — answering one of them is what leaves
+  // the other standing, and that is the whole cost of the shape.
+  // ONE value, overwritten by each later pair, and deliberately never an array:
+  // a list of everything missed is a ledger, and a ledger read at arrival is a
+  // completion counter — what VISION.md § Success Metric refuses. That one
+  // thing named reads as a regret where twelve read as a checklist is an
+  // unmeasured prototype judgment, not a measured result: nothing here has
+  // been put in front of a player.
+  // A LEG and a KIND, never a species. `known` below SURVIVES the journey, so
+  // naming the species would hand the next run a list of animals to go and
+  // collect. docs/CONTENT.md § Forks reached the same answer on DIFFERENT
+  // grounds — a sign names a kind because naming the species buys almost
+  // nothing, and that section measured it as not hurting the codex at all — so
+  // this borrows its shape and none of its evidence.
+  // The leg stored is the PRE-CHOICE `legIndex`. `completeLeg` increments
+  // before the phase becomes `arrived`, so anything reading this has to index
+  // `journey.legs` with the number recorded here and never with
+  // `state.legIndex`.
+  leftStanding: { legIndex: number; kind: "animal" | "place" } | null;
   // One entry per SPECIES the traveler has studied, in the order the species
   // were FIRST learned, each carrying how many rungs of that species' ladder
   // are known. Species rather than situation: one animal can be met in more
@@ -110,6 +131,7 @@ export function createInitialState(): GameState {
     secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    leftStanding: null,
     known: [],
     log: [],
   };

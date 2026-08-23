@@ -43,6 +43,7 @@ function makeTravelingState(overrides: Partial<GameState> = {}): GameState {
     secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    leftStanding: null,
     known: [],
     log: [],
     ...overrides,
@@ -1690,6 +1691,168 @@ describe("a leg that holds two things", () => {
 
     expect(animalsOn(next)).toHaveLength(2);
     expect(holdsPlace(next)).toBe(false);
+  });
+
+  // What the leg left behind, recorded. Everything above this line ends with
+  // one thing answered and the other one dropped, and nothing downstream could
+  // tell the dropped thing had ever been there. These pin the record itself;
+  // what any screen says about it is a separate question.
+
+  // An option this state can actually answer with and survive: choosable on
+  // this leg's weather, and not lethal. Lethality matters because a killing
+  // choice returns a `defeated` state that never completes the leg, and these
+  // tests would then be asserting about a different transition.
+  function survivableOption(
+    state: GameState,
+    options: readonly EncounterOption[],
+  ) {
+    const weather = weatherAt(state.seed, state.legIndex);
+    return options.find(
+      (candidate) =>
+        canChooseOption(state, candidate) &&
+        state.hp + effectiveOption(candidate, weather).hpDelta > 0,
+    )!;
+  }
+
+  // Walked at leg 3 rather than leg 0, deliberately: every other test in this
+  // file builds its pair at the fixture's default leg, so a record that stored
+  // a constant 0 would satisfy all of them. What reads this next indexes
+  // `journey.legs` with it, and a leg-independent bug there would name the
+  // wrong place on the screen with nothing going red. The pair rides
+  // `rngState` salts and the leg does not enter them, so moving the leg costs
+  // only re-finding a seed whose sky is clear THERE.
+  it("records the leg and the kind of the thing left standing", () => {
+    const state = makePlacePairState({
+      legIndex: 3,
+      seed: findSeedWith("clear", 3),
+      food: 3,
+      preparation: 3,
+    });
+    const { animal, place } = animalAndPlace(state);
+
+    expect(state.legIndex).toBe(3);
+
+    const afterAnimal = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: survivableOption(state, animal.options).id,
+    });
+    const afterPlace = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: survivableOption(state, place.options).id,
+    });
+
+    // The thing PASSED, not the thing answered: answering the animal is what
+    // leaves the place standing.
+    expect(afterAnimal.leftStanding).toEqual({
+      legIndex: state.legIndex,
+      kind: "place",
+    });
+    expect(afterPlace.leftStanding).toEqual({
+      legIndex: state.legIndex,
+      kind: "animal",
+    });
+    // And the leg recorded is the one that was WALKED, which is already not
+    // `legIndex` by the time anything reads this: completing the leg moved it
+    // on. Anything naming the place has to index `journey.legs` with the
+    // number stored here.
+    expect(afterAnimal.legIndex).toBe(state.legIndex + 1);
+  });
+
+  // The case a place pair cannot catch. There, "the other one" is always the
+  // opposite kind, so recording the kind of the ANSWERED scene and negating it
+  // scores exactly as recording the passed one does. Here both slots are
+  // animals and that shortcut writes "place" onto a leg that never held one.
+  it("records an animal left standing when both things on the leg were animals", () => {
+    const state = makeTwoAnimalState({ food: 3, preparation: 3 });
+
+    for (const answered of animalsOn(state)) {
+      const next = reduce(state, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: survivableOption(state, answered.options).id,
+      });
+
+      expect(next.leftStanding).toEqual({
+        legIndex: state.legIndex,
+        kind: "animal",
+      });
+    }
+  });
+
+  // A leg holding ONE thing passed nothing by, so it has nothing to say and
+  // must not say it — including saying null over a record an earlier pair
+  // wrote. Walked onto rather than fabricated, like the pairs above.
+  it("leaves the record untouched on a leg that held one thing", () => {
+    const earlier = { legIndex: 4, kind: "animal" } as const;
+
+    for (const carried of [null, earlier]) {
+      const before = makeTravelingState({
+        rngState: findPlaceRngState("quiet", false, { paired: false }),
+        seed: findSeedWith("clear", 0),
+        food: 3,
+        preparation: 3,
+        leftStanding: carried,
+      });
+      const lone = reduce(before, {
+        type: "TRAVEL",
+        routeId: routeFor(before.legIndex, "quiet").id,
+      });
+
+      expect(activeScenes(lone)).toHaveLength(1);
+
+      const next = reduce(lone, {
+        type: "CHOOSE_ENCOUNTER_OPTION",
+        optionId: survivableOption(lone, activeScenes(lone)[0]!.options).id,
+      });
+
+      // Same value, and the same object: a lone leg does not rewrite this.
+      expect(next.leftStanding).toBe(carried);
+    }
+  });
+
+  // One value, overwritten. A journey that walks two pairs remembers the
+  // second, and the first is gone — see `GameState.leftStanding` for why this
+  // is not a list.
+  it("overwrites what an earlier leg left standing", () => {
+    const earlier = { legIndex: 4, kind: "animal" } as const;
+    const state = makePlacePairState({
+      food: 3,
+      preparation: 3,
+      leftStanding: earlier,
+    });
+    const { animal } = animalAndPlace(state);
+
+    // The seeded record has to name a DIFFERENT leg than the one about to be
+    // walked, or "overwritten" and "kept" would look the same below.
+    expect(state.leftStanding).toBe(earlier);
+    expect(state.legIndex).not.toBe(earlier.legIndex);
+
+    const next = reduce(state, {
+      type: "CHOOSE_ENCOUNTER_OPTION",
+      optionId: survivableOption(state, animal.options).id,
+    });
+
+    expect(next.leftStanding).toEqual({
+      legIndex: state.legIndex,
+      kind: "place",
+    });
+  });
+
+  // This describes ONE journey, unlike `known`, which is a fact about the
+  // traveler and crosses. The `known` line is here so the contrast can be read
+  // without leaving the test; what actually pins the carry is
+  // "carries what was learned into the next journey", which goes red on its
+  // own.
+  it("does not carry what was left standing into the next journey", () => {
+    const state = makeTravelingState({
+      phase: "arrived",
+      leftStanding: { legIndex: 2, kind: "place" },
+      known: knownToDepth("wolves", 2),
+    });
+
+    const next = reduce(state, { type: "START_JOURNEY", seed: 5 });
+
+    expect(next.leftStanding).toBeNull();
+    expect(next.known).toEqual(knownToDepth("wolves", 2));
   });
 });
 
