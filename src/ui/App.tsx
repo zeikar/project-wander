@@ -33,8 +33,10 @@ function newSeed(): number {
 
 // Shows food and preparation exactly. An hp cost is given as a relative band —
 // how it compares to what a hungry leg takes — and never as a number.
-// Exported for its unit test: this file has no JSX-rendering harness, so the
-// pure string function is tested directly, the same way `leavesNoFood` is.
+// Exported for its unit test, the same way `leavesNoFood` is: pinning the pure
+// string directly is what lets the assertions sweep every authored option under
+// every sky, which a markup assertion would not do cheaply. `App.render.test.tsx`
+// renders screens, but only to pin which screen shows what.
 export function costHint(state: GameState, option: EncounterOption): string {
   // Reads the EFFECTIVE deltas, not the authored ones — the same call
   // `canChooseOption` and the reducer make — so a repriced option's label
@@ -189,8 +191,9 @@ export function leavesNoFood(
 // exactly this option (a cold reader once saw "costs 1 preparation (-1 left in
 // hand)"), and `leavesNoFood` is canChooseOption-guarded, so on an unaffordable
 // button this is the only one of the three still speaking.
-// Exported for its unit test: this file has no JSX-rendering harness, so the
-// pure string function is tested directly, the same way `costHint` is.
+// Exported for its unit test, the same way `costHint` is: pinning the pure
+// string directly is what lets the assertions sweep every authored option under
+// every sky, which a markup assertion would not do cheaply.
 export function shortfallHint(
   state: GameState,
   option: EncounterOption,
@@ -269,8 +272,9 @@ export function trafficHint(
 // asks again rather than being told, because what was earned is its call.
 // Empty for the villagers who teach nothing, the same way costHint's clauses
 // are empty for what an option does not touch.
-// Exported for its unit test: this file has no JSX-rendering harness, so the
-// pure string function is tested directly, the same way `costHint` is.
+// Exported for its unit test, the same way `costHint` is: pinning the pure
+// string directly is what lets the assertions sweep every villager the pool can
+// offer, which a markup assertion would not do cheaply.
 export function knowledgeHint(option: VillageOption): string {
   if (option.teachesSpecies === undefined) {
     return "";
@@ -399,8 +403,9 @@ function TitleScreen({ dispatch }: { dispatch: Dispatch<GameAction> }) {
 // the identical string and a test comparing them agrees with both — which is a
 // test that cannot fail, the exact class this project has now found four times.
 // Parameterized, `roadAhead("Somewhere", 3)` pins the derivation outright.
-// Exported for its unit test: this file has no JSX-rendering harness, so the
-// pure string function is tested directly, the same way `costHint` is.
+// Exported for its unit test, the same way `costHint` is: pinning the pure
+// string directly is what ALLOWS those fabricated figures, where a render
+// assertion could only ever show the shipped ones.
 export function roadAhead(destination: string, legs: number): string {
   return `${destination} is ${legs} legs of road from here.`;
 }
@@ -730,7 +735,48 @@ function EncounterScreen({
   );
 }
 
-function JourneyCompleteScreen({
+// What was left standing, and where, said as one sentence. Composed here
+// rather than stored: `src/content` holds the frame and the two nouns, and no
+// sentence ever enters state.
+// The leg is looked up with the index the reducer RECORDED, never with
+// `state.legIndex` — by the time this is read that one has walked on past the
+// leg the record is about, and on the arrival screen it has run off the end of
+// the road entirely; `GameState.leftStanding` says why it stores the pre-choice
+// one. The `!` is the assertion TravelScreen already makes on the same list:
+// the index was written off a leg being walked, so it is in range.
+// A KIND and never a species, read out of the two-noun table in `journey.ts`,
+// which carries the evidence for why naming the creature would turn a regret
+// into a checklist for the next run.
+// Empty for a journey that passed nothing by, the same way knowledgeHint is
+// empty for the villagers who teach nothing. The caller still asks the record
+// itself, so absence stays no element rather than an empty one.
+// Exported for its unit test, like `costHint` and `shortfallHint` and for the
+// same reason: it composes a player-facing string out of state, and everything
+// in that category is pinned as a pure function, where the composition can be
+// checked across inputs the screen does not happen to be in.
+// What that leaves to `App.render.test.tsx` is the other question — whether the
+// sentence appears at all, on which screen, and as an element rather than an
+// empty one. Neither answers the other.
+export function leftStandingLine(state: GameState): string {
+  if (state.leftStanding === null) {
+    return "";
+  }
+
+  const frame = journey.arrival.leftStanding;
+
+  return (
+    frame.before +
+    frame.kind[state.leftStanding.kind] +
+    frame.middle +
+    journey.legs[state.leftStanding.legIndex]!.name +
+    frame.after
+  );
+}
+
+// Exported, with `DefeatedScreen`, for `App.render.test.tsx`: the one question
+// a pure helper cannot answer is whether a line reached the screen at all, and
+// WHICH screen it reached. Nothing else imports either of them.
+export function JourneyCompleteScreen({
   state,
   dispatch,
 }: {
@@ -754,23 +800,8 @@ function JourneyCompleteScreen({
           past. Absence is AUTHORED: a journey that answered everything it met
           has nothing to say here, so there is no fallback line — and, on the
           same `&&` idiom as the two result lines above, no empty element
-          either.
-          The leg is looked up with the index the reducer RECORDED, never with
-          `state.legIndex`, which on this screen has already run off the end of
-          the road; `GameState.leftStanding` says why it stores the pre-choice
-          one. The `!` is the assertion TravelScreen already makes on the same
-          list: the index was written off a leg being walked, so it is in range.
-          Composed here rather than stored. `src/content` holds the frame and
-          the two nouns, and no sentence ever enters state. */}
-      {state.leftStanding !== null && (
-        <p>
-          {journey.arrival.leftStanding.before}
-          {journey.arrival.leftStanding.kind[state.leftStanding.kind]}
-          {journey.arrival.leftStanding.middle}
-          {journey.legs[state.leftStanding.legIndex]!.name}
-          {journey.arrival.leftStanding.after}
-        </p>
-      )}
+          either. The sentence itself is `leftStandingLine`. */}
+      {state.leftStanding !== null && <p>{leftStandingLine(state)}</p>}
       {state.log.length > 0 && (
         <p>The road behind you: {state.log.join("; ")}.</p>
       )}
@@ -785,7 +816,7 @@ function JourneyCompleteScreen({
   );
 }
 
-function DefeatedScreen({
+export function DefeatedScreen({
   state,
   dispatch,
 }: {
