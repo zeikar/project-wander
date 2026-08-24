@@ -26,6 +26,7 @@ function arrived(overrides: Partial<GameState> = {}): GameState {
     secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    leftStanding: null,
     known: [],
     log: [],
     ...overrides,
@@ -108,6 +109,35 @@ describe("arrivalEnding", () => {
 
     expect(arrivalEnding(allFood)).toBe("travelOn");
     expect(arrivalEnding(allPrep)).toBe("travelOn");
+  });
+
+  // The grade is a function of hp, food and preparation, and of NOTHING else.
+  // `leftStanding` records the one thing a paired leg was walked past, and
+  // scoring that would turn the ending into a completion counter — what
+  // VISION.md § Success Metric refuses. Checked at every ending rather than
+  // one, so a branch on the field anywhere down the chain moves a row.
+  it("ignores what was left standing: the grade reads resources alone", () => {
+    const shapes = [
+      { hp: TRAVEL_ON_HP_MIN, food: TRAVEL_ON_SUPPLIES_MIN, preparation: 0 },
+      { hp: LIMPED_HP_MAX, food: TRAVEL_ON_SUPPLIES_MIN + 5, preparation: 5 },
+      { hp: TRAVEL_ON_HP_MIN, food: 0, preparation: 0 },
+      { hp: TRAVEL_ON_HP_MIN - 1, food: 1, preparation: 0 },
+    ];
+    const graded = shapes.map((shape) =>
+      arrivalEnding(arrived({ ...shape, leftStanding: null })),
+    );
+
+    for (const [index, shape] of shapes.entries()) {
+      expect(
+        arrivalEnding(
+          arrived({ ...shape, leftStanding: { legIndex: 2, kind: "place" } }),
+        ),
+      ).toBe(graded[index]);
+    }
+
+    // And those four shapes really are the four endings, so this walked the
+    // whole chain rather than one branch of it four times.
+    expect(new Set(graded).size).toBe(4);
   });
 
   it("gives every authored ending a label and prose", () => {

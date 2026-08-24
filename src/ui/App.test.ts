@@ -10,6 +10,7 @@ import {
   costHint,
   knowledgeHint,
   leavesNoFood,
+  leftStandingLine,
   roadAhead,
   shortfallHint,
   trafficHint,
@@ -39,9 +40,11 @@ const CLEAR_SKY_SEED = findSeedWith("clear");
 const RAIN_SEED = findSeedWith("rain");
 const WIND_SEED = findSeedWith("wind");
 
-// No component test harness exists in this repo (App.tsx has no JSX-rendering
-// tests), so this pins the predicate itself: a plain function of state and an
-// option, tested the same way core's pure functions are.
+// This file pins the STRINGS the screens print — a plain function of state and
+// an option, tested the same way core's pure functions are, which is what lets
+// the assertions below sweep every option under every sky. What is on which
+// screen is a different question, answered by rendering in App.render.test.tsx;
+// neither file covers the other.
 function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
   return {
     phase: "encounter",
@@ -58,6 +61,7 @@ function makeEncounterState(overrides: Partial<GameState> = {}): GameState {
     secondSceneId: null,
     lastEncounterResult: null,
     lastRoadToll: null,
+    leftStanding: null,
     known: [],
     log: [],
     ...overrides,
@@ -779,12 +783,86 @@ describe("roadAhead", () => {
     expect(roadAhead("Somewhere", 3).match(/\d+/g)).toEqual(["3"]);
   });
 
-  // The call site is what feeds it the real journey; that is a one-line read in
-  // App.tsx and no JSX harness exists to assert it. What IS pinned here is that
-  // the shipped figures produce a sentence that reads correctly.
+  // The call site is what feeds it the real journey; that is a one-line read on
+  // the village screen, which App.render.test.tsx does not reach — its four
+  // cases are the arrival line and nothing else. What IS pinned here is that the
+  // shipped figures produce a sentence that reads correctly.
   it("reads correctly on the shipped journey", () => {
     expect(roadAhead(journey.arrival.name, journey.legs.length)).toBe(
       `${journey.arrival.name} is ${journey.legs.length} legs of road from here.`,
     );
+  });
+});
+
+// What the sentence SAYS, across both nouns and all eight legs. Whether it
+// reaches the arrival screen at all, and that it stays off the defeat screen,
+// is a different question and is asked in App.render.test.tsx. The two
+// composition cases that file asserts directly are not repeated here.
+describe("leftStandingLine", () => {
+  // `arrived` with `legIndex` already off the end of the road: `completeLeg`
+  // increments before the phase changes, so this is the state the screen
+  // actually renders in, not a convenient one.
+  function makeArrivedState(overrides: Partial<GameState> = {}): GameState {
+    return {
+      phase: "arrived",
+      hp: journey.start.hp - 5,
+      food: 1,
+      preparation: 0,
+      legIndex: journey.legs.length,
+      rngState: 7,
+      seed: CLEAR_SKY_SEED,
+      activeEncounterId: null,
+      secondSceneId: null,
+      lastEncounterResult: null,
+      lastRoadToll: null,
+      leftStanding: null,
+      known: [],
+      log: [],
+      ...overrides,
+    };
+  }
+
+  // The bug this guards is indexing `journey.legs` with `state.legIndex`
+  // instead of with the recorded one. A fixture where those two numbers happen
+  // to agree passes against the broken version, so this one keeps them apart —
+  // and keeps BOTH in range, where the wrong read returns a plausible wrong leg
+  // rather than running off the end and throwing.
+  // Not a contrived state: `completeLeg` increments `legIndex` and leaves
+  // `phase: "traveling"` on every paired leg but the last, so a record sitting
+  // behind the current leg is what the reducer produces for the whole rest of
+  // the road.
+  it("names the leg the record points at, not the leg the traveler has reached", () => {
+    const line = leftStandingLine(
+      makeArrivedState({
+        phase: "traveling",
+        legIndex: 6,
+        leftStanding: { legIndex: 1, kind: "animal" },
+      }),
+    );
+
+    expect(line).toContain("Crossroads Waymarker");
+    expect(line).not.toContain("Pinewood Rise");
+  });
+
+  it("says nothing at all when the journey passed nothing by", () => {
+    expect(leftStandingLine(makeArrivedState())).toBe("");
+  });
+
+  // Derived, not retyped: the frame and both nouns live in `journey.ts`, and a
+  // hand-copied sentence here would keep passing after the content moved.
+  it("is composed from the authored frame and the authored noun", () => {
+    const frame = journey.arrival.leftStanding;
+
+    for (const kind of ["animal", "place"] as const) {
+      for (const [legIndex, leg] of journey.legs.entries()) {
+        expect(
+          leftStandingLine(
+            makeArrivedState({ leftStanding: { legIndex, kind } }),
+          ),
+        ).toBe(
+          `${frame.before}${frame.kind[kind]}${frame.middle}${leg.name}${frame.after}`,
+        );
+      }
+    }
   });
 });

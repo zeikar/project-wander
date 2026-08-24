@@ -438,6 +438,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         secondSceneId: null,
         lastEncounterResult: null,
         lastRoadToll: null,
+        leftStanding: null,
         // Knowledge SURVIVES the journey that earned it. Everything else in
         // this object resets; a field note does not, because the traveler who
         // walks back out of Alderbrook is the same person who sat in the reeds.
@@ -663,6 +664,16 @@ export function reduce(state: GameState, action: GameAction): GameState {
         weatherAt(state.seed, state.legIndex),
       );
 
+      // The thing on this leg the traveler did NOT answer: whichever slot is
+      // not the scene that owns the option. Null on a leg holding one, where
+      // nothing was passed by.
+      const passedSceneId =
+        state.secondSceneId === null
+          ? null
+          : state.activeEncounterId === scene.id
+            ? state.secondSceneId
+            : state.activeEncounterId;
+
       const resolved: GameState = {
         ...state,
         // Clamped at both ends. The floor has always been here; the ceiling
@@ -683,6 +694,18 @@ export function reduce(state: GameState, action: GameAction): GameState {
         // so the scene not chosen is dropped here rather than carried on.
         activeEncounterId: null,
         secondSceneId: null,
+        // ...and the drop is recorded here: nothing downstream could otherwise
+        // tell it happened. The reasons for the shape are on
+        // `GameState.leftStanding`. Both reads are lookups: no roll is spent
+        // here, so no seed's script moves.
+        leftStanding:
+          passedSceneId === null
+            ? state.leftStanding
+            : {
+                legIndex: state.legIndex,
+                kind:
+                  speciesOf(passedSceneId) === undefined ? "place" : "animal",
+              },
         lastEncounterResult: effective.resultText,
         // Watching the animal is what teaches you about it — and what is
         // learned is one RUNG of the SPECIES, so meeting it in another
