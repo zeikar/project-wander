@@ -149,7 +149,7 @@ When a request is ambiguous, prefer the interpretation that is playable sooner, 
 - **Never push without being asked.**
 - The repo is public, deliberately. **Never change its visibility.**
 - Sweep and playtest harnesses are throwaway and never committed — `git status` must come back clean.
-- **Nothing about fun has been settled by measurement.** The simulation finds dominant strategies and dead options. It cannot tell you whether anyone wants a second journey; only a person playing it can.
+- **Nothing about fun has been settled by measurement.** The sweep finds dominant strategies and dead options. A simulated player finds what the screen made it believe, and is evidence only where its transcript can be recomputed from the reducer — it has twice reported an experience it did not have. Neither can tell you whether anyone wants a second journey; only a person playing it can, and no person ever has. See `VISION.md` § *Success Metric* for which half of that metric each instrument reaches.
 
 ---
 

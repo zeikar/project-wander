@@ -419,7 +419,7 @@ Every figure below was measured on the loop that exists today — an eight-leg r
 - **Whatever gives the binding resource wins everything.** An option worth 3 food was taken on 99.8% of its offers and left the three options beside it under 3%. A new choice must offer a different **kind** of trade, not a bigger one.
 - **A choice the player cannot read is not a choice.** A fork was worth 2.7 points when it only said what the roads were like, and 17.3 when it said what was on them today.
 - **Knowledge that settles an encounter destroys it — and the blame lands in the wrong place.** A persistent codex collapsed every later run into one fixed table of answers, matching on 300 of 300 seeds. Persistence took the blame; the real cause was that a known animal's answer was free and dominant. Knowing has to widen the menu, never shorten it.
-- **The simulation measures defects, never fun.** It finds dominant strategies and dead options. It cannot tell you whether anyone wants a second journey.
+- **Neither instrument measures fun, and they fail differently.** The sweep finds dominant strategies and dead options. A simulated player finds what the screen made it believe — wording that misleads, an option nobody reads, a decision knowledge fails to flip — but it has twice reported an experience it did not have, so a persona transcript is evidence only where it can be recomputed from the reducer. Neither can tell you whether anyone wants a second journey: a persona has no second journey to want.
 
 ---
 
@@ -484,6 +484,14 @@ AI never modifies game state.
 A successful prototype is one where the player starts another journey immediately — and **not** because there is something left to unlock.
 
 Because there is something left to find out.
+
+**The two halves need different instruments, and only one of them has ever been used.**
+
+*"Starts another journey immediately"* takes a person or nothing. A simulated player has no time to spend, no boredom, and no memory of the last run that costs it anything, so what it says about wanting another journey is a fluent guess and not an observation. **This half has never been run.** Seven milestones have shipped against it.
+
+*"There is something left to find out"* does not need a person, and as of 2026-09-01 it is partly answered. Three simulated players each walked a chained pair of journeys with the codex carried through the game's own play-again path. One found the second road different and named the codex as the reason. The other two never took a single observation in two full journeys — twenty-two offered, none taken — so nothing carried and the clause never got the chance to be true for them.
+
+**So the novelty is real and conditional: the second road is different for the player who bought knowledge on the first.** Nothing currently rewards making that purchase — the arrival gate scores what the pack and the body still hold, and every observation in the game costs one of them.
 
 ---
 
