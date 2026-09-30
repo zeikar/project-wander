@@ -39,7 +39,11 @@ export const ko: Strings = {
     nothingLearned: "이번 길에는 수첩에 적은 것이 없다.",
     theRoadBehind: "지나온 길",
     road: (places) => places.join(" → "),
-    meter: (label, value, max) => `${label} ${max}칸 중 ${value}칸`,
+    stat: (label, value, max) => `${label} ${value}/${max}`,
+    mapCaption: (village) => `${village}에서 먼 곳까지. 굵은 선이 걸어온 길이다.`,
+    unknownAnimal: "처음 보는 동물",
+    aPlace: "지나는 곳",
+    reading: "해설",
     language: "언어",
   },
 

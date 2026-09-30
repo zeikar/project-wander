@@ -1,50 +1,58 @@
+/* A two-colour field guide: black ink on uncoated paper, and one spot colour
+   per animal that only knowledge is allowed to use. */
 :root {
-  --paper: #f3ecdf;
-  --paper-deep: #e9e0cf;
-  --ink: #2b2520;
-  --ink-soft: #5e554c;
-  --ink-faint: #8f8577;
-  --pencil: #bdb09c;
-  --accent: #9a4a2f;
-  --accent-soft: #c98d6f;
-  --note: #f8f3e8;
-  --shadow: 0 1px 0 rgba(43, 37, 32, 0.08), 0 6px 18px -10px rgba(43, 37, 32, 0.25);
+  --paper: #fbfaf7;
+  --ink: #151515;
+  --ink-soft: #4f4c46;
+  --faint: #938f86;
+  --hair: #dedbd3;
+  --moss: #5a6b2f;
+  --slate: #4d5b6a;
+  --rust: #a3472a;
+  --spot: var(--ink);
+  --face: "Hahmlet", "Nanum Myeongjo", "Noto Serif KR", Georgia, serif;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #1c1916;
-    --paper-deep: #24201c;
-    --ink: #e9e1d3;
-    --ink-soft: #b9ae9e;
-    --ink-faint: #857b6e;
-    --pencil: #4e463d;
-    --accent: #d99470;
-    --accent-soft: #9c6149;
-    --note: #25211d;
-    --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 8px 20px -12px rgba(0, 0, 0, 0.6);
+    --paper: #141311;
+    --ink: #ecebe6;
+    --ink-soft: #b9b5ab;
+    --faint: #7f7b72;
+    --hair: #2e2c28;
+    --moss: #a8bb72;
+    --slate: #9fb1c4;
+    --rust: #e39170;
     color-scheme: dark;
   }
+}
+
+.spot-boar {
+  --spot: var(--moss);
+}
+.spot-wolves {
+  --spot: var(--slate);
+}
+.spot-deer {
+  --spot: var(--rust);
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
+html,
+body {
   background: var(--paper);
 }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.35), transparent 60%),
-    var(--paper);
   color: var(--ink);
-  font-family: "Gowun Batang", "Nanum Myeongjo", "Noto Serif KR", Georgia, serif;
+  font-family: var(--face);
   font-size: 17px;
-  line-height: 1.85;
+  line-height: 1.8;
   overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
 }
@@ -55,170 +63,261 @@ body {
   word-break: keep-all;
 }
 
-.page {
-  max-width: 38rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
-}
-
-.screen {
-  animation: settle 420ms ease-out both;
-}
-
-@keyframes settle {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+p {
+  margin: 0 0 0.9rem;
+  text-wrap: pretty;
 }
 
 h1,
 h2,
 h3 {
-  font-weight: 700;
-  line-height: 1.35;
+  text-wrap: balance;
 }
 
 h2 {
-  font-size: 1.45rem;
-  margin: 1.4rem 0 0.8rem;
-}
-
-p {
-  margin: 0 0 0.9rem;
+  font-weight: 800;
+  font-size: 1.75rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 0.2rem 0 0.9rem;
 }
 
 .faint,
 .unreadable {
-  color: var(--ink-faint);
+  color: var(--faint);
 }
 
-.unreadable {
-  border-left: 2px dotted var(--pencil);
-  padding-left: 0.8rem;
-}
-
-.small-heading {
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  color: var(--ink-faint);
-  font-weight: 400;
-  margin: 1.6rem 0 0.6rem;
-}
-
-/* ---- title ---------------------------------------------------------------- */
-
-.title-screen {
-  min-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.title-screen h1 {
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-style: italic;
-  font-weight: 500;
-  font-size: clamp(3.4rem, 14vw, 5.5rem);
-  letter-spacing: 0.02em;
-  margin: 0 0 0.6rem;
-}
-
-.premise {
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--ink-soft);
-  margin-bottom: 2.2rem;
+  margin: 1.4rem 0 0.4rem;
 }
 
-/* ---- status --------------------------------------------------------------- */
+.page {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 4rem;
+}
+
+.screen {
+  animation: settle 360ms ease-out both;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- layout ----------------------------------------------------------------
+   Phone: one column in reading order. Wide: map and notebook on the left, the
+   story and the choices on the right, so a whole day fits in one view. */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "status" "story" "map" "choices" "notes";
+  column-gap: 3rem;
+}
+
+.layout--scene {
+  grid-template-areas: "status" "story" "choices" "map" "notes";
+}
+
+.layout--end {
+  grid-template-areas: "story" "choices" "map" "notes";
+}
+
+.area-status {
+  grid-area: status;
+}
+.area-story {
+  grid-area: story;
+  min-width: 0;
+}
+.area-map {
+  grid-area: map;
+  min-width: 0;
+}
+.area-choices {
+  grid-area: choices;
+  min-width: 0;
+}
+.area-notes {
+  grid-area: notes;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .page {
+    max-width: 80rem;
+    padding: 1.75rem 2rem 3rem;
+  }
+  .layout {
+    grid-template-columns: minmax(19rem, 24rem) minmax(0, 38rem);
+    justify-content: center;
+    align-items: start;
+  }
+  .layout--map,
+  .layout--scene {
+    grid-template-areas:
+      "status status"
+      "map story"
+      "map choices"
+      "notes choices";
+    grid-template-rows: auto auto auto 1fr;
+  }
+  .layout--end {
+    grid-template-areas:
+      "map story"
+      "map choices"
+      "notes choices";
+    grid-template-rows: auto auto 1fr;
+  }
+  .area-map .map-figure {
+    margin-top: 1.25rem;
+  }
+}
+
+/* Widest: the notebook stands open in a margin column of its own. */
+@media (min-width: 1360px) {
+  .layout {
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, 36rem) minmax(15rem, 19rem);
+  }
+  .layout--map,
+  .layout--scene {
+    grid-template-areas:
+      "status status status"
+      "map story notes"
+      "map choices notes";
+    grid-template-rows: auto auto 1fr;
+  }
+  .layout--end {
+    grid-template-areas:
+      "map story notes"
+      "map choices notes";
+    grid-template-rows: auto 1fr;
+  }
+  .area-notes .notebook {
+    margin-top: 1.25rem;
+    border-top: none;
+    border-left: 1px solid var(--hair);
+    padding: 0 0 0 1.25rem;
+  }
+}
+
+/* ---- running head ---------------------------------------------------------- */
 
 .status {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 1.4rem;
-  padding-bottom: 0.7rem;
-  border-bottom: 1px solid var(--pencil);
+  justify-content: space-between;
+  gap: 0.2rem 1.2rem;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 0.35rem;
   font-size: 0.85rem;
-  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .status .day {
-  color: var(--ink);
-  font-weight: 700;
-  margin-right: auto;
+  font-weight: 600;
 }
 
-.pips {
-  display: inline-flex;
-  gap: 3px;
-  margin-left: 0.35rem;
-  vertical-align: middle;
-}
-
-.pips i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  border: 1.5px solid var(--ink-soft);
-}
-
-.pips i.on {
-  background: var(--ink);
-  border-color: var(--ink);
+.status .stats {
+  display: flex;
+  gap: 1.1rem;
+  color: var(--ink-soft);
 }
 
 .toll {
   font-size: 0.85rem;
-  color: var(--ink-faint);
-  margin-top: 0.8rem;
+  color: var(--faint);
+  margin: 1rem 0 0.2rem;
 }
 
-/* Hangul has no true italic here, so a faded voice is carried by colour and a
-   dotted rule rather than a slant. */
+/* ---- cover ----------------------------------------------------------------- */
 
-/* ---- scene ---------------------------------------------------------------- */
-
-.tell {
-  color: var(--ink);
-  border-left: 2px solid var(--accent-soft);
-  padding-left: 0.8rem;
+.cover {
+  max-width: 30rem;
+  margin: 12vh auto 0;
 }
 
-.reading,
-.learned {
-  background: var(--note);
-  border: 1px solid var(--pencil);
-  border-radius: 3px;
-  padding: 0.7rem 0.9rem 0.2rem;
-  margin: 0 0 1rem;
-  box-shadow: var(--shadow);
-  transform: rotate(-0.4deg);
+.cover h1 {
+  font-weight: 800;
+  font-size: clamp(3.2rem, 13vw, 4.6rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 0 0 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--ink);
 }
 
-.reading h3,
-.learned h3 {
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  margin: 0 0 0.3rem;
-}
-
-.note {
-  font-size: 0.95rem;
+.premise {
   color: var(--ink-soft);
+  margin-bottom: 2rem;
 }
 
-/* ---- choices -------------------------------------------------------------- */
+/* ---- scene ----------------------------------------------------------------- */
 
-.choices {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin: 1.2rem 0 1.4rem;
+.kicker {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--spot);
+  margin: 0.2rem 0 0;
+}
+
+/* Out of register: the animal's colour printed a hair off the black. */
+.tell.off-register {
+  text-shadow: 1.5px 1px 0 color-mix(in srgb, var(--spot) 55%, transparent);
+}
+
+/* In register, and underlined in the animal's colour. */
+.tell.in-register span {
+  background: linear-gradient(transparent 64%, color-mix(in srgb, var(--spot) 24%, transparent) 64%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.unreadable {
+  font-size: 0.9rem;
+  border-top: 1px dotted var(--faint);
+  padding-top: 0.5rem;
+}
+
+.gloss {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 0.9rem;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding: 0.6rem 0;
+  margin: 0.4rem 0 1rem;
+}
+
+.gloss b {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--spot);
+  white-space: nowrap;
+}
+
+.gloss p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+/* ---- index of choices ------------------------------------------------------ */
+
+.index {
+  list-style: none;
+  padding: 0;
+  margin: 0.8rem 0 1.4rem;
+  border-bottom: 1px solid var(--hair);
 }
 
 button {
@@ -227,92 +326,147 @@ button {
   cursor: pointer;
 }
 
-.choices button {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
+.row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  grid-template-areas: "k l" "k v";
+  width: 100%;
   text-align: left;
-  padding: 0.75rem 1rem;
-  background: var(--paper-deep);
-  border: 1px solid var(--pencil);
-  border-radius: 4px;
-  transition:
-    border-color 150ms,
-    background 150ms,
-    transform 150ms;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--hair);
+  padding: 0.7rem 0.4rem;
+  transition: background 120ms;
 }
 
-.choices button:hover:not(:disabled),
-.choices button:focus-visible {
-  border-color: var(--accent);
-  transform: translateX(3px);
+/* Roads have no number: the map already says which is which. */
+.row.road {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "l" "v";
+}
+
+.row .k {
+  grid-area: k;
+  font-size: 0.85rem;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.15rem;
+}
+
+.row .l {
+  grid-area: l;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.row .v {
+  grid-area: v;
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.55;
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.row.road .v {
+  color: var(--ink-soft);
+}
+
+.row.unknown .v {
+  color: var(--faint);
+}
+
+.row.unknown .v::before {
+  content: "— ";
+}
+
+.row.informed {
+  background: color-mix(in srgb, var(--spot) 11%, transparent);
+}
+
+.row.informed .k,
+.row.road.informed .l {
+  color: var(--spot);
+  font-weight: 800;
+}
+
+.row:hover:not(:disabled),
+.row:focus-visible {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
   outline: none;
 }
 
-.choices button:disabled {
+.row.informed:hover:not(:disabled),
+.row.informed:focus-visible {
+  background: color-mix(in srgb, var(--spot) 18%, transparent);
+}
+
+.row:focus-visible {
+  box-shadow: inset 2px 0 0 var(--ink);
+}
+
+.row:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  color: var(--faint);
 }
 
-.choices button.informed {
-  border-left: 3px solid var(--accent);
-}
-
-.choice-label {
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
-.choice-hint {
-  font-size: 0.82rem;
-  color: var(--ink-faint);
-  line-height: 1.5;
+.row:disabled .v {
+  color: var(--faint);
 }
 
 .primary {
-  align-self: flex-start;
-  padding: 0.7rem 1.6rem;
+  padding: 0.65rem 1.5rem;
   background: var(--ink);
   color: var(--paper);
   border: none;
-  border-radius: 3px;
-  letter-spacing: 0.05em;
-  transition: background 150ms;
+  font-weight: 600;
 }
 
 .primary:hover,
 .primary:focus-visible {
-  background: var(--accent);
-  outline: none;
+  background: var(--ink-soft);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
-/* ---- events and endings --------------------------------------------------- */
+/* ---- events and endings ---------------------------------------------------- */
 
 .event {
   margin-top: 1rem;
 }
 
+.event h2 {
+  margin-top: 0.4rem;
+}
+
 .delta {
-  font-size: 0.88rem;
-  color: var(--accent);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .rumors {
   padding-left: 1.1rem;
+  margin: 0;
   color: var(--ink-soft);
 }
 
 .rumors li {
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.ending {
+  margin-top: 1.2rem;
 }
 
 .ending h2 {
-  font-size: 1.7rem;
+  font-size: 2rem;
 }
 
 .hint {
-  color: var(--accent);
+  color: var(--ink-soft);
+  border-top: 1px dotted var(--faint);
+  padding-top: 0.5rem;
 }
 
 .road-behind {
@@ -320,79 +474,112 @@ button {
   color: var(--ink-soft);
 }
 
-.learned-list {
-  margin-bottom: 2rem;
+.road-behind .label {
+  margin-right: 0.4rem;
 }
 
-/* ---- notebook ------------------------------------------------------------- */
+.learned-list .note {
+  border-top: 1px solid var(--hair);
+  padding-top: 0.5rem;
+}
+
+.note {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+/* ---- notebook -------------------------------------------------------------- */
 
 .notebook {
-  margin-top: 2rem;
-  border-top: 1px solid var(--pencil);
-  padding-top: 0.8rem;
+  margin-top: 1.8rem;
+  border-top: 1px solid var(--ink);
+  padding-top: 0.5rem;
 }
 
 .notebook summary {
   cursor: pointer;
   font-size: 0.85rem;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.notebook section {
+  margin-top: 0.9rem;
 }
 
 .notebook h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.95rem;
-  margin: 1rem 0 0.3rem;
+  font-weight: 800;
+  margin: 0 0 0.3rem;
 }
 
-/* ---- map ------------------------------------------------------------------ */
+.notebook h3::before {
+  content: "";
+  width: 0.7rem;
+  height: 0.7rem;
+  background: var(--spot);
+}
+
+.notebook .note,
+.notebook .faint {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ---- map ------------------------------------------------------------------- */
+
+.map-figure {
+  margin: 1.4rem 0 0;
+}
+
+.map-figure figcaption {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-top: 0.3rem;
+}
 
 .map {
   display: block;
   width: 100%;
   max-width: 26rem;
-  margin: 1.2rem auto 0;
+  margin: 0 auto;
   overflow: visible;
 }
 
 .map .edge {
-  stroke: var(--pencil);
-  stroke-width: 1.2;
-  stroke-dasharray: 2 4;
-  stroke-linecap: round;
+  stroke: var(--ink);
+  stroke-width: 0.9;
+  opacity: 0.3;
 }
 
 .map .edge.walked {
-  stroke: var(--ink-soft);
-  stroke-width: 2;
-  stroke-dasharray: none;
+  stroke-width: 2.6;
+  opacity: 1;
 }
 
 .map .edge.open {
-  stroke: var(--accent);
-  stroke-width: 1.6;
-  stroke-dasharray: 5 4;
+  stroke-width: 1.3;
+  opacity: 0.9;
 }
 
 .map .node circle,
-.map .node rect,
-.map .node path {
+.map .node rect {
   fill: var(--paper);
-  stroke: var(--pencil);
-  stroke-width: 1.5;
+  stroke: var(--ink);
+  stroke-width: 1;
 }
 
 .map .node.visited circle,
-.map .node.visited rect,
-.map .node.visited path {
-  fill: var(--ink-soft);
-  stroke: var(--ink-soft);
+.map .node.visited rect {
+  fill: var(--ink);
 }
 
 .map .node.current circle,
-.map .node.current rect,
-.map .node.current path {
-  fill: var(--accent);
-  stroke: var(--ink);
+.map .node.current rect {
+  fill: var(--ink);
+  stroke: var(--paper);
   stroke-width: 2;
 }
 
@@ -401,54 +588,56 @@ button {
 }
 
 .map .node.open circle,
-.map .node.open path {
-  fill: var(--paper);
-  stroke: var(--accent);
-  stroke-width: 2;
-  animation: beckon 1.8s ease-in-out infinite;
+.map .node.open rect {
+  stroke-width: 1.4;
+}
+
+/* A road to an animal the traveler knows, printed in its colour. */
+.map .node.open[class*="spot-"] circle {
+  fill: var(--spot);
 }
 
 .map .node.open:hover circle,
-.map .node.open:hover path {
-  fill: var(--accent-soft);
-}
-
-.map .node.destination path {
-  stroke: var(--ink-soft);
-}
-
-@keyframes beckon {
-  50% {
-    stroke-width: 3.2;
-  }
+.map .node.open:hover rect {
+  fill: color-mix(in srgb, var(--spot) 35%, var(--paper));
 }
 
 .map .label {
+  font-family: var(--face);
   font-size: 12px;
-  fill: var(--ink-soft);
-  stroke: none;
+  font-weight: 600;
+  fill: var(--ink);
 }
 
-/* ---- footer --------------------------------------------------------------- */
+.map .label.road {
+  font-size: 13px;
+}
+
+.map .node[class*="spot-"] .label.road {
+  fill: var(--spot);
+}
+
+.map .label.dest {
+  font-size: 11.5px;
+}
+
+/* ---- footer ---------------------------------------------------------------- */
 
 .footer {
   margin-top: 3rem;
   font-size: 0.8rem;
-  color: var(--ink-faint);
+  color: var(--faint);
 }
 
 .footer select {
   font: inherit;
   background: transparent;
   color: inherit;
-  border: 1px solid var(--pencil);
-  border-radius: 3px;
+  border: 1px solid var(--hair);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .screen,
-  .map .node.open circle,
-  .map .node.open path {
+  .screen {
     animation: none;
   }
 }

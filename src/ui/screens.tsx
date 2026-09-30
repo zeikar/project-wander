@@ -6,13 +6,14 @@ import {
   canRead,
   currentNode,
   currentScene,
+  knowsSpeciesOf,
   nextNodes,
   offeredOptions,
   preview,
 } from "../core/reducer";
 import type { GameAction, GameState } from "../core/state";
 import { MapView } from "./MapView";
-import { LastEvent, Notebook, StatusBar, signOf } from "./parts";
+import { LastEvent, Layout, Notebook, ROOMY, StatusBar, signOf, spot, useMedia } from "./parts";
 import { useStrings } from "./strings";
 
 type ScreenProps = { state: GameState; dispatch: Dispatch<GameAction>; newSeed: () => number };
@@ -20,110 +21,159 @@ type ScreenProps = { state: GameState; dispatch: Dispatch<GameAction>; newSeed: 
 export function TitleScreen({ state, dispatch, newSeed }: ScreenProps) {
   const { ui } = useStrings();
   return (
-    <div className="title-screen">
+    <div className="cover">
       <h1>{ui.title}</h1>
       <p className="premise">{ui.premise}</p>
       <button className="primary" onClick={() => dispatch({ type: "START", seed: newSeed() })}>
         {ui.setOut}
       </button>
-      {state.known.length > 0 && <Notebook known={state.known} />}
+      {state.known.length > 0 && <Notebook known={state.known} open />}
     </div>
+  );
+}
+
+function MapFigure({ state, dispatch }: Pick<ScreenProps, "state" | "dispatch">) {
+  const strings = useStrings();
+  return (
+    <figure className="map-figure">
+      <MapView state={state} dispatch={dispatch} />
+      <figcaption>{strings.ui.mapCaption(strings.village.name)}</figcaption>
+    </figure>
   );
 }
 
 export function MapScreen({ state, dispatch }: ScreenProps) {
   const strings = useStrings();
   const { ui } = strings;
-  const atVillage = state.day === 0;
+  const roomy = useMedia(ROOMY);
+
+  const story =
+    state.day === 0 ? (
+      <div className="event">
+        <h2>{strings.village.name}</h2>
+        <p>{strings.village.description}</p>
+        <h3 className="label">{ui.rumors}</h3>
+        <ul className="rumors">
+          {destinations.map((d) => (
+            <li key={d.id}>{strings.destinations[d.id]!.rumor}</li>
+          ))}
+        </ul>
+      </div>
+    ) : (
+      <LastEvent state={state} />
+    );
 
   return (
-    <>
-      <StatusBar state={state} />
-      {atVillage ? (
-        <div className="event">
-          <h2>{strings.village.name}</h2>
-          <p>{strings.village.description}</p>
-          <h3 className="small-heading">{ui.rumors}</h3>
-          <ul className="rumors">
-            {destinations.map((d) => (
-              <li key={d.id}>{strings.destinations[d.id]!.rumor}</li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <LastEvent state={state} />
-      )}
-      <MapView state={state} dispatch={dispatch} />
-      <h3 className="small-heading">{ui.whereNext}</h3>
-      <div className="choices">
-        {nextNodes(state).map((node) => {
-          const { place, sign } = signOf(strings, state, node);
-          return (
-            <button key={node.id} onClick={() => dispatch({ type: "MOVE", nodeId: node.id })}>
-              <span className="choice-label">{place}</span>
-              <span className="choice-hint">{sign}</span>
-            </button>
-          );
-        })}
-      </div>
-      <Notebook known={state.known} />
-    </>
+    <Layout
+      kind="map"
+      status={<StatusBar state={state} />}
+      story={story}
+      map={<MapFigure state={state} dispatch={dispatch} />}
+      choices={
+        <>
+          <h3 className="label">{ui.whereNext}</h3>
+          <ol className="index">
+            {nextNodes(state).map((node) => {
+              const { place, sign, species } = signOf(strings, state, node);
+              return (
+                <li key={node.id}>
+                  <button
+                    className={`row road ${species ? `informed ${spot(species)}` : ""}`}
+                    onClick={() => dispatch({ type: "MOVE", nodeId: node.id })}
+                  >
+                    <span className="l">{place}</span>
+                    <span className="v">{sign}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      }
+      notes={<Notebook known={state.known} open={roomy} />}
+    />
   );
 }
 
 export function SceneScreen({ state, dispatch }: ScreenProps) {
   const strings = useStrings();
   const { ui } = strings;
+  const roomy = useMedia(ROOMY);
   const scene = currentScene(state)!;
   const variant = currentNode(state)!.variant!;
   const text = strings.scenes[scene.id]!;
   const v = text.variants[variant]!;
-  const hint = (
-    option: SceneOption,
-    affordable: boolean,
-    outcome: ReturnType<typeof preview>,
-  ) => {
+  const readable = canRead(state, scene);
+  const kicker =
+    scene.kind === "place"
+      ? ui.aPlace
+      : knowsSpeciesOf(state, scene)
+        ? strings.species[scene.species!].name
+        : ui.unknownAnimal;
+
+  const hint = (option: SceneOption, affordable: boolean) => {
     if (!affordable) {
       return ui.noFood;
     }
+    const outcome = preview(state, option);
     const base = outcome ? ui.outcome(outcome.hp, outcome.food) : ui.unknownOutcome;
     return option.study ? ui.withLesson(base) : base;
   };
 
   return (
-    <>
-      <StatusBar state={state} />
-      <p className="toll">{state.hungry ? ui.hungry : ui.fed}</p>
-      <h2>{text.title}</h2>
-      <p>{text.description}</p>
-      {v.tell && <p className="tell">{v.tell}</p>}
-      {scene.reads !== undefined &&
-        (canRead(state, scene) ? (
-          <aside className="reading">
-            <h3>{ui.notebook}</h3>
-            <p className="note">{v.reading}</p>
-          </aside>
-        ) : (
-          <p className="unreadable">{ui.unreadable}</p>
-        ))}
-      <div className="choices">
-        {offeredOptions(state).map((option) => {
-          const affordable = canAfford(state, option);
-          const outcome = preview(state, option);
-          return (
-            <button
-              key={option.id}
-              disabled={!affordable}
-              className={option.needs ? "informed" : undefined}
-              onClick={() => dispatch({ type: "CHOOSE", optionId: option.id })}
-            >
-              <span className="choice-label">{text.options[option.id]!.label}</span>
-              <span className="choice-hint">{hint(option, affordable, outcome)}</span>
-            </button>
-          );
-        })}
-      </div>
-    </>
+    <Layout
+      kind="scene"
+      status={<StatusBar state={state} />}
+      story={
+        <article className={`scene ${spot(scene.species)}`}>
+          <p className="toll">{state.hungry ? ui.hungry : ui.fed}</p>
+          <p className="kicker">{kicker}</p>
+          <h2>{text.title}</h2>
+          <p>{text.description}</p>
+          {/* Unread, the tell is printed out of register — the animal's colour
+              a hair off the black. Reading it brings the plate into line. */}
+          {v.tell && (
+            <p className={`tell ${readable ? "in-register" : "off-register"}`}>
+              <span>{v.tell}</span>
+            </p>
+          )}
+          {scene.reads !== undefined &&
+            (readable ? (
+              <div className="gloss">
+                <b>{ui.reading}</b>
+                <p>{v.reading}</p>
+              </div>
+            ) : (
+              <p className="unreadable">{ui.unreadable}</p>
+            ))}
+        </article>
+      }
+      choices={
+        <ol className={`index ${spot(scene.species)}`}>
+          {offeredOptions(state).map((option, i) => {
+            const affordable = canAfford(state, option);
+            const certain = preview(state, option) !== null;
+            return (
+              <li key={option.id}>
+                <button
+                  className={`row ${option.needs ? "informed" : ""} ${certain ? "" : "unknown"}`}
+                  disabled={!affordable}
+                  onClick={() => dispatch({ type: "CHOOSE", optionId: option.id })}
+                >
+                  <span className="k" aria-hidden="true">
+                    {option.needs ? "+" : i + 1}
+                  </span>
+                  <span className="l">{text.options[option.id]!.label}</span>
+                  <span className="v">{hint(option, affordable)}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      }
+      map={<MapFigure state={state} dispatch={dispatch} />}
+      notes={<Notebook known={state.known} open={roomy} />}
+    />
   );
 }
 
@@ -140,53 +190,57 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
     .map((id) => state.map!.layers.flat().find((n) => n.id === id)!)
     .filter((n) => n.kind === "scene")
     .map((n) => strings.scenes[n.sceneId!]!.title);
+  const destination =
+    ending.kind === "arrived" ? strings.destinations[ending.destinationId]! : null;
 
   return (
-    <>
-      {ending.kind === "arrived" ? (
-        <div className="ending">
-          <h2>{strings.destinations[ending.destinationId]!.name}</h2>
-          <p>
-            {ending.saw
-              ? strings.destinations[ending.destinationId]!.sight
-              : strings.destinations[ending.destinationId]!.missed}
-          </p>
-          {!ending.saw && (
-            <p className="hint">{strings.destinations[ending.destinationId]!.hint}</p>
-          )}
-        </div>
-      ) : (
-        <div className="ending">
-          {state.last?.kind === "chose" && <LastEvent state={state} />}
-          <h2>{ui.diedTitle}</h2>
-          <p>{ui.diedOf[ending.cause]}</p>
-        </div>
-      )}
-
-      <p className="faint">{ui.daysWalked(state.day)}</p>
-      {path.length > 0 && (
-        <p className="road-behind">
-          <span className="small-heading">{ui.theRoadBehind}</span> {ui.road(path)}
-        </p>
-      )}
-
-      <section className="learned-list">
-        <h3 className="small-heading">{ui.learnedThisJourney}</h3>
-        {state.learnedThisJourney.length === 0 ? (
-          <p className="faint">{ui.nothingLearned}</p>
-        ) : (
-          state.learnedThisJourney.map((f) => (
-            <p key={f} className="note">
-              {strings.facts[f]}
+    <Layout
+      kind="end"
+      story={
+        <>
+          {ending.kind === "died" && state.last?.kind === "chose" && <LastEvent state={state} />}
+          <div className="ending">
+            <p className="kicker">{ui.daysWalked(state.day)}</p>
+            <h2>{destination ? destination.name : ui.diedTitle}</h2>
+            <p>
+              {destination
+                ? ending.kind === "arrived" && ending.saw
+                  ? destination.sight
+                  : destination.missed
+                : ending.kind === "died" && ui.diedOf[ending.cause]}
             </p>
-          ))
-        )}
-      </section>
-
-      <button className="primary" onClick={() => dispatch({ type: "START", seed: newSeed() })}>
-        {ui.setOutAgain}
-      </button>
-      <Notebook known={state.known} />
-    </>
+            {destination && ending.kind === "arrived" && !ending.saw && (
+              <p className="hint">{destination.hint}</p>
+            )}
+          </div>
+          <section className="learned-list">
+            <h3 className="label">{ui.learnedThisJourney}</h3>
+            {state.learnedThisJourney.length === 0 ? (
+              <p className="faint">{ui.nothingLearned}</p>
+            ) : (
+              state.learnedThisJourney.map((f) => (
+                <p key={f} className="note">
+                  {strings.facts[f]}
+                </p>
+              ))
+            )}
+          </section>
+        </>
+      }
+      map={<MapFigure state={state} dispatch={dispatch} />}
+      choices={
+        <>
+          {path.length > 0 && (
+            <p className="road-behind">
+              <span className="label">{ui.theRoadBehind}</span> {ui.road(path)}
+            </p>
+          )}
+          <button className="primary" onClick={() => dispatch({ type: "START", seed: newSeed() })}>
+            {ui.setOutAgain}
+          </button>
+        </>
+      }
+      notes={<Notebook known={state.known} open />}
+    />
   );
 }

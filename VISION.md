@@ -51,6 +51,18 @@ And the far places themselves: arriving is not the same as seeing. The white sta
 
 ---
 
+## The look
+
+A two-colour field guide: black ink on uncoated paper, and one spot colour per animal. The spot colour belongs to knowledge alone — a tell the traveler cannot read yet is printed a hair out of register, and knowing the animal brings it into line. On a wide screen the map, the day and the notebook sit side by side, like a spread of the guide.
+
+---
+
+## Open questions
+
+- **Should the far places be villages?** v0 imagined a chain of villages with the destination as one more town; v1 made them sights you have to know how to see. Nothing built yet depends on the answer — a destination is just a node.
+
+---
+
 ## AI, if it comes
 
 AI may describe people, moments and journeys. It never decides what anything costs, whether it worked, or what was learned. The game must be fully playable without it.

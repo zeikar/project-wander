@@ -1,17 +1,19 @@
-// The region, drawn like a sketch in the back of a notebook. The village sits
-// at the bottom and the destinations at the top. Only the roads leading on
-// from here show what is on them; the rest is a dot on a page.
+// The region as a figure in the guide: the village at the bottom, the far
+// places at the top. Roads leading on from here carry their names, so the
+// list beside the map reads as its legend; a road to an animal the traveler
+// knows is printed in that animal's colour. The rest is a dot on the page.
 import type { Dispatch } from "react";
 import type { MapNode } from "../core/map";
 import { nextNodes } from "../core/reducer";
 import type { GameAction, GameState } from "../core/state";
+import { signOf, spot } from "./parts";
 import { useStrings } from "./strings";
 
 const W = 340;
-const ROW = 64;
+const ROW = 54;
 const PAD_TOP = 40;
-const PAD_BOTTOM = 34;
-const MARGIN = 64;
+const PAD_BOTTOM = 30;
+const MARGIN = 62;
 
 export function MapView({
   state,
@@ -32,22 +34,13 @@ export function MapView({
     return { x, y };
   };
 
-  const open = new Set(
-    state.phase === "map" ? nextNodes(state).map((n) => n.id) : [],
-  );
-  const walked = new Set(
-    state.path.slice(1).map((id, i) => `${state.path[i]}>${id}`),
-  );
+  const open = new Set(state.phase === "map" ? nextNodes(state).map((n) => n.id) : []);
+  const walked = new Set(state.path.slice(1).map((id, i) => `${state.path[i]}>${id}`));
   const visited = new Set(state.path);
   const nodes = map.layers.flat();
 
   return (
-    <svg
-      className="map"
-      viewBox={`0 0 ${W} ${height}`}
-      role="img"
-      aria-label={strings.ui.whereNext}
-    >
+    <svg className="map" viewBox={`0 0 ${W} ${height}`} role="img" aria-label={strings.ui.whereNext}>
       {nodes.flatMap((from) =>
         (map.next[from.id] ?? []).map((toId) => {
           const to = nodes.find((n) => n.id === toId)!;
@@ -58,46 +51,45 @@ export function MapView({
             : from.id === state.at && open.has(toId)
               ? "edge open"
               : "edge";
-          return (
-            <line key={`${from.id}>${toId}`} className={cls} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
-          );
+          return <line key={`${from.id}>${toId}`} className={cls} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
         }),
       )}
       {nodes.map((node) => {
         const { x, y } = place(node);
+        const isOpen = open.has(node.id);
         const status =
-          node.id === state.at
-            ? "current"
-            : open.has(node.id)
-              ? "open"
-              : visited.has(node.id)
-                ? "visited"
-                : "unseen";
-        const onClick = open.has(node.id)
-          ? () => dispatch({ type: "MOVE", nodeId: node.id })
-          : undefined;
+          node.id === state.at ? "current" : isOpen ? "open" : visited.has(node.id) ? "visited" : "unseen";
+        const sign = isOpen ? signOf(strings, state, node) : null;
+        // Labels sit on the side with more room, so the outer columns never
+        // run off the figure.
+        const right = x <= W / 2;
         return (
           <g
             key={node.id}
-            className={`node ${node.kind} ${status}`}
-            onClick={onClick}
+            className={`node ${node.kind} ${status} ${spot(sign?.species)}`}
+            onClick={isOpen ? () => dispatch({ type: "MOVE", nodeId: node.id }) : undefined}
             transform={`translate(${x} ${y})`}
           >
             {node.kind === "destination" ? (
-              <path d="M0 -9 L8 0 L0 9 L-8 0 Z" />
+              <rect x={-6} y={-6} width={12} height={12} transform="rotate(45)" />
             ) : node.kind === "start" ? (
-              <rect x={-7} y={-7} width={14} height={14} rx={2} />
+              <rect x={-6} y={-6} width={12} height={12} />
             ) : (
-              <circle r={status === "unseen" ? 3.5 : 7} />
+              <circle r={status === "unseen" ? 3 : status === "visited" ? 4 : 7} />
             )}
             {node.kind === "destination" && (
-              <text className="label" y={-16} textAnchor="middle">
+              <text className="label dest" y={-14} textAnchor="middle">
                 {strings.destinations[node.destinationId!]!.name}
               </text>
             )}
             {node.kind === "start" && (
-              <text className="label" y={24} textAnchor="middle">
+              <text className="label" y={22} textAnchor="middle">
                 {strings.village.name}
+              </text>
+            )}
+            {sign && node.kind !== "destination" && (
+              <text className="label road" x={right ? 12 : -12} y={4} textAnchor={right ? "start" : "end"}>
+                {sign.place}
               </text>
             )}
           </g>

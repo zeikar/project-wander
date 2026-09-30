@@ -1,21 +1,64 @@
-import { species } from "../content/species";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { findScene } from "../content/scenes";
+import { species, speciesOfFact } from "../content/species";
+import type { SpeciesId } from "../content/types";
 import { MAX_FOOD, MAX_HP } from "../content/world";
 import type { MapNode } from "../core/map";
-import { findScene } from "../content/scenes";
 import { knowsSpeciesOf } from "../core/reducer";
 import type { GameState } from "../core/state";
 import type { Strings } from "../i18n";
 import { resultText } from "../i18n";
 import { useStrings } from "./strings";
 
-function Pips({ value, max, label }: { value: number; max: number; label: string }) {
-  const { ui } = useStrings();
+// Each animal is printed in its own spot colour, the way a field guide gives
+// every plate one ink besides black. Only knowledge uses it.
+export function spot(id: SpeciesId | undefined): string {
+  return id === undefined ? "" : `spot-${id}`;
+}
+
+// Whether the window matches a media query, kept current as it resizes.
+export function useMedia(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const onChange = () => setMatches(list.matches);
+    list.addEventListener("change", onChange);
+    return () => list.removeEventListener("change", onChange);
+  }, [query]);
+  return matches;
+}
+
+// Wide enough for the notebook to stand open in its own column. Narrower, it
+// folds, so the day in front of the traveler still fits in one view.
+export const ROOMY = "(min-width: 1360px)";
+
+// The screen's five parts. On a phone they stack in reading order. Wider, the
+// map takes the left column and the story and choices the right; widest, the
+// notebook gets a column of its own, like notes in a margin.
+export function Layout({
+  kind,
+  status,
+  story,
+  map,
+  choices,
+  notes,
+}: {
+  kind: "map" | "scene" | "end";
+  status?: ReactNode;
+  story: ReactNode;
+  map: ReactNode;
+  choices: ReactNode;
+  notes: ReactNode;
+}) {
   return (
-    <span className="pips" role="img" aria-label={ui.meter(label, value, max)}>
-      {Array.from({ length: max }, (_, i) => (
-        <i key={i} className={i < value ? "on" : "off"} />
-      ))}
-    </span>
+    <div className={`layout layout--${kind}`}>
+      {status && <div className="area-status">{status}</div>}
+      <div className="area-story">{story}</div>
+      <div className="area-map">{map}</div>
+      <div className="area-choices">{choices}</div>
+      <div className="area-notes">{notes}</div>
+    </div>
   );
 }
 
@@ -24,11 +67,9 @@ export function StatusBar({ state }: { state: GameState }) {
   return (
     <header className="status">
       <span className="day">{ui.day(state.day)}</span>
-      <span className="stat">
-        {ui.hp} <Pips value={state.hp} max={MAX_HP} label={ui.hp} />
-      </span>
-      <span className="stat">
-        {ui.food} <Pips value={state.food} max={MAX_FOOD} label={ui.food} />
+      <span className="stats">
+        <span>{ui.stat(ui.hp, state.hp, MAX_HP)}</span>
+        <span>{ui.stat(ui.food, state.food, MAX_FOOD)}</span>
       </span>
     </header>
   );
@@ -44,7 +85,7 @@ export function Notebook({ known, open = false }: { known: GameState["known"]; o
       <summary>{strings.ui.notebook}</summary>
       {entries.length === 0 && <p className="faint">{strings.ui.notebookEmpty}</p>}
       {entries.map((s) => (
-        <section key={s.id}>
+        <section key={s.id} className={spot(s.id)}>
           <h3>{strings.species[s.id].name}</h3>
           {s.facts
             .filter((f) => known.includes(f))
@@ -73,8 +114,8 @@ export function LastEvent({ state }: { state: GameState }) {
     const lines = strings.quiet.lines;
     return (
       <div className="event">
-        <p>{lines[(state.seed + state.day) % lines.length]}</p>
         <p className="toll">{state.hungry ? strings.ui.hungry : strings.ui.fed}</p>
+        <p>{lines[(state.seed + state.day) % lines.length]}</p>
       </div>
     );
   }
@@ -85,21 +126,22 @@ export function LastEvent({ state }: { state: GameState }) {
         <p className="delta">{strings.ui.outcome(last.hp, last.food)}</p>
       )}
       {last.learned && (
-        <aside className="learned">
-          <h3>{strings.ui.learned}</h3>
-          <p className="note">{strings.facts[last.learned]}</p>
-        </aside>
+        <div className={`gloss learned ${spot(speciesOfFact(last.learned))}`}>
+          <b>{strings.ui.learned}</b>
+          <p>{strings.facts[last.learned]}</p>
+        </div>
       )}
     </div>
   );
 }
 
-// What a node looks like from a day away.
+// What a node looks like from a day away, and whose colour it wears once the
+// traveler knows the animal behind it.
 export function signOf(
   strings: Strings,
   state: GameState,
   node: MapNode,
-): { place: string; sign: string } {
+): { place: string; sign: string; species?: SpeciesId } {
   if (node.kind === "destination") {
     const d = strings.destinations[node.destinationId!]!;
     return { place: d.name, sign: d.rumor };
@@ -107,8 +149,12 @@ export function signOf(
   if (node.kind === "scene") {
     const scene = findScene(node.sceneId!)!;
     const text = strings.scenes[scene.id]!;
-    const sign = knowsSpeciesOf(state, scene) && text.signKnown ? text.signKnown : text.sign;
-    return { place: text.place, sign };
+    const known = knowsSpeciesOf(state, scene);
+    return {
+      place: text.place,
+      sign: known && text.signKnown ? text.signKnown : text.sign,
+      species: known ? scene.species : undefined,
+    };
   }
   return { place: strings.quiet.place, sign: strings.quiet.sign };
 }

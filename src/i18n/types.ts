@@ -72,8 +72,15 @@ export interface Strings {
     theRoadBehind: string;
     // The places passed, in order, as one line.
     road: (places: readonly string[]) => string;
-    // Screen-reader text for a pip meter.
-    meter: (label: string, value: number, max: number) => string;
+    // A resource as the status line shows it.
+    stat: (label: string, value: number, max: number) => string;
+    // The caption under the map, which names the village it starts from.
+    mapCaption: (village: string) => string;
+    // The line above a scene's title: what kind of thing this is.
+    unknownAnimal: string;
+    aPlace: string;
+    // The label on what the notebook makes of a scene.
+    reading: string;
     language: string;
   };
   village: { name: string; description: string };
