@@ -24,9 +24,15 @@ export default function App() {
   useEffect(() => {
     saveKnown(state.known);
   }, [state.known]);
+  // Only an explicit choice is saved. Saving the detected language would pin
+  // every returning player to it, even after their own language ships.
+  const chooseLocale = (id: LocaleId) => {
+    setLocale(id);
+    saveLocale(id);
+  };
   useEffect(() => {
-    saveLocale(locale);
     document.documentElement.lang = locales[locale].meta.htmlLang;
+    document.title = locales[locale].ui.title;
   }, [locale]);
 
   // Scroll to the top whenever the screen changes, so a new scene starts at
@@ -53,7 +59,7 @@ export default function App() {
           <footer className="footer">
             <label>
               {strings.ui.language}{" "}
-              <select value={locale} onChange={(e) => setLocale(e.target.value as LocaleId)}>
+              <select value={locale} onChange={(e) => chooseLocale(e.target.value as LocaleId)}>
                 {localeIds.map((id) => (
                   <option key={id} value={id}>
                     {locales[id].meta.name}

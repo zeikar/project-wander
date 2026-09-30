@@ -24,7 +24,7 @@ export const ko: Strings = {
       ].filter(Boolean);
       return parts.length > 0 ? parts.join(" · ") : "잃는 것도 얻는 것도 없다";
     },
-    willLearn: "수첩에 적을 것이 생긴다",
+    withLesson: (hint) => `${hint} · 수첩에 적을 것이 생긴다`,
     noFood: "식량이 모자란다",
     learned: "수첩에 적었다",
     fed: "하루를 걸으며 한 끼를 먹었다.",
@@ -38,6 +38,8 @@ export const ko: Strings = {
     learnedThisJourney: "이번 길에 알게 된 것",
     nothingLearned: "이번 길에는 수첩에 적은 것이 없다.",
     theRoadBehind: "지나온 길",
+    road: (places) => places.join(" → "),
+    meter: (label, value, max) => `${label} ${max}칸 중 ${value}칸`,
     language: "언어",
   },
 
@@ -106,6 +108,12 @@ export const ko: Strings = {
             rooting: "물을 가르며 녀석 곁을 지난다. 녀석은 끝내 고개를 들지 않았다.",
             alert:
               "절반쯤 건넜을 때 녀석이 돌아섰다. 어깨에 받혀 돌바닥에 나뒹군다. 일어나 보니 녀석은 다시 뿌리를 뜯고 있다. 코를 쳐든 멧돼지는 이미 알고 있었던 것이다.",
+          },
+        },
+        wait: {
+          label: "해 질 때까지 둑에 앉아 기다린다",
+          result: {
+            "*": "빈속으로 해가 기울기를 기다린다. 녀석이 둑을 올라 사라진 뒤에야 건넌다. 몸이 차갑게 식었다.",
           },
         },
         detour: {
@@ -212,6 +220,12 @@ export const ko: Strings = {
             passing: "그림자들은 능선 너머로 사라졌다. 걸음을 늦춰도 되었다.",
           },
         },
+        climb: {
+          label: "나무에 올라 밤을 샌다",
+          result: {
+            "*": "가지에 몸을 묶고 밤을 샌다. 아래에서 발소리가 몇 번 오간다. 새벽에 내려오니 온몸이 뻣뻣하다.",
+          },
+        },
         fire: {
           label: "불을 피우고 날이 밝기를 기다린다",
           result: {
@@ -257,6 +271,12 @@ export const ko: Strings = {
         },
       },
       options: {
+        "night-walk": {
+          label: "밤이 되기를 기다려 빈터를 비껴간다",
+          result: {
+            "*": "어둠 속을 더듬어 빈터를 비껴간다. 가시에 긁히고 발을 헛디뎠지만 무리는 이쪽을 신경 쓰지 않았다.",
+          },
+        },
         "go-around": {
           label: "빈터를 크게 돌아간다",
           result: {
@@ -315,6 +335,12 @@ export const ko: Strings = {
             holding:
               "세 걸음 만에 녀석이 머리를 낮추고 달려온다. 뿔에 떠밀려 골짜기 아래로 굴러떨어진다. 녀석은 쫓아오지 않는다. 몰아냈으니 됐다는 듯이.",
             grazing: "녀석은 고개도 들지 않는다. 골짜기를 건너는 동안 풀 뜯는 소리만 들린다.",
+          },
+        },
+        wait: {
+          label: "녀석이 떠날 때까지 덤불에 숨어 기다린다",
+          result: {
+            "*": "덤불 속에서 빈속으로 한나절을 버틴다. 저녁 무렵 녀석이 골짜기 아래로 내려가고서야 지나간다.",
           },
         },
         detour: {

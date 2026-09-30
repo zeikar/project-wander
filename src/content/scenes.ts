@@ -6,6 +6,9 @@ function always(variants: readonly string[], outcome: Outcome) {
   return Object.fromEntries(variants.map((v) => [v, outcome]));
 }
 
+// Every scene keeps a certain way through that costs no food — with an empty
+// pack, time is paid in blood instead. In v0 an empty pack left one gamble,
+// and that was where most deaths came from. Pinned in reducer.test.ts.
 const FORD = ["rooting", "alert"] as const;
 const WALLOW = ["sleeping", "sow"] as const;
 const PINES = ["stalking", "passing"] as const;
@@ -31,6 +34,7 @@ export const scenes: readonly Scene[] = [
           alert: { hp: -2, food: 0, learn: "boar.nose" },
         },
       },
+      { id: "wait", outcomes: always(FORD, { hp: -1, food: 0 }) },
       { id: "detour", outcomes: always(FORD, { hp: 0, food: -1 }) },
       {
         id: "watch",
@@ -93,6 +97,7 @@ export const scenes: readonly Scene[] = [
           passing: { hp: 0, food: 0 },
         },
       },
+      { id: "climb", outcomes: always(PINES, { hp: -1, food: 0 }) },
       { id: "fire", outcomes: always(PINES, { hp: 0, food: -1 }) },
       {
         id: "watch",
@@ -116,6 +121,7 @@ export const scenes: readonly Scene[] = [
     variants: KILL,
     reads: "wolves.rank",
     options: [
+      { id: "night-walk", outcomes: always(KILL, { hp: -1, food: 0 }) },
       { id: "go-around", outcomes: always(KILL, { hp: 0, food: -1 }) },
       {
         id: "steal",
@@ -155,6 +161,7 @@ export const scenes: readonly Scene[] = [
           grazing: { hp: 0, food: 0 },
         },
       },
+      { id: "wait", outcomes: always(RUT, { hp: -1, food: 0 }) },
       { id: "detour", outcomes: always(RUT, { hp: 0, food: -1 }) },
       {
         id: "watch",

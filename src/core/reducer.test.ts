@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { scenes } from "../content/scenes";
 import type { FactId } from "../content/types";
 import { MAX_HP, START_FOOD, START_HP } from "../content/world";
 import type { MapNode, WorldMap } from "./map";
@@ -160,10 +161,33 @@ describe("what knowing changes", () => {
   it("stops offering to watch for what is already known", () => {
     expect(ids(atScene("ford-boar", "rooting"))).toContain("watch");
     expect(ids(atScene("ford-boar", "rooting", { known: ["boar.nose"] }))).not.toContain("watch");
-    // At the wallow, what watching teaches depends on what is there.
+  });
+
+  // At the wallow, what watching teaches depends on what is there. Until the
+  // scene can be read, the menu must not give that away.
+  it("does not let the menu reveal a scene the traveler cannot read", () => {
     const knowsNose = { known: ["boar.nose"] as FactId[] };
-    expect(ids(atScene("wallow-boar", "sleeping", knowsNose))).not.toContain("watch");
-    expect(ids(atScene("wallow-boar", "sow", knowsNose))).toContain("watch");
+    expect(ids(atScene("wallow-boar", "sleeping", knowsNose))).toEqual(
+      ids(atScene("wallow-boar", "sow", knowsNose)),
+    );
+    expect(ids(atScene("wallow-boar", "sleeping", knowsNose))).toContain("watch");
+    // Once it can be read, only a lesson still missing is offered.
+    const knowsSow = { known: ["boar.sow"] as FactId[] };
+    expect(ids(atScene("wallow-boar", "sleeping", knowsSow))).toContain("watch");
+    expect(ids(atScene("wallow-boar", "sow", knowsSow))).not.toContain("watch");
+  });
+
+  // An empty pack must never leave only a gamble.
+  it("leaves at least one certain, affordable way through at food 0", () => {
+    for (const scene of scenes) {
+      for (const variant of scene.variants) {
+        const state = atScene(scene.id, variant, { food: 0 });
+        const certain = offeredOptions(state).filter(
+          (o) => canAfford(state, o) && preview(state, o) !== null,
+        );
+        expect(certain.length, `${scene.id}/${variant}`).toBeGreaterThan(0);
+      }
+    }
   });
 
   it("shows an outcome only when it is certain or can be read", () => {

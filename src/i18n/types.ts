@@ -58,7 +58,8 @@ export interface Strings {
     unreadable: string;
     unknownOutcome: string;
     outcome: (hp: number, food: number) => string;
-    willLearn: string;
+    // An option's hint with "this will teach you something" added to it.
+    withLesson: (hint: string) => string;
     noFood: string;
     learned: string;
     fed: string;
@@ -69,6 +70,10 @@ export interface Strings {
     learnedThisJourney: string;
     nothingLearned: string;
     theRoadBehind: string;
+    // The places passed, in order, as one line.
+    road: (places: readonly string[]) => string;
+    // Screen-reader text for a pip meter.
+    meter: (label: string, value: number, max: number) => string;
     language: string;
   };
   village: { name: string; description: string };

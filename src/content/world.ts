@@ -1,7 +1,7 @@
 import type { Destination } from "./types";
 
 // Sanity-swept over 2000 seeds (2026-10-01): a careful player who knows
-// nothing dies on about 18% of first journeys; one who knows everything
+// nothing dies on about 20% of first journeys; one who knows everything
 // almost never does. At 5 hp / 3 food the first figure was 42%.
 export const START_HP = 6;
 export const MAX_HP = 6;

@@ -10,26 +10,26 @@ export type LocaleId = keyof typeof locales;
 
 export const DEFAULT_LOCALE: LocaleId = "ko";
 
-export function isLocaleId(value: unknown): value is LocaleId {
-  return typeof value === "string" && Object.hasOwn(locales, value);
-}
-
 // A saved choice wins; otherwise the first browser language we have; else the
 // default. Matches on the primary subtag, so "en-GB" finds "en".
-export function detectLocale(
+export function detectLocale<Id extends string = LocaleId>(
   saved: string | null,
   browserLanguages: readonly string[],
-): LocaleId {
-  if (isLocaleId(saved)) {
+  available: readonly Id[] = Object.keys(locales) as Id[],
+  fallback: Id = DEFAULT_LOCALE as Id,
+): Id {
+  const has = (value: string | null | undefined): value is Id =>
+    value != null && (available as readonly string[]).includes(value);
+  if (has(saved)) {
     return saved;
   }
   for (const tag of browserLanguages) {
     const primary = tag.toLowerCase().split("-")[0];
-    if (isLocaleId(primary)) {
+    if (has(primary)) {
       return primary;
     }
   }
-  return DEFAULT_LOCALE;
+  return fallback;
 }
 
 // An option's result line for the variant that happened, falling back to "*".

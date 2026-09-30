@@ -45,9 +45,14 @@ body {
   font-family: "Gowun Batang", "Nanum Myeongjo", "Noto Serif KR", Georgia, serif;
   font-size: 17px;
   line-height: 1.85;
-  word-break: keep-all;
   overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Korean breaks lines between words; languages written without spaces must
+   not inherit this. */
+:lang(ko) body {
+  word-break: keep-all;
 }
 
 .page {

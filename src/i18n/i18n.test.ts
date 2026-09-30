@@ -38,6 +38,10 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       );
       for (const option of scene.options) {
         expect(text.options[option.id]!.label).toBeTruthy();
+        // A misspelt variant key would silently fall back to "*".
+        for (const key of Object.keys(text.options[option.id]!.result)) {
+          expect([...scene.variants, "*"], `${scene.id}/${option.id}: ${key}`).toContain(key);
+        }
         for (const variant of scene.variants) {
           expect(
             resultText(strings, scene.id, option.id, variant),
@@ -54,6 +58,7 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
     }
     for (const s of species) {
       expect(strings.species[s.id].name).toBeTruthy();
+      expect(strings.species[s.id].more).toBeTruthy();
     }
     expect(Object.keys(strings.destinations).sort()).toEqual(
       destinations.map((d) => d.id).sort(),
@@ -68,10 +73,14 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
   });
 });
 
+// Against a pretend registry of two, so every branch picks something other
+// than the fallback at least once.
 describe("detectLocale", () => {
+  const two = ["ko", "en"] as const;
   it("prefers a saved choice, then the browser, then the default", () => {
-    expect(detectLocale("ko", ["en-US"])).toBe("ko");
-    expect(detectLocale(null, ["ko-KR"])).toBe("ko");
-    expect(detectLocale("nope", ["xx"])).toBe("ko");
+    expect(detectLocale("en", ["ko-KR"], two, "ko")).toBe("en");
+    expect(detectLocale(null, ["fr-FR", "en-GB"], two, "ko")).toBe("en");
+    expect(detectLocale("nope", ["xx"], two, "ko")).toBe("ko");
+    expect(detectLocale(null, [], two, "en")).toBe("en");
   });
 });

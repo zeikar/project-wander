@@ -1,5 +1,5 @@
 import type { Dispatch } from "react";
-import { findScene } from "../content/scenes";
+import type { SceneOption } from "../content/types";
 import { destinations } from "../content/world";
 import {
   canAfford,
@@ -78,6 +78,17 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
   const variant = currentNode(state)!.variant!;
   const text = strings.scenes[scene.id]!;
   const v = text.variants[variant]!;
+  const hint = (
+    option: SceneOption,
+    affordable: boolean,
+    outcome: ReturnType<typeof preview>,
+  ) => {
+    if (!affordable) {
+      return ui.noFood;
+    }
+    const base = outcome ? ui.outcome(outcome.hp, outcome.food) : ui.unknownOutcome;
+    return option.study ? ui.withLesson(base) : base;
+  };
 
   return (
     <>
@@ -107,14 +118,7 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
               onClick={() => dispatch({ type: "CHOOSE", optionId: option.id })}
             >
               <span className="choice-label">{text.options[option.id]!.label}</span>
-              <span className="choice-hint">
-                {!affordable
-                  ? ui.noFood
-                  : outcome
-                    ? ui.outcome(outcome.hp, outcome.food)
-                    : ui.unknownOutcome}
-                {option.study && affordable && ` · ${ui.willLearn}`}
-              </span>
+              <span className="choice-hint">{hint(option, affordable, outcome)}</span>
             </button>
           );
         })}
@@ -127,11 +131,15 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
   const strings = useStrings();
   const { ui } = strings;
   const ending = state.ending!;
-  const path = state.path
-    .slice(1)
+  // Dying of hunger on the way means the last node was never reached.
+  const reached =
+    ending.kind === "died" && ending.cause === "hunger"
+      ? state.path.slice(1, -1)
+      : state.path.slice(1);
+  const path = reached
     .map((id) => state.map!.layers.flat().find((n) => n.id === id)!)
     .filter((n) => n.kind === "scene")
-    .map((n) => strings.scenes[findScene(n.sceneId!)!.id]!.title);
+    .map((n) => strings.scenes[n.sceneId!]!.title);
 
   return (
     <>
@@ -158,7 +166,7 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
       <p className="faint">{ui.daysWalked(state.day)}</p>
       {path.length > 0 && (
         <p className="road-behind">
-          <span className="small-heading">{ui.theRoadBehind}</span> {path.join(" → ")}
+          <span className="small-heading">{ui.theRoadBehind}</span> {ui.road(path)}
         </p>
       )}
 

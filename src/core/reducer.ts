@@ -58,8 +58,17 @@ export function offeredOptions(state: GameState): readonly SceneOption[] {
     if (option.needs !== undefined && !state.known.includes(option.needs)) {
       return false;
     }
-    const learn = option.outcomes[variant]?.learn;
-    return !(option.study && learn !== undefined && state.known.includes(learn));
+    if (!option.study) {
+      return true;
+    }
+    // Hidden once there is nothing left to learn by it. A traveler who cannot
+    // read the scene cannot tell which lesson is on offer either, so for them
+    // every variant's lesson must be known — otherwise the menu itself would
+    // give away what is going on.
+    const lessons = canRead(state, scene)
+      ? [option.outcomes[variant]!.learn]
+      : Object.values(option.outcomes).map((o) => o.learn);
+    return !lessons.every((l) => l !== undefined && state.known.includes(l));
   });
 }
 

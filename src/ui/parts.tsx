@@ -9,8 +9,9 @@ import { resultText } from "../i18n";
 import { useStrings } from "./strings";
 
 function Pips({ value, max, label }: { value: number; max: number; label: string }) {
+  const { ui } = useStrings();
   return (
-    <span className="pips" aria-label={`${label} ${value}/${max}`}>
+    <span className="pips" role="img" aria-label={ui.meter(label, value, max)}>
       {Array.from({ length: max }, (_, i) => (
         <i key={i} className={i < value ? "on" : "off"} />
       ))}
