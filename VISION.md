@@ -491,7 +491,7 @@ Because there is something left to find out.
 
 *"There is something left to find out"* does not need a person, and as of 2026-09-01 it is partly answered. Three simulated players each walked a chained pair of journeys with the codex carried through the game's own play-again path. One found the second road different and named the codex as the reason. The other two never took a single observation in two full journeys — twenty-two offered, none taken — so nothing carried and the clause never got the chance to be true for them.
 
-**So the novelty is real and conditional: the second road is different for the player who bought knowledge on the first.** Nothing currently rewards making that purchase — the arrival gate scores what the pack and the body still hold, and every observation in the game costs one of them.
+**So the novelty is real and conditional: the second road is different for the player who bought knowledge on the first.** The purchase does pay, by the arrival gate's own grade — not because the gate weighs knowledge, but because what a note opens leaves more in the pack and the body on later roads: watching only where it is cheap arrives well as often as never watching on a first journey and more often from the third (`docs/CONTENT.md` § *Encounters*). What was missing was the screen saying so — the button that sold the knowledge printed only its price. It now says the note outlasts the journey. Whether that is enough to make a person buy is the half that takes a person.
 
 ---
 
