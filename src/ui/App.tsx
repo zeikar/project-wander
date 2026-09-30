@@ -96,6 +96,23 @@ export function costHint(state: GameState, option: EncounterOption): string {
   if (effective.preparationDelta > 0) {
     gains.push(`${effective.preparationDelta} preparation`);
   }
+  // What watching buys — the last payout on the screen still unlabelled, and
+  // the same omission as the two above: an observation read as pure loss ("costs
+  // a little blood and 1 food"; at the bees' flight line, nothing at all). Two
+  // of three simulated players took 0 of 22 live observations over four
+  // journeys, and one reported that knowing "never actually changed a number".
+  // It is not a loss at the gate. Measured over chained journeys (300 seeds, a
+  // blind resource scorer): watching only when it costs about a meal over the
+  // best answer arrives well as often as never watching on the first journey
+  // (77.0% vs 76.3%) and more often from the third on (85.0% vs 74.0% by the
+  // sixth) — docs/CONTENT.md § *Encounters* has the rest.
+  // Says the note is KEPT, which is the half a traveler cannot learn before a
+  // journey ends, and never what it opens: that is found by meeting the animal
+  // again. Only on a LIVE observation; one a rung too deep is refused with a
+  // line of its own, and a promise beside it would argue with that line.
+  if (isLiveObservation(state, option)) {
+    gains.push("a field note that outlasts this journey");
+  }
 
   // Spending preparation is the one cost whose real consequence is invisible at
   // the moment you pay it: it can shut a door at a LATER encounter that asks
@@ -136,6 +153,22 @@ export function costHint(state: GameState, option: EncounterOption): string {
     : "";
 
   return `${ledger ? ` — ${ledger}` : ""}${requires}`;
+}
+
+// Resolved through the scene that OWNS the option, never the leg's first slot —
+// the same rule `canChooseOption` gates on, so on a leg holding two animals the
+// second one's observation is not read against the first one's depth.
+function isLiveObservation(state: GameState, option: EncounterOption): boolean {
+  if (option.codex !== "teaches") {
+    return false;
+  }
+  const scene = activeScenes(state).find((candidate) =>
+    candidate.options.some((owned) => owned.id === option.id),
+  );
+  return (
+    scene !== undefined &&
+    speciesDepth(state, speciesOf(scene.id)) === codexLayerOf(scene.id)! - 1
+  );
 }
 
 // Unlike an option's authored hp cost, the leg's toll is a hazard this
