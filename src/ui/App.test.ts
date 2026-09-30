@@ -366,10 +366,9 @@ describe("costHint", () => {
     );
   });
 
-  // The codex options go through the existing rules unchanged: nothing here has
-  // a positive hpDelta, so no new clause was needed. These pin what the four
-  // shapes actually read as, including the two that say nothing about a wound's
-  // size and the one that truthfully says nothing at all.
+  // The unlocked answers go through the existing rules unchanged. The
+  // observation does not: what it buys is a note, and that is a gain like any
+  // other, so it goes in the same ledger clause as what it costs.
   it("describes what knowledge costs and what it buys", () => {
     // Each option is evaluated against ITS OWN encounter: canChooseOption
     // resolves the codex gate through the scene that OWNS the option, so an
@@ -401,20 +400,52 @@ describe("costHint", () => {
       " — needs 1 preparation in hand, spends none",
     );
     expect(costHint(atWolves, readThePack)).toBe(
-      " — costs a little blood and 1 food",
+      " — costs a little blood and 1 food, gains a field note that outlasts this journey",
     );
   });
 
-  it("gives an observation that spends nothing an empty clause, not a missing one", () => {
+  // Regression: this used to pin an EMPTY string, on the reasoning that the
+  // flight line gives up the afternoon and nothing else. It gives up nothing
+  // else and it GETS a note — and a button reading as nothing at all, beside
+  // one reading "gains 1 preparation", was the observation as pure loss.
+  it("names what an observation gives even when it spends nothing", () => {
     const state = makeEncounterState({
       preparation: 2,
       food: 2,
       activeEncounterId: "bee-hollow",
     });
 
-    // watch-the-flight-line gives up the afternoon and nothing else. An empty
-    // clause is the truthful label, not a missing one.
-    expect(costHint(state, watchTheFlightLine)).toBe("");
+    expect(costHint(state, watchTheFlightLine)).toBe(
+      " — gains a field note that outlasts this journey",
+    );
+  });
+
+  // Every observation, in its own scene, at the one depth it teaches at and at
+  // every depth shallower. Swept rather than sampled so that a rung-2 scene —
+  // the only kind that can be LOCKED — cannot be missed.
+  it("promises a note only on an observation that can actually teach one", () => {
+    const note = "a field note that outlasts this journey";
+    let locked = 0;
+    for (const encounter of encounters) {
+      const teaches = encounter.options.find(
+        (option) => option.codex === "teaches",
+      )!;
+      for (let depth = 0; depth < encounter.codexLayer; depth++) {
+        const state = makeEncounterState({
+          activeEncounterId: encounter.id,
+          known:
+            depth === 0 ? [] : [{ speciesId: encounter.speciesId, depth }],
+        });
+        const live = depth === encounter.codexLayer - 1;
+        if (!live) {
+          locked++;
+        }
+        expect(costHint(state, teaches).includes(note)).toBe(live);
+      }
+    }
+    // The sweep reached a locked observation at all — without one, the `false`
+    // half of the assertion above was never exercised.
+    expect(locked).toBeGreaterThan(0);
   });
 });
 
@@ -661,6 +692,31 @@ describe("labels on a leg that holds two things", () => {
     for (const option of place.options) {
       expect(costHint(beside, option)).toBe(costHint(alone, option));
       expect(leavesNoFood(beside, option)).toBe(leavesNoFood(alone, option));
+    }
+  });
+
+  // Two animals, and the one in the SECOND slot is the one whose observation is
+  // live. The first slot's scene sits a rung deeper at depth 0, so a label that
+  // read the leg's first slot would find it locked and promise nothing — and
+  // the other way round, would promise a note on the first slot's locked one.
+  it("promises a note by the scene that owns the observation, not the first slot", () => {
+    const sow = encounters.find((encounter) => encounter.id === "sow-and-litter")!;
+    const countTheLitter = sow.options.find(
+      (option) => option.codex === "teaches",
+    )!;
+    const note = "a field note that outlasts this journey";
+
+    for (const [first, second] of [
+      ["sow-and-litter", "pine-shadows"],
+      ["pine-shadows", "sow-and-litter"],
+    ] as const) {
+      const state = makeEncounterState({
+        activeEncounterId: first,
+        secondSceneId: second,
+        known: [],
+      });
+      expect(costHint(state, readThePack).includes(note)).toBe(true);
+      expect(costHint(state, countTheLitter).includes(note)).toBe(false);
     }
   });
 });

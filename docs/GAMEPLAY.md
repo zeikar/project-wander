@@ -96,7 +96,7 @@ Every animal can be watched instead of answered well.
 
 Watching costs more than the good answer does — an afternoon, a meal, sometimes blood.
 
-What you get is knowledge of how that animal works.
+What you get is knowledge of how that animal works, and the button says so beside the price: a note that outlasts the journey.
 
 Knowing an animal comes in layers, and each scene teaches one particular layer of it — not whatever you happen to be missing. So a second afternoon with the same animal is not always the first one over again, and it is the scene that decides which.
 

@@ -96,6 +96,29 @@ export function costHint(state: GameState, option: EncounterOption): string {
   if (effective.preparationDelta > 0) {
     gains.push(`${effective.preparationDelta} preparation`);
   }
+  // What watching buys — the last payout still unlabelled, and the same
+  // omission as the two above: an observation read as pure loss, and two of
+  // three simulated players took 0 of 22 live ones. Over chained journeys it
+  // is not a loss at the gate (docs/CONTENT.md § *Encounters*).
+  // Says the note is KEPT, the half a traveler cannot learn before a journey
+  // ends, and never what it opens. Only on a LIVE observation, resolved through
+  // the scene that OWNS the option — the rule `canChooseOption` gates on, so
+  // the second of two animals is not read against the first one's depth. One a
+  // rung too deep is refused with a line of its own, and a promise beside it
+  // would argue with that line.
+  const observed =
+    option.codex === "teaches"
+      ? activeScenes(state).find((scene) =>
+          scene.options.some((owned) => owned.id === option.id),
+        )
+      : undefined;
+  if (
+    observed !== undefined &&
+    speciesDepth(state, speciesOf(observed.id)) ===
+      codexLayerOf(observed.id)! - 1
+  ) {
+    gains.push("a field note that outlasts this journey");
+  }
 
   // Spending preparation is the one cost whose real consequence is invisible at
   // the moment you pay it: it can shut a door at a LATER encounter that asks
