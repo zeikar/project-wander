@@ -196,6 +196,27 @@ describe("what knowing changes", () => {
     expect(ids(atScene("wallow-boar", "sow", knowsSow))).not.toContain("watch");
   });
 
+  // The lantern's watch teaches a different fact at night and at dawn, and the
+  // fact that unlocks its guide is not the one that reads it.
+  it("does not let the lantern's menu give away night from dawn", () => {
+    const knowsDawn = { known: ["lantern.dawn"] as FactId[] };
+    expect(ids(atScene("lantern-light", "night", knowsDawn))).toEqual(
+      ids(atScene("lantern-light", "dawn", knowsDawn)),
+    );
+    expect(ids(atScene("lantern-light", "night", knowsDawn))).toContain("watch");
+    const knowsDrift = { known: ["lantern.drift"] as FactId[] };
+    expect(ids(atScene("lantern-light", "dawn", knowsDrift))).toContain("watch");
+    expect(ids(atScene("lantern-light", "night", knowsDrift))).not.toContain("watch");
+  });
+
+  it("shows what following the lantern costs only to one who knows it is not carried", () => {
+    const blind = atScene("lantern-light", "night");
+    const follow = currentScene(blind)!.options.find((o) => o.id === "follow")!;
+    expect(preview(blind, follow)).toBeNull();
+    const reading = { ...blind, known: ["lantern.drift"] as FactId[] };
+    expect(preview(reading, follow)).toEqual(follow.outcomes.night);
+  });
+
   // An empty pack must never leave only a gamble — under any sky.
   it("leaves at least one certain, affordable way through at food 0", () => {
     for (const sky of ["clear", "rain", "fog"] as const) {

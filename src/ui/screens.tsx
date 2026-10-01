@@ -127,7 +127,9 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
       ? ui.aPlace
       : knowsSpeciesOf(state, scene)
         ? strings.species[scene.species!].name
-        : ui.unknownAnimal;
+        : scene.kind === "monster"
+          ? ui.unknownThing
+          : ui.unknownAnimal;
 
   const today = weatherAt(state);
   const hint = (option: SceneOption, affordable: boolean) => {

@@ -16,7 +16,7 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       for (const field of [text.place, text.sign, text.title, text.description]) {
         expect(field, scene.id).not.toBe("");
       }
-      if (scene.kind === "animal") {
+      if (scene.kind !== "place") {
         expect(text.signKnown, scene.id).toBeTruthy();
       }
 
@@ -25,7 +25,7 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       );
       for (const variant of scene.variants) {
         const v = text.variants[variant]!;
-        if (scene.kind === "animal") {
+        if (scene.kind !== "place") {
           expect(v.tell, `${scene.id}/${variant}`).toBeTruthy();
         }
         if (scene.reads !== undefined) {

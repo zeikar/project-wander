@@ -11,6 +11,7 @@
   --rust: #a3472a;
   --teal: #367069;
   --umber: #7b5230;
+  --glow: #736417;
   --spot: var(--ink);
   --face: "Hahmlet", "Nanum Myeongjo", "Noto Serif KR", Georgia, serif;
   color-scheme: light;
@@ -28,6 +29,7 @@
     --rust: #e39170;
     --teal: #7fbdb6;
     --umber: #c8a47a;
+    --glow: #dfc64a;
     color-scheme: dark;
   }
 }
@@ -46,6 +48,9 @@
 }
 .spot-otter {
   --spot: var(--umber);
+}
+.spot-lantern {
+  --spot: var(--glow);
 }
 
 * {

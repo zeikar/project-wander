@@ -19,6 +19,7 @@ const SHALLOWS = ["near", "aside"] as const;
 const REEDS = ["settled", "lifting"] as const;
 const BANK = ["cached", "holed"] as const;
 const CAMP = ["visited", "clean"] as const;
+const LIGHT = ["night", "dawn"] as const;
 const ONE = ["only"] as const;
 
 export const scenes: readonly Scene[] = [
@@ -355,6 +356,46 @@ export const scenes: readonly Scene[] = [
         outcomes: {
           visited: { hp: 1, food: -1 },
           clean: { hp: 1, food: 0 },
+        },
+      },
+    ],
+  },
+
+  // --- lantern --------------------------------------------------------------
+  {
+    id: "lantern-light",
+    kind: "monster",
+    species: "lantern",
+    variants: LIGHT,
+    reads: "lantern.drift",
+    options: [
+      {
+        id: "follow",
+        outcomes: {
+          night: { hp: -3, food: 0, learn: "lantern.drift" },
+          dawn: { hp: 0, food: 0 },
+        },
+      },
+      { id: "call-out", outcomes: always(LIGHT, { hp: -1, food: 0 }) },
+      { id: "keep-to-causeway", outcomes: always(LIGHT, { hp: 0, food: -1 }) },
+      // Two lessons, one per variant, as at the wallow: where the light settles
+      // can only be seen at dawn. The menu must not give away which is on offer.
+      {
+        id: "watch",
+        study: true,
+        outcomes: {
+          night: { hp: 0, food: -1, learn: "lantern.drift" },
+          dawn: { hp: 0, food: -1, learn: "lantern.dawn" },
+        },
+      },
+      // Knowing turns the danger into a guide, and it is still a trade: at
+      // night the light has to be waited out in the cold before it settles.
+      {
+        id: "dawn-ground",
+        needs: "lantern.dawn",
+        outcomes: {
+          night: { hp: -1, food: 1 },
+          dawn: { hp: 0, food: 1 },
         },
       },
     ],

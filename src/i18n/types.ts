@@ -17,12 +17,12 @@ export interface SceneText {
   place: string;
   // What can be seen of it a day away, before choosing the road.
   sign: string;
-  // The same sign, read by someone who knows the animal. Animal scenes only.
+  // The same sign, read by someone who knows the animal. Not for places.
   signKnown?: string;
   title: string;
   description: string;
-  // Per variant: the telling detail, and — for animal scenes — what the
-  // notebook makes of it once the right fact is known.
+  // Per variant: the telling detail, and — for scenes that are not places —
+  // what the notebook makes of it once the right fact is known.
   variants: Record<string, { tell?: string; reading?: string }>;
   // Per option: its label, and what happened, per variant. "*" answers for
   // every variant that has no line of its own.
@@ -96,6 +96,8 @@ export interface Strings {
     newWay: string;
     // The line above a scene's title: what kind of thing this is.
     unknownAnimal: string;
+    // A monster the notebook knows nothing of: nobody can yet say it is an animal at all.
+    unknownThing: string;
     aPlace: string;
     // The label on what the notebook makes of a scene.
     reading: string;

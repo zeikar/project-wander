@@ -22,7 +22,7 @@ describe("scenes", () => {
   });
 
   it("keep an animal's facts to that animal", () => {
-    for (const scene of scenes.filter((s) => s.kind === "animal")) {
+    for (const scene of scenes.filter((s) => s.kind !== "place")) {
       expect(scene.species, scene.id).toBeDefined();
       expect(scene.reads, scene.id).toBeDefined();
       const facts = [
