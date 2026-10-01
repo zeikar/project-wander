@@ -26,7 +26,7 @@ When a journey ends, the player should want to set out again — **not because s
 
 ## What carries over
 
-**Only what you know.** No levels, no gear, no gold. The traveler does not get stronger; the player does.
+**Only what you know.** No levels, no gear, no gold. The traveler does not get stronger; the player does. What you know includes where you have been and whom you have met: the far places and the people remember the traveler, and a return is told as one.
 
 Knowledge works as a lens, in three ways:
 

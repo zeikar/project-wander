@@ -38,7 +38,8 @@ export interface GameState {
   food: number;
   // Whether today's walk went hungry — the road took blood instead of a meal.
   hungry: boolean;
-  // The notebook. The only thing that survives a journey.
+  // The notebook. With the ways, the far places reached and the people met,
+  // all that survives a journey: what the traveler knows.
   known: readonly FactId[];
   // The ways the traveler knows — the notebook's other page, kept like `known`.
   open: readonly RegionId[];

@@ -1,0 +1,15 @@
+- main [ref=e3]:
+  - generic [ref=e5]:
+    - heading "Wander" [level=1] [ref=e6]
+    - paragraph [ref=e7]: 세상이 생각보다 넓다는 이유 하나로, 고향을 떠난다.
+    - button "길을 떠난다" [ref=e8] [cursor=pointer]
+    - group [ref=e9]:
+      - generic "수첩" [ref=e10] [cursor=pointer]
+      - generic [ref=e11]:
+        - heading "늑대" [level=3] [ref=e12]
+        - paragraph [ref=e13]: 늑대는 서열대로 먹는다. 제일 작은 놈까지 먹고 나면 식사는 끝난 것이고, 배부른 무리는 쫓지 않는다.
+        - paragraph [ref=e14]: 늑대에 대해 아직 모르는 것이 있다.
+      - generic [ref=e15]:
+        - heading "붉은사슴" [level=3] [ref=e16]
+        - paragraph [ref=e17]: 발정기의 수사슴은 지키는 곳에서 멀어지는 쪽으로만 몬다. 위쪽으로 비켜선 것에는 관심이 없다.
+        - paragraph [ref=e18]: 붉은사슴에 대해 아직 모르는 것이 있다.

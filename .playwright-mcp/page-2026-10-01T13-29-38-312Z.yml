@@ -1,0 +1,34 @@
+- main [ref=f1e3]:
+  - generic [ref=f1e429]:
+    - generic [ref=f1e431]:
+      - generic [ref=f1e432]: 2일째
+      - generic [ref=f1e433]:
+        - generic [ref=f1e434]: 체력 6/6
+        - generic [ref=f1e435]: 식량 4/6
+    - generic [ref=f1e437]:
+      - paragraph [ref=f1e438]: 빗물에 패인 사슴 길을 따라 오르니, 짓밟히지 않은 풀밭 가장자리에 버섯이 돋아 있다.
+      - paragraph [ref=f1e439]: 식량 +1
+    - figure "잿골 들녘, 잿골에서 먼 곳까지. 굵은 선이 걸어온 길이다." [ref=f1e441]:
+      - img "어느 길로 갈까" [ref=f1e442]:
+        - generic [ref=f1e459]: 잿골
+        - generic [ref=f1e472] [cursor=pointer]: 숲
+        - generic [ref=f1e475] [cursor=pointer]: 물가
+        - generic [ref=f1e488]: 도토리 골짜기
+        - generic [ref=f1e491]: 흰 사슴의 호수
+        - generic [ref=f1e494]: 늑대 바위
+    - generic [ref=f1e498]:
+      - heading "어느 길로 갈까" [level=3] [ref=f1e499]
+      - paragraph [ref=f1e500]:
+        - generic [ref=f1e501]: 내일 하늘 · 비, 맞바람
+        - generic [ref=f1e502]: 빗속에서는 냄새가 멀리 가지 못하고, 불이 붙지 않는다.
+      - list [ref=f1e503]:
+        - listitem [ref=f1e504]:
+          - button "숲 땅이 온통 뒤집혀 있다. 멧돼지가 뒹구는 진흙 골이다." [ref=f1e505] [cursor=pointer]:
+            - generic [ref=f1e506]: 숲
+            - generic [ref=f1e507]: 땅이 온통 뒤집혀 있다. 멧돼지가 뒹구는 진흙 골이다.
+        - listitem [ref=f1e508]:
+          - button "물가 하류로 흙탕물이 번져 온다. 멧돼지가 여울을 파헤치고 있다." [ref=f1e509] [cursor=pointer]:
+            - generic [ref=f1e510]: 물가
+            - generic [ref=f1e511]: 하류로 흙탕물이 번져 온다. 멧돼지가 여울을 파헤치고 있다.
+    - group [ref=f1e513]:
+      - generic "수첩" [ref=f1e514] [cursor=pointer]
