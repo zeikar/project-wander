@@ -91,8 +91,10 @@ export interface Strings {
     // After a miss, where this journey went past what was missing, named by its
     // scene's title: a road walked on `day`, or one on the way not taken at the
     // fork on `day`, or none on this map.
+    // `another`: the traveler walked the same kind of scene elsewhere, where
+    // something else was going on.
     leadTaken: (day: number, title: string) => string;
-    leadLeft: (day: number, title: string) => string;
+    leadLeft: (day: number, title: string, another: boolean) => string;
     noLead: string;
     learnedThisJourney: string;
     nothingLearned: string;
@@ -109,6 +111,8 @@ export interface Strings {
     ways: string;
     // The end-screen label over a way found on this journey.
     newWay: string;
+    // A road on offer told apart from another of the same name by where it lies.
+    onSide: (place: string, side: "left" | "middle" | "right") => string;
     // The line above a scene's title: what kind of thing this is.
     unknownAnimal: string;
     // A monster the notebook knows nothing of: nobody can yet say it is an animal at all.

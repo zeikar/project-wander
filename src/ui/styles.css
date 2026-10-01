@@ -688,12 +688,13 @@ button {
 
 /* Fog: paper-coloured haze, thickest at the edges so the middle of the page
    stays readable. */
+/* Light enough to read through: fog hides the roads, not the page. */
 .sky--fog {
   background: linear-gradient(
-    color-mix(in srgb, var(--paper) 45%, transparent),
+    color-mix(in srgb, var(--paper) 35%, transparent),
     transparent 12%,
     transparent 85%,
-    color-mix(in srgb, var(--paper) 55%, transparent)
+    color-mix(in srgb, var(--paper) 40%, transparent)
   );
 }
 
@@ -702,7 +703,7 @@ button {
   width: 70vmax;
   height: 40vmax;
   border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--paper) 55%, transparent), transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--paper) 32%, transparent), transparent);
   filter: blur(18px);
 }
 

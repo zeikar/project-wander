@@ -64,6 +64,9 @@ export function generateMap(seed: number, region: Region): WorldMap {
   // roll left none, one road becomes one that does — never the only road
   // holding another far place's key, and never a scene its day already has.
   const road = () => layers.slice(1).flat();
+  const ownScenes = scenes.filter(
+    (s) => region.places.includes(s.id) || (s.species !== undefined && region.species.includes(s.species)),
+  );
   for (const { needs } of region.destinations) {
     if (road().some((n) => teaches(n, needs))) {
       continue;
@@ -72,7 +75,7 @@ export function generateMap(seed: number, region: Region): WorldMap {
     const choices = road()
       .filter((spot) => !others.some((f) => teaches(spot, f) && road().filter((n) => teaches(n, f)).length === 1))
       .flatMap((spot) =>
-        regionScenes(region).flatMap((scene) =>
+        ownScenes.flatMap((scene) =>
           scene.variants
             .map((variant) => ({ ...spot, kind: "scene" as const, sceneId: scene.id, variant }))
             .filter(
@@ -127,12 +130,6 @@ function teaches(node: MapNode, fact: FactId): boolean {
   return (
     scene !== undefined &&
     scene.options.some((o) => o.needs === undefined && o.outcomes[node.variant!]!.learn === fact)
-  );
-}
-
-function regionScenes(region: Region): readonly Scene[] {
-  return scenes.filter(
-    (s) => region.places.includes(s.id) || (s.species !== undefined && region.species.includes(s.species)),
   );
 }
 

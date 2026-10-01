@@ -68,6 +68,7 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
   const roomy = useMedia(ROOMY);
   const tomorrow = weatherAt(state, currentNode(state)!.layer + 1);
   const region = strings.regions[state.region];
+  const roads = nextNodes(state).map((node) => ({ node, ...signOf(strings, state, node) }));
 
   const story =
     state.day === 0 ? (
@@ -97,15 +98,18 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
           <h3 className="label">{ui.whereNext}</h3>
           {tomorrow && <WeatherLine weather={tomorrow} when="tomorrow" />}
           <ol className="index">
-            {nextNodes(state).map((node) => {
-              const { place, sign, species } = signOf(strings, state, node);
+            {roads.map(({ node, place, sign, species }, i) => {
+              // Listed left to right like the map, so a shared name is told
+              // apart by where it lies.
+              const shared = roads.filter((r) => r.place === place).length > 1;
+              const side = i === 0 ? "left" : i === roads.length - 1 ? "right" : "middle";
               return (
                 <li key={node.id}>
                   <button
                     className={`row road ${species ? `informed ${spot(species)}` : ""}`}
                     onClick={() => dispatch({ type: "MOVE", nodeId: node.id })}
                   >
-                    <span className="l">{place}</span>
+                    <span className="l">{shared ? ui.onSide(place, side) : place}</span>
                     <span className="v">{sign}</span>
                   </button>
                 </li>
@@ -249,7 +253,11 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
         ? ui.noLead
         : fork === null
           ? ui.leadTaken(node.layer, scene!.title)
-          : ui.leadLeft(fork, scene!.title);
+          : ui.leadLeft(
+              fork,
+              scene!.title,
+              state.path.some((id) => nodeById(state, id)!.sceneId === node.sceneId),
+            );
       mark = node?.id;
     }
   }

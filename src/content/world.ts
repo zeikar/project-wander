@@ -1,11 +1,10 @@
 import type { Destination, Region, RegionId } from "./types";
 
-// Sanity-swept over 2000 seeds (2026-10-01): a careful player who knows
-// nothing — random roads, guesses weighed by their average outcome — dies on
-// about 17% of first journeys in the fields (20% before the weather and the
-// repricing); one who knows everything almost never does. At 5 hp / 3 food
-// the first figure was 42%. Once every day was a choice of two roads and every
-// map held each far place's key, 600 seeds put it at 20%: more stops to study.
+// Sanity-swept (2026-10-01, 600 seeds): a careful player who knows nothing —
+// random roads, guesses weighed by their average outcome — dies on about 20%
+// of first journeys in the fields; one who knows everything almost never does.
+// It was 17% before every map held each far place's key (more stops to
+// study), and 42% at 5 hp / 3 food.
 export const START_HP = 6;
 export const MAX_HP = 6;
 export const START_FOOD = 4;
