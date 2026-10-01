@@ -3,6 +3,8 @@ dist
 coverage
 .DS_Store
 *.local
+# browser-tool screenshots and snapshots
+.playwright-mcp/
 
 # hyperclaude working artifacts (plans, reviews, research)
 .hyperclaude/
