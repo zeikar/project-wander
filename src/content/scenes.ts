@@ -436,6 +436,24 @@ export const scenes: readonly Scene[] = [
       { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
     ],
   },
+  {
+    id: "reed-hut",
+    kind: "place",
+    variants: ONE,
+    options: [
+      { id: "sleep", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "sunken-boat",
+    kind: "place",
+    variants: ONE,
+    options: [
+      { id: "search", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
 ];
 
 export function findScene(id: string): Scene | undefined {

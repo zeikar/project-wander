@@ -81,6 +81,19 @@ describe("START", () => {
   it("opens only the first region on a fresh notebook", () => {
     expect(createInitialState().open).toEqual([FIRST_REGION]);
   });
+
+  it("sets out from the ferry only once the notebook has the way there", () => {
+    const open = createInitialState([], ["fields", "marsh"]);
+    const state = reduce(open, { type: "START", seed: 7, region: "marsh" });
+    expect(state.region).toBe("marsh");
+    expect(state.map!.layers.at(-1)!.map((n) => n.destinationId).sort()).toEqual([
+      "heron-island",
+      "lantern-shoal",
+      "otter-weir",
+    ]);
+    const closed = createInitialState([], ["fields"]);
+    expect(reduce(closed, { type: "START", seed: 7, region: "marsh" })).toBe(closed);
+  });
 });
 
 describe("MOVE", () => {
@@ -111,7 +124,53 @@ describe("MOVE", () => {
     const missed = reduce(before, { type: "MOVE", nodeId: "2-0" });
     expect(missed.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: false, opened: null });
     const saw = reduce({ ...before, known: ["deer.dawn"] }, { type: "MOVE", nodeId: "2-0" });
-    expect(saw.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: true, opened: null });
+    expect(saw.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: true, opened: "marsh" });
+  });
+
+  it("opens the way to the marsh only by seeing the white stag", () => {
+    const before = atScene("ford-boar", "rooting", { phase: "map" });
+    const saw = reduce({ ...before, known: ["deer.dawn"] }, { type: "MOVE", nodeId: "2-0" });
+    expect(saw.ending).toMatchObject({ saw: true, opened: "marsh" });
+    expect(saw.open).toEqual(["fields", "marsh"]);
+    const missed = reduce(before, { type: "MOVE", nodeId: "2-0" });
+    expect(missed.ending).toMatchObject({ saw: false, opened: null });
+    expect(missed.open).toEqual(["fields"]);
+  });
+
+  it("opens nothing at a far place that is not the gate, or by a way already known", () => {
+    const rock = atScene("ford-boar", "rooting", {
+      phase: "map",
+      known: ["wolves.chase"],
+      map: roadThrough("ford-boar", "rooting", "wolf-rock"),
+    });
+    const atRock = reduce(rock, { type: "MOVE", nodeId: "2-0" });
+    expect(atRock.ending).toEqual({ kind: "arrived", destinationId: "wolf-rock", saw: true, opened: null });
+    expect(atRock.open).toEqual(["fields"]);
+
+    const again = atScene("ford-boar", "rooting", {
+      phase: "map",
+      known: ["deer.dawn"],
+      open: ["fields", "marsh"],
+    });
+    const atLake = reduce(again, { type: "MOVE", nodeId: "2-0" });
+    expect(atLake.ending).toMatchObject({ saw: true, opened: null });
+    expect(atLake.open).toEqual(["fields", "marsh"]);
+  });
+
+  // The far place is looked up in the region the journey crosses, not the first.
+  it("arrives at a marsh far place on a marsh journey", () => {
+    const marsh = atScene("heron-shallows", "near", {
+      phase: "map",
+      region: "marsh",
+      known: ["heron.wade"],
+      map: roadThrough("heron-shallows", "near", "heron-island"),
+    });
+    expect(reduce(marsh, { type: "MOVE", nodeId: "2-0" }).ending).toEqual({
+      kind: "arrived",
+      destinationId: "heron-island",
+      saw: true,
+      opened: null,
+    });
   });
 });
 
@@ -140,8 +199,8 @@ describe("CHOOSE", () => {
   });
 
   it("keeps the open ways across the next START", () => {
-    const ended = { ...atScene("ford-boar", "alert"), phase: "end" as const, open: ["fields" as const] };
-    expect(reduce(ended, { type: "START", seed: 3, region: "fields" }).open).toEqual(["fields"]);
+    const ended = { ...atScene("ford-boar", "alert"), phase: "end" as const, open: ["fields", "marsh"] as const };
+    expect(reduce(ended, { type: "START", seed: 3, region: "fields" }).open).toEqual(["fields", "marsh"]);
   });
 
   it("clamps health at the pool you set out with", () => {

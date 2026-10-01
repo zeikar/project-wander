@@ -29,6 +29,20 @@ export const regions: readonly Region[] = [
     ],
     // How often each sky comes. Wind is even odds.
     skyOdds: { rain: 0.2, fog: 0.2 }, // rest: clear
+    // The stag leaves along the lake's far shore: seeing it is what shows the way past the lake.
+    gate: { destinationId: "white-stag-lake", to: "marsh" },
+  },
+  {
+    id: "marsh",
+    species: ["heron", "otter", "lantern"],
+    places: ["reed-hut", "sunken-boat"],
+    destinations: [
+      { id: "heron-island", needs: "heron.wade" },
+      { id: "otter-weir", needs: "otter.cache" },
+      { id: "lantern-shoal", needs: "lantern.dawn" },
+    ],
+    // Fog is the marsh's weather; rain keeps the fields' odds.
+    skyOdds: { rain: 0.2, fog: 0.4 },
   },
 ];
 

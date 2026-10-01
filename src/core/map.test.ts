@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { findScene } from "../content/scenes";
-import { ROAD_DAYS, regions } from "../content/world";
+import type { RegionId } from "../content/types";
+import { ROAD_DAYS, regionById, regions } from "../content/world";
 import { generateMap } from "./map";
 
 const SEEDS = Array.from({ length: 300 }, (_, i) => i * 7919 + 1);
@@ -99,4 +100,14 @@ describe.each(regions)("generateMap in $id", (region) => {
     const fog = days.filter((w) => w.sky === "fog").length / days.length;
     expect(Math.abs(fog - region.skyOdds.fog)).toBeLessThan(0.08);
   });
+});
+
+// Fog is the marsh's weather. Checked across regions rather than against a
+// constant, so it holds whatever odds a sweep settles on.
+it("brings fog to the marsh more often than to the fields", () => {
+  const fogShare = (id: RegionId) => {
+    const days = SEEDS.flatMap((s) => generateMap(s, regionById(id)).weather);
+    return days.filter((w) => w.sky === "fog").length / days.length;
+  };
+  expect(fogShare("marsh")).toBeGreaterThan(fogShare("fields"));
 });

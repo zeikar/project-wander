@@ -78,7 +78,7 @@ export interface Destination {
   needs: FactId;
 }
 
-export type RegionId = "fields";
+export type RegionId = "fields" | "marsh";
 
 // A stretch of country a journey crosses. `gate`: a region opens through exactly
 // one sight; arriving at that destination and seeing it writes `to` into the notebook.
