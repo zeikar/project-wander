@@ -113,10 +113,16 @@ export const scenes: readonly Scene[] = [
           passing: { hp: 0, food: -1, learn: "wolves.chase" },
         },
       },
+      // Knowing what wolves do makes this safe, not free: backing out the way
+      // you came costs the day. What it buys over the fire is that rain cannot
+      // close it. Was 0 in every variant, which let knowledge settle the scene.
       {
         id: "back-away",
         needs: "wolves.chase",
-        outcomes: always(PINES, { hp: 0, food: 0 }),
+        outcomes: {
+          stalking: { hp: 0, food: -1 },
+          passing: { hp: 0, food: 0 },
+        },
       },
     ],
   },
@@ -145,7 +151,7 @@ export const scenes: readonly Scene[] = [
         id: "wait-for-scraps",
         needs: "wolves.rank",
         outcomes: {
-          full: { hp: 0, food: 2 },
+          full: { hp: 0, food: 1 },
           hungry: { hp: -1, food: 1 },
         },
       },
@@ -174,10 +180,15 @@ export const scenes: readonly Scene[] = [
         study: true,
         outcomes: always(RUT, { hp: 0, food: -1, learn: "deer.drive" }),
       },
+      // Was free in every variant. Uphill is where he will not follow, not an
+      // easy road.
       {
         id: "step-uphill",
         needs: "deer.drive",
-        outcomes: always(RUT, { hp: 0, food: 0 }),
+        outcomes: {
+          holding: { hp: -1, food: 0 },
+          grazing: { hp: 0, food: 0 },
+        },
       },
     ],
   },
@@ -200,10 +211,10 @@ export const scenes: readonly Scene[] = [
         id: "follow-trail",
         needs: "deer.dawn",
         outcomes: {
-          downwind: { hp: 0, food: 2 },
+          downwind: { hp: 0, food: 1 },
           upwind: { hp: 0, food: 0 },
           // Rain buries scent, so the deer come down whatever the wind.
-          rain: { hp: 0, food: 2 },
+          rain: { hp: 0, food: 1 },
         },
       },
     ],
