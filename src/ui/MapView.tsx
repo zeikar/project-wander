@@ -84,7 +84,7 @@ export function MapView({
             )}
             {node.kind === "start" && (
               <text className="label" y={22} textAnchor="middle">
-                {strings.village.name}
+                {strings.regions[state.region].village.name}
               </text>
             )}
             {sign && node.kind !== "destination" && (

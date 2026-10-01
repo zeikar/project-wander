@@ -6,7 +6,7 @@ import {
   MAX_HP,
   START_FOOD,
   START_HP,
-  destinations,
+  regionById,
 } from "../content/world";
 import { generateMap } from "./map";
 import type { MapNode } from "./map";
@@ -92,6 +92,22 @@ export function preview(
   return null;
 }
 
+// Whether choosing a study option is certain to teach something new, as far as
+// the traveler can tell: the lesson of the actual variant if the scene reads,
+// else every variant's. A promise of a new entry must hold in every case that
+// looks the same from where they stand.
+export function teachesForSure(state: GameState, option: SceneOption): boolean {
+  const scene = currentScene(state);
+  const variant = currentNode(state)?.variant;
+  if (!option.study || !scene || variant === undefined) {
+    return false;
+  }
+  const lessons = canRead(state, scene)
+    ? [option.outcomes[variant]!.learn]
+    : Object.values(option.outcomes).map((o) => o.learn);
+  return lessons.every((l) => l !== undefined && !state.known.includes(l));
+}
+
 // The weather over a layer's day; layer defaults to where the traveler is.
 export function weatherAt(state: GameState, layer?: number): Weather | undefined {
   const at = layer ?? currentNode(state)?.layer;
@@ -117,12 +133,16 @@ export function reduce(state: GameState, action: GameAction): GameState {
       if (state.phase !== "title" && state.phase !== "end") {
         return state;
       }
-      const map = generateMap(action.seed);
+      if (!state.open.includes(action.region)) {
+        return state;
+      }
+      const map = generateMap(action.seed, regionById(action.region));
       const start = map.layers[0]![0]!;
       return {
         ...state,
         phase: "map",
         seed: action.seed >>> 0,
+        region: action.region,
         map,
         at: start.id,
         day: 0,
@@ -167,17 +187,20 @@ export function reduce(state: GameState, action: GameAction): GameState {
         };
       }
       if (node.kind === "destination") {
-        const destination = destinations.find(
+        const region = regionById(state.region);
+        const destination = region.destinations.find(
           (d) => d.id === node.destinationId,
         )!;
+        const saw = walked.known.includes(destination.needs);
+        // Only the first sight finds the way; the second visit finds nothing
+        // new, so the end screen says so once.
+        const to = region.gate?.destinationId === destination.id ? region.gate.to : null;
+        const opened = saw && to !== null && !state.open.includes(to) ? to : null;
         return {
           ...walked,
           phase: "end",
-          ending: {
-            kind: "arrived",
-            destinationId: destination.id,
-            saw: walked.known.includes(destination.needs),
-          },
+          open: opened ? [...state.open, opened] : state.open,
+          ending: { kind: "arrived", destinationId: destination.id, saw, opened },
         };
       }
       if (node.kind === "quiet") {

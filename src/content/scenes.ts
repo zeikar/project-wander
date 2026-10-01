@@ -15,6 +15,11 @@ const PINES = ["stalking", "passing"] as const;
 const KILL = ["full", "hungry"] as const;
 const RUT = ["holding", "grazing"] as const;
 const WATER = ["downwind", "upwind", "rain"] as const;
+const SHALLOWS = ["near", "aside"] as const;
+const REEDS = ["settled", "lifting"] as const;
+const BANK = ["cached", "holed"] as const;
+const CAMP = ["visited", "clean"] as const;
+const LIGHT = ["night", "dawn"] as const;
 const ONE = ["only"] as const;
 
 export const scenes: readonly Scene[] = [
@@ -220,6 +225,182 @@ export const scenes: readonly Scene[] = [
     ],
   },
 
+  // --- heron ----------------------------------------------------------------
+  {
+    id: "heron-shallows",
+    kind: "animal",
+    species: "heron",
+    variants: SHALLOWS,
+    reads: "heron.wade",
+    options: [
+      {
+        id: "wade",
+        outcomes: {
+          near: { hp: 0, food: 0 },
+          aside: { hp: -2, food: 0, learn: "heron.wade" },
+        },
+      },
+      { id: "wait", outcomes: always(SHALLOWS, { hp: -1, food: 0 }) },
+      // The marsh's one option the fog closes: the willows on the far bank are
+      // what you steer by.
+      {
+        id: "pole-around",
+        closedIn: ["fog"],
+        outcomes: always(SHALLOWS, { hp: 0, food: -1 }),
+      },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(SHALLOWS, { hp: 0, food: -1, learn: "heron.wade" }),
+      },
+      // Costs hp in `aside`: the heron's line is long and cold, so knowing where
+      // the shallows are does not waive the crossing.
+      {
+        id: "heron-line",
+        needs: "heron.wade",
+        outcomes: {
+          near: { hp: 0, food: 1 },
+          aside: { hp: -1, food: 1 },
+        },
+      },
+    ],
+  },
+  {
+    id: "heron-reeds",
+    kind: "animal",
+    species: "heron",
+    variants: REEDS,
+    reads: "heron.lift",
+    options: [
+      {
+        id: "push-through",
+        outcomes: {
+          settled: { hp: 0, food: 0 },
+          lifting: { hp: -2, food: 0, learn: "heron.lift" },
+        },
+      },
+      { id: "wait", outcomes: always(REEDS, { hp: -1, food: 0 }) },
+      { id: "skirt", outcomes: always(REEDS, { hp: 0, food: -1 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(REEDS, { hp: 0, food: -1, learn: "heron.lift" }),
+      },
+      {
+        id: "dig-roots",
+        needs: "heron.lift",
+        outcomes: {
+          settled: { hp: 0, food: 1 },
+          lifting: { hp: -1, food: 1 },
+        },
+      },
+    ],
+  },
+
+  // --- otter ----------------------------------------------------------------
+  {
+    id: "otter-bank",
+    kind: "animal",
+    species: "otter",
+    variants: BANK,
+    reads: "otter.cache",
+    options: [
+      {
+        id: "reach-under",
+        outcomes: {
+          cached: { hp: -1, food: 2 },
+          holed: { hp: -2, food: 1, learn: "otter.cache" },
+        },
+      },
+      { id: "pass", outcomes: always(BANK, { hp: 0, food: 0 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(BANK, { hp: 0, food: -1, learn: "otter.cache" }),
+      },
+      // With the otter at home it costs a cold wait in the reeds for it to go.
+      {
+        id: "take-one",
+        needs: "otter.cache",
+        outcomes: {
+          cached: { hp: 0, food: 1 },
+          holed: { hp: -1, food: 1 },
+        },
+      },
+    ],
+  },
+  {
+    id: "otter-camp",
+    kind: "animal",
+    species: "otter",
+    variants: CAMP,
+    reads: "otter.raid",
+    options: [
+      {
+        id: "sleep",
+        outcomes: {
+          visited: { hp: 1, food: -2, learn: "otter.raid" },
+          clean: { hp: 1, food: 0 },
+        },
+      },
+      { id: "push-on", outcomes: always(CAMP, { hp: -1, food: 0 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(CAMP, { hp: 0, food: -1, learn: "otter.raid" }),
+      },
+      // A pillow keeps most of the pack, not all of it: they still get a meal.
+      {
+        id: "pack-pillow",
+        needs: "otter.raid",
+        outcomes: {
+          visited: { hp: 1, food: -1 },
+          clean: { hp: 1, food: 0 },
+        },
+      },
+    ],
+  },
+
+  // --- lantern --------------------------------------------------------------
+  {
+    id: "lantern-light",
+    kind: "monster",
+    species: "lantern",
+    variants: LIGHT,
+    reads: "lantern.drift",
+    options: [
+      {
+        id: "follow",
+        outcomes: {
+          night: { hp: -3, food: 0, learn: "lantern.drift" },
+          dawn: { hp: 0, food: 0 },
+        },
+      },
+      { id: "call-out", outcomes: always(LIGHT, { hp: -1, food: 0 }) },
+      { id: "keep-to-causeway", outcomes: always(LIGHT, { hp: 0, food: -1 }) },
+      // Two lessons, one per variant, as at the wallow: where the light settles
+      // can only be seen at dawn. The menu must not give away which is on offer.
+      {
+        id: "watch",
+        study: true,
+        outcomes: {
+          night: { hp: 0, food: -1, learn: "lantern.drift" },
+          dawn: { hp: 0, food: -1, learn: "lantern.dawn" },
+        },
+      },
+      // Knowing turns the danger into a guide, and it is still a trade: at
+      // night the light has to be waited out in the cold before it settles.
+      {
+        id: "dawn-ground",
+        needs: "lantern.dawn",
+        outcomes: {
+          night: { hp: -1, food: 1 },
+          dawn: { hp: 0, food: 1 },
+        },
+      },
+    ],
+  },
+
   // --- places ---------------------------------------------------------------
   {
     id: "old-camp",
@@ -252,6 +433,24 @@ export const scenes: readonly Scene[] = [
         study: true,
         outcomes: always(ONE, { hp: 0, food: 0, learn: "wolves.rank" }),
       },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "reed-hut",
+    kind: "place",
+    variants: ONE,
+    options: [
+      { id: "sleep", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "sunken-boat",
+    kind: "place",
+    variants: ONE,
+    options: [
+      { id: "search", outcomes: always(ONE, { hp: -1, food: 2 }) },
       { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
     ],
   },

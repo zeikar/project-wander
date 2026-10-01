@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scenes } from "../content/scenes";
 import type { FactId, Sky } from "../content/types";
-import { MAX_HP, START_FOOD, START_HP } from "../content/world";
+import { FIRST_REGION, MAX_HP, START_FOOD, START_HP } from "../content/world";
 import type { MapNode, WorldMap } from "./map";
 import {
   canAfford,
@@ -12,9 +12,10 @@ import {
   offeredOptions,
   preview,
   reduce,
+  teachesForSure,
 } from "./reducer";
 import { createInitialState } from "./state";
-import type { GameState } from "./state";
+import type { GameAction, GameState } from "./state";
 
 // A hand-made road: village -> one scene -> one destination, so each rule can
 // be put in front of exactly the scene it is about.
@@ -58,7 +59,7 @@ const ids = (state: GameState) => offeredOptions(state).map((o) => o.id);
 describe("START", () => {
   it("sets out from the village with a fresh pack and the old notebook", () => {
     const known: FactId[] = ["boar.nose"];
-    const state = reduce(createInitialState(known), { type: "START", seed: 7 });
+    const state = reduce(createInitialState(known), { type: "START", seed: 7, region: "fields" });
     expect(state.phase).toBe("map");
     expect(state.at).toBe("0-0");
     expect(state.hp).toBe(START_HP);
@@ -69,7 +70,30 @@ describe("START", () => {
 
   it("is ignored in the middle of a journey", () => {
     const state = atScene("ford-boar", "rooting");
-    expect(reduce(state, { type: "START", seed: 1 })).toBe(state);
+    expect(reduce(state, { type: "START", seed: 1, region: "fields" })).toBe(state);
+  });
+
+  it("ignores a region the notebook has no way to", () => {
+    const title = createInitialState();
+    const unknown = { type: "START", seed: 1, region: "nowhere" } as unknown as GameAction;
+    expect(reduce(title, unknown)).toBe(title);
+  });
+
+  it("opens only the first region on a fresh notebook", () => {
+    expect(createInitialState().open).toEqual([FIRST_REGION]);
+  });
+
+  it("sets out from the ferry only once the notebook has the way there", () => {
+    const open = createInitialState([], ["fields", "marsh"]);
+    const state = reduce(open, { type: "START", seed: 7, region: "marsh" });
+    expect(state.region).toBe("marsh");
+    expect(state.map!.layers.at(-1)!.map((n) => n.destinationId).sort()).toEqual([
+      "heron-island",
+      "lantern-shoal",
+      "otter-weir",
+    ]);
+    const closed = createInitialState([], ["fields"]);
+    expect(reduce(closed, { type: "START", seed: 7, region: "marsh" })).toBe(closed);
   });
 });
 
@@ -99,9 +123,55 @@ describe("MOVE", () => {
   it("sees the destination's sight only with the fact it needs", () => {
     const before = atScene("ford-boar", "rooting", { phase: "map" });
     const missed = reduce(before, { type: "MOVE", nodeId: "2-0" });
-    expect(missed.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: false });
+    expect(missed.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: false, opened: null });
     const saw = reduce({ ...before, known: ["deer.dawn"] }, { type: "MOVE", nodeId: "2-0" });
-    expect(saw.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: true });
+    expect(saw.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: true, opened: "marsh" });
+  });
+
+  it("opens the way to the marsh only by seeing the white stag", () => {
+    const before = atScene("ford-boar", "rooting", { phase: "map" });
+    const saw = reduce({ ...before, known: ["deer.dawn"] }, { type: "MOVE", nodeId: "2-0" });
+    expect(saw.ending).toMatchObject({ saw: true, opened: "marsh" });
+    expect(saw.open).toEqual(["fields", "marsh"]);
+    const missed = reduce(before, { type: "MOVE", nodeId: "2-0" });
+    expect(missed.ending).toMatchObject({ saw: false, opened: null });
+    expect(missed.open).toEqual(["fields"]);
+  });
+
+  it("opens nothing at a far place that is not the gate, or by a way already known", () => {
+    const rock = atScene("ford-boar", "rooting", {
+      phase: "map",
+      known: ["wolves.chase"],
+      map: roadThrough("ford-boar", "rooting", "wolf-rock"),
+    });
+    const atRock = reduce(rock, { type: "MOVE", nodeId: "2-0" });
+    expect(atRock.ending).toEqual({ kind: "arrived", destinationId: "wolf-rock", saw: true, opened: null });
+    expect(atRock.open).toEqual(["fields"]);
+
+    const again = atScene("ford-boar", "rooting", {
+      phase: "map",
+      known: ["deer.dawn"],
+      open: ["fields", "marsh"],
+    });
+    const atLake = reduce(again, { type: "MOVE", nodeId: "2-0" });
+    expect(atLake.ending).toMatchObject({ saw: true, opened: null });
+    expect(atLake.open).toEqual(["fields", "marsh"]);
+  });
+
+  // The far place is looked up in the region the journey crosses, not the first.
+  it("arrives at a marsh far place on a marsh journey", () => {
+    const marsh = atScene("heron-shallows", "near", {
+      phase: "map",
+      region: "marsh",
+      known: ["heron.wade"],
+      map: roadThrough("heron-shallows", "near", "heron-island"),
+    });
+    expect(reduce(marsh, { type: "MOVE", nodeId: "2-0" }).ending).toEqual({
+      kind: "arrived",
+      destinationId: "heron-island",
+      saw: true,
+      opened: null,
+    });
   });
 });
 
@@ -124,9 +194,14 @@ describe("CHOOSE", () => {
   it("keeps the notebook across the next START", () => {
     const learned = reduce(atScene("ford-boar", "alert"), { type: "CHOOSE", optionId: "watch" });
     const ended = { ...learned, phase: "end" as const };
-    const again = reduce(ended, { type: "START", seed: 3 });
+    const again = reduce(ended, { type: "START", seed: 3, region: "fields" });
     expect(again.known).toEqual(["boar.nose"]);
     expect(again.learnedThisJourney).toEqual([]);
+  });
+
+  it("keeps the open ways across the next START", () => {
+    const ended = { ...atScene("ford-boar", "alert"), phase: "end" as const, open: ["fields", "marsh"] as const };
+    expect(reduce(ended, { type: "START", seed: 3, region: "fields" }).open).toEqual(["fields", "marsh"]);
   });
 
   it("clamps health at the pool you set out with", () => {
@@ -179,6 +254,43 @@ describe("what knowing changes", () => {
     const knowsSow = { known: ["boar.sow"] as FactId[] };
     expect(ids(atScene("wallow-boar", "sleeping", knowsSow))).toContain("watch");
     expect(ids(atScene("wallow-boar", "sow", knowsSow))).not.toContain("watch");
+  });
+
+  // The lantern's watch teaches a different fact at night and at dawn, and the
+  // fact that unlocks its guide is not the one that reads it.
+  it("does not let the lantern's menu give away night from dawn", () => {
+    const knowsDawn = { known: ["lantern.dawn"] as FactId[] };
+    expect(ids(atScene("lantern-light", "night", knowsDawn))).toEqual(
+      ids(atScene("lantern-light", "dawn", knowsDawn)),
+    );
+    expect(ids(atScene("lantern-light", "night", knowsDawn))).toContain("watch");
+    const knowsDrift = { known: ["lantern.drift"] as FactId[] };
+    expect(ids(atScene("lantern-light", "dawn", knowsDrift))).toContain("watch");
+    expect(ids(atScene("lantern-light", "night", knowsDrift))).not.toContain("watch");
+  });
+
+  // The hint may promise a new notebook entry only when every case that looks
+  // the same from where the traveler stands teaches one.
+  it("promises a lesson only when no look-alike case teaches nothing new", () => {
+    const sure = (id: string, variant: string, scene: string, known: FactId[]) => {
+      const state = atScene(scene, variant, { known });
+      const option = currentScene(state)!.options.find((o) => o.id === id)!;
+      return teachesForSure(state, option);
+    };
+    expect(sure("watch", "night", "lantern-light", [])).toBe(true);
+    expect(sure("watch", "dawn", "lantern-light", [])).toBe(true);
+    expect(sure("watch", "night", "lantern-light", ["lantern.dawn"])).toBe(false);
+    expect(sure("watch", "dawn", "lantern-light", ["lantern.dawn"])).toBe(false);
+    expect(sure("watch", "sleeping", "wallow-boar", ["boar.nose"])).toBe(false);
+    expect(sure("watch", "sow", "wallow-boar", ["boar.nose"])).toBe(false);
+  });
+
+  it("shows what following the lantern costs only to one who knows it is not carried", () => {
+    const blind = atScene("lantern-light", "night");
+    const follow = currentScene(blind)!.options.find((o) => o.id === "follow")!;
+    expect(preview(blind, follow)).toBeNull();
+    const reading = { ...blind, known: ["lantern.drift"] as FactId[] };
+    expect(preview(reading, follow)).toEqual(follow.outcomes.night);
   });
 
   // An empty pack must never leave only a gamble — under any sky.

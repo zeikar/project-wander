@@ -2,7 +2,7 @@
 // every word a player reads lives in a locale bundle under `src/i18n/`, keyed
 // by the same ids, so adding a language never touches this folder.
 
-export type SpeciesId = "boar" | "wolves" | "deer";
+export type SpeciesId = "boar" | "wolves" | "deer" | "heron" | "otter" | "lantern";
 
 export type FactId =
   | "boar.nose"
@@ -10,7 +10,13 @@ export type FactId =
   | "wolves.rank"
   | "wolves.chase"
   | "deer.drive"
-  | "deer.dawn";
+  | "deer.dawn"
+  | "heron.wade"
+  | "heron.lift"
+  | "otter.cache"
+  | "otter.raid"
+  | "lantern.drift"
+  | "lantern.dawn";
 
 // The sky over one day of road, and which way the wind blows along it.
 export type Sky = "clear" | "rain" | "fog";
@@ -49,7 +55,9 @@ export interface SceneOption {
 
 export interface Scene {
   id: string;
-  kind: "animal" | "place";
+  // A monster is a scene where ordinary sense is wrong and the tell says which
+  // guess is unsafe — never an animal with bigger numbers.
+  kind: "animal" | "place" | "monster";
   species?: SpeciesId;
   // What can be going on in this scene. One is rolled per map node; the
   // description shows a tell, and `reads` is the fact that lets you read it.
@@ -68,4 +76,17 @@ export interface Scene {
 export interface Destination {
   id: string;
   needs: FactId;
+}
+
+export type RegionId = "fields" | "marsh";
+
+// A stretch of country a journey crosses. `gate`: a region opens through exactly
+// one sight; arriving at that destination and seeing it writes `to` into the notebook.
+export interface Region {
+  id: RegionId;
+  species: readonly SpeciesId[];
+  places: readonly string[];
+  destinations: readonly Destination[];
+  skyOdds: { rain: number; fog: number };
+  gate?: { destinationId: string; to: RegionId };
 }

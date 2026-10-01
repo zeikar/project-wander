@@ -18,7 +18,7 @@ When a journey ends, the player should want to set out again — **not because s
 
 ## One journey
 
-1. In the village you hear a few rumours. Each one is a place at the far edge of the map.
+1. You set out from a village you know, and hear a few rumours there. Each one is a place at the far edge of the map.
 2. The region is a map made fresh from a seed. Every day you choose the next road. From a day away you can see only a **sign** — tracks, smoke, a silence.
 3. Where the road takes you, something is going on: an animal, a place, a sky. You read it and choose.
    Every day has a sky and a wind, and tomorrow's is shown over the map. The wind carries your scent ahead or behind; rain keeps it from carrying and puts out fires; fog hides what is on the roads but not their names. An animal you know plus a wind you can read is a day you can see coming.
@@ -35,6 +35,28 @@ Knowledge works as a lens, in three ways:
 - **New answers** appear that only someone who knows would think of.
 
 And the far places themselves: arriving is not the same as seeing. The white stag comes to the lake at dawn, from one side, and only the traveler who knows how deer come to water will see it. The rumour is the locked door; knowledge is the key; and the journey that missed it tells you what kind of thing you were missing.
+
+## Regions
+
+The world is a chain of regions. Each has its own village, its own animals and places, its own far places, and its own weather.
+
+A region opens through one sight. Arrive at that far place and see it, and you find the way onward. The way is something you know, so it is written in the notebook and kept like a fact.
+
+A journey starts from any village you know. The first region stays playable.
+
+## Animals and monsters
+
+An animal is something you can guess at and be right. Knowing it shows what things cost and adds a way through.
+
+A monster is where ordinary sense is wrong. The creature tells you which guess is unsafe before it costs anything; the warning is there even before you know how to read it. Knowing turns the warning into a resource, and it is still a trade. A monster is never an animal with bigger numbers.
+
+## The marsh
+
+Past the lake where the white stag drinks, a ferry landing opens onto the marsh. Fog is its weather, and it hides the roads more often than in the fields.
+
+A grey heron stands where the water is knee-deep. Otters keep fish under the banks and raid a pack left down at night. The marsh lantern is a light that looks carried and is not: followed at night it leads into deep water, and at dawn it settles only on firm ground.
+
+What lies beyond is only glimpsed — low hills past the lantern shoal, at dawn. No way leads there yet.
 
 ---
 
@@ -60,7 +82,7 @@ A two-colour field guide: black ink on uncoated paper, and one spot colour per a
 
 ## Open questions
 
-- **Should the far places be villages?** v0 imagined a chain of villages with the destination as one more town; v1 made them sights you have to know how to see. Nothing built yet depends on the answer — a destination is just a node.
+- **Should the far places hold people?** Partly settled by regions: each region now begins at a village, and a region's gate is a sight, not a town. What stays open is whether a far place should ever be somewhere with people in it — a village to arrive at, not only a thing to see.
 
 ---
 

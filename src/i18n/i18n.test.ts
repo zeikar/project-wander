@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scenes } from "../content/scenes";
 import { allFacts, species } from "../content/species";
-import { destinations } from "../content/world";
+import { destinations, regions } from "../content/world";
 import { detectLocale, locales, resultText } from ".";
 
 // Every registered locale, checked against the game data itself — so a new
@@ -16,7 +16,7 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       for (const field of [text.place, text.sign, text.title, text.description]) {
         expect(field, scene.id).not.toBe("");
       }
-      if (scene.kind === "animal") {
+      if (scene.kind !== "place") {
         expect(text.signKnown, scene.id).toBeTruthy();
       }
 
@@ -25,7 +25,7 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       );
       for (const variant of scene.variants) {
         const v = text.variants[variant]!;
-        if (scene.kind === "animal") {
+        if (scene.kind !== "place") {
           expect(v.tell, `${scene.id}/${variant}`).toBeTruthy();
         }
         if (scene.reads !== undefined) {
@@ -72,7 +72,20 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
         expect(field, d.id).toBeTruthy();
       }
     }
-    expect(strings.quiet.lines.length).toBeGreaterThan(0);
+  });
+
+  it("has a name, a village and quiet days for every region, and a way to each one a gate opens", () => {
+    const gated = regions.flatMap((r) => (r.gate ? [r.gate.to] : []));
+    for (const r of regions) {
+      const text = strings.regions[r.id];
+      for (const field of [text.name, text.village.name, text.village.description, text.quiet.place, text.quiet.sign]) {
+        expect(field, r.id).toBeTruthy();
+      }
+      expect(text.quiet.lines.length, r.id).toBeGreaterThan(0);
+      if (gated.includes(r.id)) {
+        expect(text.way, r.id).toBeTruthy();
+      }
+    }
   });
 });
 
