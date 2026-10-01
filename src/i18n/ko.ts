@@ -1,6 +1,5 @@
 import type { Strings } from "./types";
 
-const dayName = (n: number) => (n === 0 ? "떠나는 날" : `${n}일째`);
 const ORDINALS = ["첫", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열"];
 const ordinal = (n: number) => (n <= ORDINALS.length ? `${ORDINALS[n - 1]} 번째` : `${n}번째`);
 
@@ -12,7 +11,7 @@ export const ko: Strings = {
     premise: "세상이 생각보다 넓다는 이유 하나로, 고향을 떠난다.",
     setOut: "길을 떠난다",
     setOutAgain: "다시 길을 떠난다",
-    day: dayName,
+    day: (n) => (n === 0 ? "떠나는 날" : `${n}일째`),
     hp: "체력",
     food: "식량",
     whereNext: "어느 길로 갈까",
@@ -41,12 +40,6 @@ export const ko: Strings = {
     },
     daysWalked: (n) => `${n}일을 걸었다.`,
     nthVisit: (n) => `이곳에 온 것은 ${ordinal(n)}다.`,
-    leadTaken: (day, title) => `그건 ${dayName(day)} 지나온 ‘${title}’에서 알 수 있었다.`,
-    leadUnfed: (day, title) =>
-      `그건 ${dayName(day)} 지나온 ‘${title}’에서 알 수 있었다. 그때는 식량이 모자랐다.`,
-    leadLeft: (day, title, another) =>
-      `그건 ${dayName(day)} 갈림길에서 가지 않은 길 위, ${another ? "다른 " : ""}‘${title}’에서 알 수 있었다.`,
-    noLead: "이번 길에서는 그걸 알 기회가 없었다.",
     learnedThisJourney: "이번 길에 알게 된 것",
     nothingLearned: "이번 길에는 수첩에 적은 것이 없다.",
     theRoadBehind: "지나온 길",

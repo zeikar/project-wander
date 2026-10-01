@@ -217,7 +217,7 @@ export function signOf(
   strings: Strings,
   state: GameState,
   node: MapNode,
-): { place: string; sign: string; species?: SpeciesId } {
+): { place: string; sign: string } {
   if (node.kind === "destination") {
     const d = strings.destinations[node.destinationId!]!;
     return { place: d.name, sign: d.rumor };
@@ -230,11 +230,9 @@ export function signOf(
     if (fog) {
       return { place: text.place, sign: strings.weather.fogSign };
     }
-    const known = knowsSpeciesOf(state, scene);
     return {
       place: text.place,
-      sign: known && text.signKnown ? text.signKnown : text.sign,
-      species: known ? scene.species : undefined,
+      sign: knowsSpeciesOf(state, scene) && text.signKnown ? text.signKnown : text.sign,
     };
   }
   const quiet = strings.regions[state.region].quiet;

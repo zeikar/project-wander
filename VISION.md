@@ -34,7 +34,7 @@ Knowledge works as a lens, in three ways:
 - **Tells** in a scene — a boar with its nose down, wolves matching your pace — read as what they mean, and an option you could only guess at shows what it will cost.
 - **New answers** appear that only someone who knows would think of.
 
-And the far places themselves: arriving is not the same as seeing. Every map holds, somewhere, a road where each far place's key can be learned. The white stag comes to the lake at dawn, from one side, and only the traveler who knows how deer come to water will see it. The rumour is the locked door; knowledge is the key; and the journey that missed it tells you what kind of thing you were missing, and where on this map it was — a road you walked past, or one you turned from at a fork, ringed on the map.
+And the far places themselves: arriving is not the same as seeing. Every map holds, somewhere, a road where each far place's key can be learned. The white stag comes to the lake at dawn, from one side, and only the traveler who knows how deer come to water will see it. The rumour is the locked door; knowledge is the key; and the journey that missed it tells you what kind of thing you were missing.
 
 The far places remember you. Coming back is told as a return: a second miss comes closer to what was missing without saying it, and a second sight shows something the first did not.
 

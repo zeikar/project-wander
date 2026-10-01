@@ -9,7 +9,6 @@ import {
   isClosed,
   knowsSpeciesOf,
   nextNodes,
-  nodeById,
   offeredOptions,
   preview,
   teachesForSure,
@@ -45,15 +44,11 @@ export function TitleScreen({ state, dispatch, newSeed }: ScreenProps) {
   );
 }
 
-function MapFigure({
-  state,
-  dispatch,
-  mark,
-}: Pick<ScreenProps, "state" | "dispatch"> & { mark?: string }) {
+function MapFigure({ state, dispatch }: Pick<ScreenProps, "state" | "dispatch">) {
   const strings = useStrings();
   return (
     <figure className="map-figure">
-      <MapView state={state} dispatch={dispatch} mark={mark} />
+      <MapView state={state} dispatch={dispatch} />
       <figcaption>{strings.ui.mapCaption(
           strings.regions[state.region].name,
           strings.regions[state.region].village.name,
@@ -98,7 +93,7 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
           <h3 className="label">{ui.whereNext}</h3>
           {tomorrow && <WeatherLine weather={tomorrow} when="tomorrow" />}
           <ol className="index">
-            {roads.map(({ node, place, sign, species }, i) => {
+            {roads.map(({ node, place, sign }, i) => {
               // Listed left to right like the map, so a shared name is told
               // apart by where it lies.
               const shared = roads.filter((r) => r.place === place).length > 1;
@@ -106,7 +101,7 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
               return (
                 <li key={node.id}>
                   <button
-                    className={`row road ${species ? `informed ${spot(species)}` : ""}`}
+                    className="row road"
                     onClick={() => dispatch({ type: "MOVE", nodeId: node.id })}
                   >
                     <span className="l">{shared ? ui.onSide(place, side) : place}</span>
@@ -234,8 +229,6 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
   let told = ending.kind === "died" ? ui.diedOf[ending.cause] : "";
   let visits = 1;
   let hint: string | null = null;
-  let lead: string | null = null;
-  let mark: string | undefined;
   if (ending.kind === "arrived") {
     const destination = strings.destinations[ending.destinationId]!;
     const been = state.been[ending.destinationId]!;
@@ -246,21 +239,6 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
     } else {
       told = been.missed > 1 ? destination.missedAgain : destination.missed;
       hint = destination.hint;
-      const found = ending.lead;
-      const node = found ? nodeById(state, found.nodeId)! : null;
-      const title = node ? strings.scenes[node.sceneId!]!.title : "";
-      lead = !found
-        ? ui.noLead
-        : found.kind === "walked"
-          ? ui.leadTaken(node!.layer, title)
-          : found.kind === "unfed"
-            ? ui.leadUnfed(node!.layer, title)
-            : ui.leadLeft(
-                found.fork,
-                title,
-                state.path.some((id) => nodeById(state, id)!.sceneId === node!.sceneId),
-              );
-      mark = node?.id;
     }
   }
 
@@ -277,12 +255,7 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
             </p>
             <h2>{title}</h2>
             <p>{told}</p>
-            {hint && (
-              <div className="hint">
-                <p>{hint}</p>
-                <p>{lead}</p>
-              </div>
-            )}
+            {hint && <p className="hint">{hint}</p>}
             {ending.kind === "arrived" && ending.opened && (
               <>
                 <h3 className="label">{ui.newWay}</h3>
@@ -304,7 +277,7 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
           </section>
         </>
       }
-      map={<MapFigure state={state} dispatch={dispatch} mark={mark} />}
+      map={<MapFigure state={state} dispatch={dispatch} />}
       choices={
         <>
           {path.length > 0 && (
