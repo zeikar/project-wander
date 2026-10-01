@@ -18,13 +18,14 @@ export type LastEvent =
     }
   | { kind: "quiet" };
 
-// Where a journey went past what it was missing at the far place: a road that
-// would have taught it, walked (`fork` null) or turned away from at the fork
-// on day `fork`.
-export interface Lead {
-  nodeId: string;
-  fork: number | null;
-}
+// Where a journey went past what it was missing at the far place: a road
+// walked where it was on offer and passed up, one walked where it was there
+// but the pack was too empty to stop for it, or one turned away from at the
+// fork on day `fork`.
+export type Lead =
+  | { kind: "walked"; nodeId: string }
+  | { kind: "unfed"; nodeId: string }
+  | { kind: "left"; nodeId: string; fork: number };
 
 export type Ending =
   // `opened`: the way found on this journey, if any. `lead`: only for a miss.
@@ -37,11 +38,12 @@ export type Ending =
     }
   | { kind: "died"; cause: "wounds" | "hunger" };
 
-// A lesson that was on offer on a road walked: an option the traveler could
-// have taken there, as they stood, that would have taught `fact`.
+// A lesson that was there on a road walked: an option offered to the traveler,
+// as they stood, that would have taught `fact` — `fed` if they could pay for it.
 export interface Chance {
   nodeId: string;
   fact: FactId;
+  fed: boolean;
 }
 
 // How often the traveler has reached each far place, by destination id. Facts

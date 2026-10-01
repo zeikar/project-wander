@@ -89,11 +89,13 @@ export interface Strings {
     // The end-screen line for a far place reached before; n counts this time.
     nthVisit: (n: number) => string;
     // After a miss, where this journey went past what was missing, named by its
-    // scene's title: a road walked on `day`, or one on the way not taken at the
-    // fork on `day`, or none on this map.
-    // `another`: the traveler walked the same kind of scene elsewhere, where
-    // something else was going on.
+    // scene's title: a road walked on `day` where it was passed up, or where the
+    // pack was too empty to stop for it; or one on the way not taken at the fork
+    // on `day` (`another`: a scene of the same kind was walked elsewhere, with
+    // something else going on). `noLead` is for a journey offered it nowhere,
+    // which only a sky ruling the lesson out could leave.
     leadTaken: (day: number, title: string) => string;
+    leadUnfed: (day: number, title: string) => string;
     leadLeft: (day: number, title: string, another: boolean) => string;
     noLead: string;
     learnedThisJourney: string;

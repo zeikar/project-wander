@@ -246,18 +246,20 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
     } else {
       told = been.missed > 1 ? destination.missedAgain : destination.missed;
       hint = destination.hint;
-      const node = ending.lead ? nodeById(state, ending.lead.nodeId)! : null;
-      const scene = node ? strings.scenes[node.sceneId!]! : null;
-      const fork = ending.lead?.fork ?? null;
-      lead = !node
+      const found = ending.lead;
+      const node = found ? nodeById(state, found.nodeId)! : null;
+      const title = node ? strings.scenes[node.sceneId!]!.title : "";
+      lead = !found
         ? ui.noLead
-        : fork === null
-          ? ui.leadTaken(node.layer, scene!.title)
-          : ui.leadLeft(
-              fork,
-              scene!.title,
-              state.path.some((id) => nodeById(state, id)!.sceneId === node.sceneId),
-            );
+        : found.kind === "walked"
+          ? ui.leadTaken(node!.layer, title)
+          : found.kind === "unfed"
+            ? ui.leadUnfed(node!.layer, title)
+            : ui.leadLeft(
+                found.fork,
+                title,
+                state.path.some((id) => nodeById(state, id)!.sceneId === node!.sceneId),
+              );
       mark = node?.id;
     }
   }

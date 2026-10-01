@@ -686,15 +686,14 @@ button {
   display: block;
 }
 
-/* Fog: paper-coloured haze, thickest at the edges so the middle of the page
-   stays readable. */
-/* Light enough to read through: fog hides the roads, not the page. */
+/* Fog: paper-coloured haze, thickest at the edges and thin enough everywhere
+   that a road listed under it still reads — fog hides the roads, not the page. */
 .sky--fog {
   background: linear-gradient(
     color-mix(in srgb, var(--paper) 35%, transparent),
     transparent 12%,
     transparent 85%,
-    color-mix(in srgb, var(--paper) 40%, transparent)
+    color-mix(in srgb, var(--paper) 30%, transparent)
   );
 }
 

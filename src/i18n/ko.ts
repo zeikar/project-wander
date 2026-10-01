@@ -42,6 +42,8 @@ export const ko: Strings = {
     daysWalked: (n) => `${n}일을 걸었다.`,
     nthVisit: (n) => `이곳에 온 것은 ${ordinal(n)}다.`,
     leadTaken: (day, title) => `그건 ${dayName(day)} 지나온 ‘${title}’에서 알 수 있었다.`,
+    leadUnfed: (day, title) =>
+      `그건 ${dayName(day)} 지나온 ‘${title}’에서 알 수 있었다. 그때는 식량이 모자랐다.`,
     leadLeft: (day, title, another) =>
       `그건 ${dayName(day)} 갈림길에서 가지 않은 길 위, ${another ? "다른 " : ""}‘${title}’에서 알 수 있었다.`,
     noLead: "이번 길에서는 그걸 알 기회가 없었다.",
