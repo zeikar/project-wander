@@ -6,7 +6,9 @@ import {
   MAX_HP,
   START_FOOD,
   START_HP,
+  FIRST_REGION,
   destinations,
+  regionById,
 } from "../content/world";
 import { generateMap } from "./map";
 import type { MapNode } from "./map";
@@ -117,7 +119,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
       if (state.phase !== "title" && state.phase !== "end") {
         return state;
       }
-      const map = generateMap(action.seed);
+      const map = generateMap(action.seed, regionById(FIRST_REGION));
       const start = map.layers[0]![0]!;
       return {
         ...state,

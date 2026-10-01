@@ -69,3 +69,16 @@ export interface Destination {
   id: string;
   needs: FactId;
 }
+
+export type RegionId = "fields";
+
+// A stretch of country a journey crosses. `gate`: a region opens through exactly
+// one sight; arriving at that destination and seeing it writes `to` into the notebook.
+export interface Region {
+  id: RegionId;
+  species: readonly SpeciesId[];
+  places: readonly string[];
+  destinations: readonly Destination[];
+  skyOdds: { rain: number; fog: number };
+  gate?: { destinationId: string; to: RegionId };
+}

@@ -3,9 +3,8 @@
 // on there — is decided here, so play itself needs no randomness at all.
 import { rollRandom } from "./rng";
 import { scenes } from "../content/scenes";
-import { species } from "../content/species";
-import type { Scene, Weather } from "../content/types";
-import { NODE_ODDS, ROAD_DAYS, SKY_ODDS, destinations } from "../content/world";
+import type { Region, Scene, Weather } from "../content/types";
+import { NODE_ODDS, ROAD_DAYS } from "../content/world";
 
 export interface MapNode {
   id: string;
@@ -24,7 +23,7 @@ export interface WorldMap {
   weather: readonly Weather[];
 }
 
-export function generateMap(seed: number): WorldMap {
+export function generateMap(seed: number, region: Region): WorldMap {
   let state = seed >>> 0;
   const roll = () => {
     const r = rollRandom(state);
@@ -38,7 +37,7 @@ export function generateMap(seed: number): WorldMap {
   for (let layer = 0; layer <= ROAD_DAYS + 1; layer++) {
     const r = roll();
     weather.push({
-      sky: r < SKY_ODDS.rain ? "rain" : r < SKY_ODDS.rain + SKY_ODDS.fog ? "fog" : "clear",
+      sky: r < region.skyOdds.rain ? "rain" : r < region.skyOdds.rain + region.skyOdds.fog ? "fog" : "clear",
       wind: roll() < 0.5 ? "behind" : "ahead",
     });
   }
@@ -49,12 +48,12 @@ export function generateMap(seed: number): WorldMap {
     const width = roll() < 0.5 ? 2 : 3;
     const row: MapNode[] = [];
     for (let index = 0; index < width; index++) {
-      row.push(roadNode(layer, index, weather[layer]!, roll, pick));
+      row.push(roadNode(layer, index, weather[layer]!, region, roll, pick));
     }
     layers.push(row);
   }
 
-  const shuffled = [...destinations];
+  const shuffled = [...region.destinations];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(roll() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
@@ -91,6 +90,7 @@ function roadNode(
   layer: number,
   index: number,
   weather: Weather,
+  region: Region,
   roll: () => number,
   pick: <T>(items: readonly T[]) => T,
 ): MapNode {
@@ -108,12 +108,12 @@ function roadNode(
   if (r < NODE_ODDS.animal) {
     // Species first, then its situation, so an animal with more situations is
     // not met more often than the others.
-    const animal = pick(species).id;
+    const animal = pick(region.species);
     const scene = pick(scenes.filter((s) => s.species === animal));
     return { id, layer, index, kind: "scene", sceneId: scene.id, variant: variantOf(scene) };
   }
   if (r < NODE_ODDS.animal + NODE_ODDS.place) {
-    const scene = pick(scenes.filter((s) => s.kind === "place"));
+    const scene = pick(scenes.filter((s) => s.kind === "place" && region.places.includes(s.id)));
     return { id, layer, index, kind: "scene", sceneId: scene.id, variant: variantOf(scene) };
   }
   return { id, layer, index, kind: "quiet" };

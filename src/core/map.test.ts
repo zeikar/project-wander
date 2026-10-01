@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { findScene } from "../content/scenes";
-import { ROAD_DAYS, destinations } from "../content/world";
+import { ROAD_DAYS, regions } from "../content/world";
 import { generateMap } from "./map";
 
 const SEEDS = Array.from({ length: 300 }, (_, i) => i * 7919 + 1);
 
-describe("generateMap", () => {
+describe.each(regions)("generateMap in $id", (region) => {
   it("makes the same map from the same seed", () => {
-    expect(generateMap(42)).toEqual(generateMap(42));
+    expect(generateMap(42, region)).toEqual(generateMap(42, region));
   });
 
   it("makes different maps from different seeds", () => {
-    const shapes = new Set(SEEDS.map((s) => JSON.stringify(generateMap(s))));
+    const shapes = new Set(SEEDS.map((s) => JSON.stringify(generateMap(s, region))));
     expect(shapes.size).toBeGreaterThan(SEEDS.length * 0.9);
   });
 
   it.each(SEEDS)("seed %i: a village, road days, and every destination", (seed) => {
-    const map = generateMap(seed);
+    const map = generateMap(seed, region);
     expect(map.layers).toHaveLength(ROAD_DAYS + 2);
     expect(map.layers[0]!.map((n) => n.kind)).toEqual(["start"]);
     for (const row of map.layers.slice(1, -1)) {
@@ -33,12 +33,12 @@ describe("generateMap", () => {
       }
     }
     expect(map.layers.at(-1)!.map((n) => n.destinationId).sort()).toEqual(
-      destinations.map((d) => d.id).sort(),
+      region.destinations.map((d) => d.id).sort(),
     );
   });
 
   it.each(SEEDS)("seed %i: every node is reachable and leads on, with no roads crossing", (seed) => {
-    const { layers, next } = generateMap(seed);
+    const { layers, next } = generateMap(seed, region);
     for (let layer = 0; layer < layers.length - 1; layer++) {
       const from = layers[layer]!;
       const to = layers[layer + 1]!;
@@ -63,7 +63,7 @@ describe("generateMap", () => {
   });
 
   it.each(SEEDS)("seed %i: a sky for every day, and scent scenes follow the wind", (seed) => {
-    const map = generateMap(seed);
+    const map = generateMap(seed, region);
     expect(map.weather).toHaveLength(map.layers.length);
     for (const node of map.layers.flat()) {
       const scene = node.sceneId ? findScene(node.sceneId) : undefined;
@@ -76,12 +76,27 @@ describe("generateMap", () => {
   });
 
   it("brings every sky and both winds over enough journeys", () => {
-    const all = SEEDS.flatMap((s) => generateMap(s).weather);
+    const all = SEEDS.flatMap((s) => generateMap(s, region).weather);
     for (const sky of ["clear", "rain", "fog"]) {
       expect(all.some((w) => w.sky === sky), sky).toBe(true);
     }
     for (const wind of ["behind", "ahead"]) {
       expect(all.some((w) => w.wind === wind), wind).toBe(true);
     }
+  });
+
+  it("fills the road only from its own species and places, and its odds reach the sky", () => {
+    const scenesSeen = SEEDS.flatMap((s) =>
+      generateMap(s, region).layers.flat().flatMap((n) => (n.sceneId ? [findScene(n.sceneId)!] : [])),
+    );
+    for (const scene of scenesSeen) {
+      expect(
+        region.places.includes(scene.id) || (scene.species && region.species.includes(scene.species)),
+        scene.id,
+      ).toBe(true);
+    }
+    const days = SEEDS.flatMap((s) => generateMap(s, region).weather);
+    const fog = days.filter((w) => w.sky === "fog").length / days.length;
+    expect(Math.abs(fog - region.skyOdds.fog)).toBeLessThan(0.08);
   });
 });
