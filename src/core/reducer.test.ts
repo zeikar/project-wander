@@ -198,9 +198,15 @@ describe("what a far place remembers", () => {
   const arrive = (state: GameState) => reduce(state, { type: "MOVE", nodeId: "2-0" });
   const before = (sceneId: string, variant: string, over: Partial<GameState> = {}) =>
     atScene(sceneId, variant, { phase: "map", ...over });
+  // Walk the hand-made road: stop at its one scene, do `optionId`, go on.
+  const walk = (sceneId: string, variant: string, optionId: string, over: Partial<GameState> = {}) => {
+    const at = reduce(atScene(sceneId, variant, over), { type: "CHOOSE", optionId });
+    expect(at.phase).toBe("map");
+    return arrive(at).ending;
+  };
 
-  it("names the road walked that would have taught what was missing", () => {
-    expect(arrive(before("dawn-water", "upwind")).ending).toMatchObject({
+  it("names the road walked where what was missing was on offer and passed up", () => {
+    expect(walk("dawn-water", "upwind", "fill-and-go")).toMatchObject({
       saw: false,
       lead: { nodeId: "1-0", fork: null },
     });
@@ -208,32 +214,39 @@ describe("what a far place remembers", () => {
 
   it("names a road only if what was going on there taught it", () => {
     const acorns = (variant: string) =>
-      before("wallow-boar", variant, { map: roadThrough("wallow-boar", variant, "acorn-valley") });
-    expect(arrive(acorns("sow")).ending).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
-    expect(arrive(acorns("sleeping")).ending).toMatchObject({ lead: null });
+      walk("wallow-boar", variant, "pass", { map: roadThrough("wallow-boar", variant, "acorn-valley") });
+    expect(acorns("sow")).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
+    expect(acorns("sleeping")).toMatchObject({ lead: null });
   });
 
-  // The stag would teach the dawn only by stepping uphill, which takes knowing
-  // the drive. Learned on the way it may have come after the stag, so only
-  // what was known setting out counts.
-  it("counts a lesson that needs knowing only if it was known setting out", () => {
-    const stag = (over: Partial<GameState>) => arrive(before("rut-stag", "grazing", over)).ending;
-    expect(stag({})).toMatchObject({ lead: null });
-    expect(stag({ known: ["deer.drive"] })).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
-    expect(stag({ known: ["deer.drive"], learnedThisJourney: ["deer.drive"] })).toMatchObject({
-      lead: null,
-    });
+  // The stag teaches the dawn only by stepping uphill, which takes knowing the
+  // drive — however it came to be known, so long as it was known there.
+  it("counts a lesson that needs knowing only if it was known on that road", () => {
+    expect(walk("rut-stag", "grazing", "wait")).toMatchObject({ lead: null });
+    expect(
+      walk("rut-stag", "grazing", "wait", { known: ["deer.drive"], learnedThisJourney: ["deer.drive"] }),
+    ).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
   });
 
-  // village -> ford (walked) or cart -> wallow with the sow (never walked) -> lake
+  it("does not name a road whose lesson the pack could not pay for there", () => {
+    expect(walk("dawn-water", "upwind", "fill-and-go", { food: 0 })).toMatchObject({ lead: null });
+  });
+
+  // village -> ford (walked) or cart -> wallow with the sow (never walked) -> valley
   it("names a road turned away from, at the last fork that still led there", () => {
-    const node = (id: string, layer: number, index: number, sceneId: string, variant: string): MapNode =>
-      ({ id, layer, index, kind: "scene", sceneId, variant });
+    const node = (id: string, layer: number, index: number, sceneId: string): MapNode => ({
+      id,
+      layer,
+      index,
+      kind: "scene",
+      sceneId,
+      variant: sceneId === "wallow-boar" ? "sow" : sceneId === "ford-boar" ? "rooting" : "only",
+    });
     const map: WorldMap = {
       layers: [
         [{ id: "0-0", layer: 0, index: 0, kind: "start" }],
-        [node("1-0", 1, 0, "ford-boar", "rooting"), node("1-1", 1, 1, "overturned-cart", "only")],
-        [node("2-0", 2, 0, "old-camp", "only"), node("2-1", 2, 1, "wallow-boar", "sow")],
+        [node("1-0", 1, 0, "ford-boar"), node("1-1", 1, 1, "overturned-cart")],
+        [node("2-0", 2, 0, "old-camp"), node("2-1", 2, 1, "wallow-boar")],
         [{ id: "3-0", layer: 3, index: 0, kind: "destination", destinationId: "acorn-valley" }],
       ],
       next: { "0-0": ["1-0", "1-1"], "1-0": ["2-0"], "1-1": ["2-0", "2-1"], "2-0": ["3-0"], "2-1": ["3-0"] },
@@ -247,6 +260,23 @@ describe("what a far place remembers", () => {
     expect(
       reduce({ ...walked, path: ["0-0", "1-1", "2-0"] }, { type: "MOVE", nodeId: "3-0" }).ending,
     ).toMatchObject({ lead: { nodeId: "2-1", fork: 1 } });
+  });
+
+  // A road not walked can only be judged by what was known setting out.
+  it("names a road not walked by a lesson that needs knowing only if known setting out", () => {
+    const map = roadThrough("ford-boar", "rooting");
+    const fork: WorldMap = {
+      ...map,
+      layers: [
+        map.layers[0]!,
+        [...map.layers[1]!, { id: "1-1", layer: 1, index: 1, kind: "scene", sceneId: "rut-stag", variant: "grazing" }],
+        map.layers[2]!,
+      ],
+      next: { ...map.next, "0-0": ["1-0", "1-1"], "1-1": ["2-0"] },
+    };
+    const lake = (over: Partial<GameState>) => walk("ford-boar", "rooting", "detour", { map: fork, ...over });
+    expect(lake({ known: ["deer.drive"] })).toMatchObject({ lead: { nodeId: "1-1", fork: 0 } });
+    expect(lake({ known: ["deer.drive"], learnedThisJourney: ["deer.drive"] })).toMatchObject({ lead: null });
   });
 
   it("counts misses and sights per far place, and a sight names no road", () => {

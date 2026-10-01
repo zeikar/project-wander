@@ -655,8 +655,8 @@ button {
 .map .node.marked .ring {
   fill: none;
   stroke: var(--ink);
-  stroke-width: 1;
-  stroke-dasharray: 2 2.5;
+  stroke-width: 1.6;
+  stroke-dasharray: 3 2.5;
 }
 
 .map .label.dest {

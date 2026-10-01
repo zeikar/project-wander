@@ -93,7 +93,7 @@ export function MapView({
             )}
             {marked && (
               <>
-                <circle className="ring" r={10} />
+                <circle className="ring" r={11} />
                 <text className="label road" x={right ? 15 : -15} y={4} textAnchor={right ? "start" : "end"}>
                   {strings.scenes[node.sceneId!]!.place}
                 </text>

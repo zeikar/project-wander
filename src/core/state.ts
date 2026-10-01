@@ -37,6 +37,13 @@ export type Ending =
     }
   | { kind: "died"; cause: "wounds" | "hunger" };
 
+// A lesson that was on offer on a road walked: an option the traveler could
+// have taken there, as they stood, that would have taught `fact`.
+export interface Chance {
+  nodeId: string;
+  fact: FactId;
+}
+
 // How often the traveler has reached each far place, by destination id. Facts
 // are never lost, so every miss of a place comes before its first sight.
 export type Been = Readonly<Record<string, { missed: number; saw: number }>>;
@@ -59,6 +66,7 @@ export interface GameState {
   // The far places as remembered: arriving again is told as a return.
   been: Been;
   learnedThisJourney: readonly FactId[];
+  chances: readonly Chance[];
   path: readonly string[];
   last: LastEvent | null;
   ending: Ending | null;
@@ -88,6 +96,7 @@ export function createInitialState(
     open,
     been,
     learnedThisJourney: [],
+    chances: [],
     path: [],
     last: null,
     ending: null,
