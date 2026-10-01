@@ -72,6 +72,8 @@ export interface Strings {
     outcome: (hp: number, food: number) => string;
     // An option's hint with "this will teach you something" added to it.
     withLesson: (hint: string) => string;
+    // The same, when what it teaches might be something already known.
+    withMaybeLesson: (hint: string) => string;
     noFood: string;
     learned: string;
     fed: string;

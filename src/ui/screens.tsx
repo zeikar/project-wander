@@ -11,6 +11,7 @@ import {
   nextNodes,
   offeredOptions,
   preview,
+  teachesForSure,
   weatherAt,
 } from "../core/reducer";
 import type { GameAction, GameState } from "../core/state";
@@ -141,7 +142,10 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
     }
     const outcome = preview(state, option);
     const base = outcome ? ui.outcome(outcome.hp, outcome.food) : ui.unknownOutcome;
-    return option.study ? ui.withLesson(base) : base;
+    if (!option.study) {
+      return base;
+    }
+    return teachesForSure(state, option) ? ui.withLesson(base) : ui.withMaybeLesson(base);
   };
 
   return (

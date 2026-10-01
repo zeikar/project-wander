@@ -12,6 +12,7 @@ import {
   offeredOptions,
   preview,
   reduce,
+  teachesForSure,
 } from "./reducer";
 import { createInitialState } from "./state";
 import type { GameAction, GameState } from "./state";
@@ -266,6 +267,22 @@ describe("what knowing changes", () => {
     const knowsDrift = { known: ["lantern.drift"] as FactId[] };
     expect(ids(atScene("lantern-light", "dawn", knowsDrift))).toContain("watch");
     expect(ids(atScene("lantern-light", "night", knowsDrift))).not.toContain("watch");
+  });
+
+  // The hint may promise a new notebook entry only when every case that looks
+  // the same from where the traveler stands teaches one.
+  it("promises a lesson only when no look-alike case teaches nothing new", () => {
+    const sure = (id: string, variant: string, scene: string, known: FactId[]) => {
+      const state = atScene(scene, variant, { known });
+      const option = currentScene(state)!.options.find((o) => o.id === id)!;
+      return teachesForSure(state, option);
+    };
+    expect(sure("watch", "night", "lantern-light", [])).toBe(true);
+    expect(sure("watch", "dawn", "lantern-light", [])).toBe(true);
+    expect(sure("watch", "night", "lantern-light", ["lantern.dawn"])).toBe(false);
+    expect(sure("watch", "dawn", "lantern-light", ["lantern.dawn"])).toBe(false);
+    expect(sure("watch", "sleeping", "wallow-boar", ["boar.nose"])).toBe(false);
+    expect(sure("watch", "sow", "wallow-boar", ["boar.nose"])).toBe(false);
   });
 
   it("shows what following the lantern costs only to one who knows it is not carried", () => {

@@ -92,6 +92,22 @@ export function preview(
   return null;
 }
 
+// Whether choosing a study option is certain to teach something new, as far as
+// the traveler can tell: the lesson of the actual variant if the scene reads,
+// else every variant's. A promise of a new entry must hold in every case that
+// looks the same from where they stand.
+export function teachesForSure(state: GameState, option: SceneOption): boolean {
+  const scene = currentScene(state);
+  const variant = currentNode(state)?.variant;
+  if (!option.study || !scene || variant === undefined) {
+    return false;
+  }
+  const lessons = canRead(state, scene)
+    ? [option.outcomes[variant]!.learn]
+    : Object.values(option.outcomes).map((o) => o.learn);
+  return lessons.every((l) => l !== undefined && !state.known.includes(l));
+}
+
 // The weather over a layer's day; layer defaults to where the traveler is.
 export function weatherAt(state: GameState, layer?: number): Weather | undefined {
   const at = layer ?? currentNode(state)?.layer;

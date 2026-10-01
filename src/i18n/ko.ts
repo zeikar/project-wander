@@ -25,6 +25,7 @@ export const ko: Strings = {
       return parts.length > 0 ? parts.join(" · ") : "잃는 것도 얻는 것도 없다";
     },
     withLesson: (hint) => `${hint} · 수첩에 적을 것이 생긴다`,
+    withMaybeLesson: (hint) => `${hint} · 수첩에 적을 것이 생길지도 모른다`,
     noFood: "식량이 모자란다",
     learned: "수첩에 적었다",
     fed: "하루를 걸으며 한 끼를 먹었다.",
