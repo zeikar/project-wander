@@ -118,16 +118,14 @@ export const scenes: readonly Scene[] = [
           passing: { hp: 0, food: -1, learn: "wolves.chase" },
         },
       },
-      // Knowing what wolves do makes this safe, not free: backing out the way
-      // you came costs the day. What it buys over the fire is that rain cannot
-      // close it. Was 0 in every variant, which let knowledge settle the scene.
+      // Knowing they chase what runs, you can back off and follow the pack at a
+      // distance — a day spent, and the next thing about wolves learned. A
+      // different kind of trade from the fire or the tree, and gone once known.
       {
         id: "back-away",
         needs: "wolves.chase",
-        outcomes: {
-          stalking: { hp: 0, food: -1 },
-          passing: { hp: 0, food: 0 },
-        },
+        study: true,
+        outcomes: always(PINES, { hp: 0, food: -1, learn: "wolves.rank" }),
       },
     ],
   },
@@ -185,14 +183,16 @@ export const scenes: readonly Scene[] = [
         study: true,
         outcomes: always(RUT, { hp: 0, food: -1, learn: "deer.drive" }),
       },
-      // Was free in every variant. Uphill is where he will not follow, not an
-      // easy road.
+      // Knowing he will not follow uphill, you can spend the night on the slope
+      // and watch the hinds go down to water at dawn: one fact leading to the
+      // next, and to the white stag. Gone once known.
       {
         id: "step-uphill",
         needs: "deer.drive",
+        study: true,
         outcomes: {
-          holding: { hp: -1, food: 0 },
-          grazing: { hp: 0, food: 0 },
+          holding: { hp: -1, food: 0, learn: "deer.dawn" },
+          grazing: { hp: 0, food: -1, learn: "deer.dawn" },
         },
       },
     ],
