@@ -9,6 +9,8 @@
   --moss: #5a6b2f;
   --slate: #4d5b6a;
   --rust: #a3472a;
+  --teal: #367069;
+  --umber: #7b5230;
   --spot: var(--ink);
   --face: "Hahmlet", "Nanum Myeongjo", "Noto Serif KR", Georgia, serif;
   color-scheme: light;
@@ -24,6 +26,8 @@
     --moss: #a8bb72;
     --slate: #9fb1c4;
     --rust: #e39170;
+    --teal: #7fbdb6;
+    --umber: #c8a47a;
     color-scheme: dark;
   }
 }
@@ -36,6 +40,12 @@
 }
 .spot-deer {
   --spot: var(--rust);
+}
+.spot-heron {
+  --spot: var(--teal);
+}
+.spot-otter {
+  --spot: var(--umber);
 }
 
 * {

@@ -2,7 +2,7 @@
 // every word a player reads lives in a locale bundle under `src/i18n/`, keyed
 // by the same ids, so adding a language never touches this folder.
 
-export type SpeciesId = "boar" | "wolves" | "deer";
+export type SpeciesId = "boar" | "wolves" | "deer" | "heron" | "otter";
 
 export type FactId =
   | "boar.nose"
@@ -10,7 +10,11 @@ export type FactId =
   | "wolves.rank"
   | "wolves.chase"
   | "deer.drive"
-  | "deer.dawn";
+  | "deer.dawn"
+  | "heron.wade"
+  | "heron.lift"
+  | "otter.cache"
+  | "otter.raid";
 
 // The sky over one day of road, and which way the wind blows along it.
 export type Sky = "clear" | "rain" | "fog";
