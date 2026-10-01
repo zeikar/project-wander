@@ -249,7 +249,7 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
         ? ui.noLead
         : fork === null
           ? ui.leadTaken(node.layer, scene!.title)
-          : ui.leadLeft(fork, scene!.place);
+          : ui.leadLeft(fork, scene!.title);
       mark = node?.id;
     }
   }

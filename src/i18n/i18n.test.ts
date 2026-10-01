@@ -7,6 +7,18 @@ import { detectLocale, locales, resultText } from ".";
 // Every registered locale, checked against the game data itself — so a new
 // language, a new scene or a new option all land here without editing it.
 describe.each(Object.entries(locales))("locale %s", (_, strings) => {
+  // Fog leaves a road its name and hides the rest, so a name must not give the
+  // road away: each is shared by more than one kind of road in its region.
+  it.each(regions)("names no road of $id that fog would give away", (region) => {
+    const roads = scenes
+      .filter((s) => region.places.includes(s.id) || (s.species && region.species.includes(s.species)))
+      .map((s) => strings.scenes[s.id]!.place);
+    const names = [...roads, strings.regions[region.id].quiet.place];
+    for (const name of names) {
+      expect(names.filter((n) => n === name).length, name).toBeGreaterThan(1);
+    }
+  });
+
   it("has every scene, variant and option, and nothing the game lacks", () => {
     expect(Object.keys(strings.scenes).sort()).toEqual(
       scenes.map((s) => s.id).sort(),

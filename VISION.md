@@ -19,9 +19,9 @@ When a journey ends, the player should want to set out again — **not because s
 ## One journey
 
 1. You set out from a village you know, and hear a few rumours there. Each one is a place at the far edge of the map.
-2. The region is a map made fresh from a seed. Every day you choose the next road. From a day away you can see only a **sign** — tracks, smoke, a silence.
+2. The region is a map made fresh from a seed. Every day you choose the next road, from at least two; roads may cross. From a day away you can see only a **sign** — tracks, smoke, a silence.
 3. Where the road takes you, something is going on: an animal, a place, a sky. You read it and choose.
-   Every day has a sky and a wind, and tomorrow's is shown over the map. The wind carries your scent ahead or behind; rain keeps it from carrying and puts out fires; fog hides what is on the roads but not their names. An animal you know plus a wind you can read is a day you can see coming.
+   Every day has a sky and a wind, and tomorrow's is shown over the map. The wind carries your scent ahead or behind; rain keeps it from carrying and puts out fires; fog hides what is on the roads but not their names — and a name is only the lie of the land, a wood or a waterside that more than one thing can be waiting in. An animal you know plus a wind you can read is a day you can see coming.
 4. The journey ends when you reach one of the far places, or when the road ends you.
 
 ## What carries over
@@ -34,7 +34,7 @@ Knowledge works as a lens, in three ways:
 - **Tells** in a scene — a boar with its nose down, wolves matching your pace — read as what they mean, and an option you could only guess at shows what it will cost.
 - **New answers** appear that only someone who knows would think of.
 
-And the far places themselves: arriving is not the same as seeing. The white stag comes to the lake at dawn, from one side, and only the traveler who knows how deer come to water will see it. The rumour is the locked door; knowledge is the key; and the journey that missed it tells you what kind of thing you were missing, and where on this map it was — a road you walked past, or one you turned from at a fork, ringed on the map — or that this map had nowhere to learn it.
+And the far places themselves: arriving is not the same as seeing. Every map holds, somewhere, a road where each far place's key can be learned. The white stag comes to the lake at dawn, from one side, and only the traveler who knows how deer come to water will see it. The rumour is the locked door; knowledge is the key; and the journey that missed it tells you what kind of thing you were missing, and where on this map it was — a road you walked past, or one you turned from at a fork, ringed on the map — or that this map had nowhere to learn it.
 
 The far places remember you. Coming back is told as a return: a second miss comes closer to what was missing without saying it, and a second sight shows something the first did not.
 

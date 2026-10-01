@@ -13,7 +13,8 @@
 import type { FactId, RegionId, Sky, SpeciesId, Wind } from "../content/types";
 
 export interface SceneText {
-  // What the node is called on the map.
+  // What the node is called on the map: the lie of the land, shared with other
+  // roads of its region, so that fog — which leaves names — leaves a guess.
   place: string;
   // What can be seen of it a day away, before choosing the road.
   sign: string;
@@ -87,11 +88,11 @@ export interface Strings {
     daysWalked: (n: number) => string;
     // The end-screen line for a far place reached before; n counts this time.
     nthVisit: (n: number) => string;
-    // After a miss, where this journey went past what was missing: a road walked
-    // on `day` (named by its scene's title), or one on the way not taken at the
-    // fork on `day` (named as the map names it), or none on this map.
+    // After a miss, where this journey went past what was missing, named by its
+    // scene's title: a road walked on `day`, or one on the way not taken at the
+    // fork on `day`, or none on this map.
     leadTaken: (day: number, title: string) => string;
-    leadLeft: (day: number, place: string) => string;
+    leadLeft: (day: number, title: string) => string;
     noLead: string;
     learnedThisJourney: string;
     nothingLearned: string;
