@@ -635,6 +635,74 @@ button {
   font-size: 11.5px;
 }
 
+/* ---- the sky over the page ------------------------------------------------ */
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  overflow: hidden;
+  animation: sky-in 1.2s ease-out both;
+}
+
+@keyframes sky-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.strokes {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Fog: paper-coloured haze, thickest at the edges so the middle of the page
+   stays readable. */
+.sky--fog {
+  background: linear-gradient(
+    color-mix(in srgb, var(--paper) 45%, transparent),
+    transparent 12%,
+    transparent 85%,
+    color-mix(in srgb, var(--paper) 55%, transparent)
+  );
+}
+
+.mist {
+  position: absolute;
+  width: 70vmax;
+  height: 40vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--paper) 55%, transparent), transparent);
+  filter: blur(18px);
+}
+
+.mist--a {
+  top: -8vmax;
+  left: -20vmax;
+  animation: drift 38s ease-in-out infinite alternate;
+}
+
+.mist--b {
+  bottom: -12vmax;
+  right: -24vmax;
+  animation: drift 46s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes drift {
+  to {
+    transform: translateX(22vmax);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky,
+  .mist {
+    animation: none;
+  }
+}
+
 /* ---- footer ---------------------------------------------------------------- */
 
 .footer {

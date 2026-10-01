@@ -57,7 +57,8 @@ export interface Scene {
   reads?: FactId;
   // Scenes that turn on scent take their variant from the day's weather
   // instead of a roll: the wind carries the traveler's smell ahead or behind,
-  // and rain keeps it from carrying at all.
+  // and rain keeps it from carrying at all. The text of whatever variant rain
+  // picks must not name a wind direction — rain can fall in either wind.
   byWind?: Readonly<Record<Wind | "rain", string>>;
   options: readonly SceneOption[];
 }

@@ -1,11 +1,12 @@
 import { useEffect, useReducer, useState } from "react";
-import { reduce } from "../core/reducer";
+import { currentNode, reduce, weatherAt } from "../core/reducer";
 import { createInitialState } from "../core/state";
 import { detectLocale, locales } from "../i18n";
 import type { LocaleId } from "../i18n";
 import { EndScreen, MapScreen, SceneScreen, TitleScreen } from "./screens";
 import { loadKnown, loadLocale, saveKnown, saveLocale } from "./storage";
 import { StringsContext } from "./strings";
+import { WeatherSky } from "./WeatherSky";
 
 // The UI is the one place randomness may come from: the core takes the seed
 // as data, so every journey stays reproducible.
@@ -48,6 +49,18 @@ export default function App() {
 
   return (
     <StringsContext.Provider value={strings}>
+      {/* On the map the page wears tomorrow's sky — the one the forecast names
+          and the road about to be chosen will be walked under — so it carries
+          straight on into the scene. */}
+      <WeatherSky
+        weather={
+          state.phase === "map"
+            ? weatherAt(state, currentNode(state)!.layer + 1)
+            : state.phase === "scene"
+              ? weatherAt(state)
+              : undefined
+        }
+      />
       <main className="page">
         <div className="screen" key={screenKey}>
           {state.phase === "title" && <TitleScreen {...props} />}

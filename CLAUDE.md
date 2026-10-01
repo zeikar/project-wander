@@ -57,7 +57,7 @@ ui → i18n → content (types only)
 
 ## Determinism
 
-Everything random is decided when the map is generated from the seed — layout, each day's weather, which scene stands where, and which variant of it is going on (scent scenes take theirs from the wind). Play itself uses no randomness. The only `Math.random` is the UI picking a new seed.
+Everything random is decided when the map is generated from the seed — layout, each day's weather, which scene stands where, and which variant of it is going on (scent scenes take theirs from the wind). Play itself uses no randomness. `Math.random` appears only in the UI — picking a new seed, and the decorative weather animation, which never touches state.
 
 ## Languages
 

@@ -14,7 +14,7 @@ const WALLOW = ["sleeping", "sow"] as const;
 const PINES = ["stalking", "passing"] as const;
 const KILL = ["full", "hungry"] as const;
 const RUT = ["holding", "grazing"] as const;
-const WATER = ["downwind", "upwind"] as const;
+const WATER = ["downwind", "upwind", "rain"] as const;
 const ONE = ["only"] as const;
 
 export const scenes: readonly Scene[] = [
@@ -187,7 +187,7 @@ export const scenes: readonly Scene[] = [
     species: "deer",
     variants: WATER,
     reads: "deer.dawn",
-    byWind: { behind: "upwind", ahead: "downwind", rain: "downwind" },
+    byWind: { behind: "upwind", ahead: "downwind", rain: "rain" },
     options: [
       { id: "fill-and-go", outcomes: always(WATER, { hp: 0, food: 0 }) },
       { id: "rest", outcomes: always(WATER, { hp: 1, food: 0 }) },
@@ -202,6 +202,8 @@ export const scenes: readonly Scene[] = [
         outcomes: {
           downwind: { hp: 0, food: 2 },
           upwind: { hp: 0, food: 0 },
+          // Rain buries scent, so the deer come down whatever the wind.
+          rain: { hp: 0, food: 2 },
         },
       },
     ],
