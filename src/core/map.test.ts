@@ -62,7 +62,7 @@ describe.each(regions)("generateMap in $id", (region) => {
     }
   });
 
-  // A miss can then always point at a road that held what was missing.
+  // Any journey can then come to see any far place, if it finds the road.
   it.each(SEEDS)("seed %i: every far place's key can be learned somewhere on the map", (seed) => {
     const nodes = generateMap(seed, region).layers.flat();
     for (const { id, needs } of region.destinations) {

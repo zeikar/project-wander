@@ -211,8 +211,8 @@ export function LastEvent({ state }: { state: GameState }) {
   );
 }
 
-// What a node looks like from a day away, and whose colour it wears once the
-// traveler knows the animal behind it.
+// What a node looks like from a day away; once the traveler knows the animal
+// behind it, the sign says so in words.
 export function signOf(
   strings: Strings,
   state: GameState,
