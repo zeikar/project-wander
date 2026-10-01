@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scenes } from "./scenes";
 import { allFacts, speciesOfFact } from "./species";
-import { destinations, FIRST_REGION, regionById } from "./world";
+import { destinations, FIRST_REGION, regionById, regions } from "./world";
 
 describe("scenes", () => {
   it("give every option an outcome for every variant, and no other", () => {
@@ -22,7 +22,7 @@ describe("scenes", () => {
   });
 
   it("keep an animal's facts to that animal", () => {
-    for (const scene of scenes.filter((s) => s.kind !== "place")) {
+    for (const scene of scenes.filter((s) => s.kind === "animal" || s.kind === "monster")) {
       expect(scene.species, scene.id).toBeDefined();
       expect(scene.reads, scene.id).toBeDefined();
       const facts = [
@@ -102,6 +102,43 @@ describe("scenes", () => {
       for (const option of scene.options.filter((o) => o.needs)) {
         const out = option.outcomes[variant!]!;
         expect(out.hp < 0 || out.food < 0, `${scene.id}/${option.id}/${variant}`).toBe(true);
+      }
+    }
+  });
+});
+
+describe("people", () => {
+  const people = scenes.filter((s) => s.kind === "person");
+
+  it("live in a region each, and say plainly what is going on", () => {
+    expect(regions.flatMap((r) => r.people).sort()).toEqual(people.map((p) => p.id).sort());
+    for (const person of people) {
+      expect(person.species, person.id).toBeUndefined();
+      expect(person.reads, person.id).toBeUndefined();
+      expect(person.variants, person.id).toEqual(["only"]);
+    }
+  });
+
+  it("each want one thing known, and hear one sight told", () => {
+    for (const person of people) {
+      expect(person.options.filter((o) => o.needs).length, person.id).toBe(1);
+      expect(person.options.filter((o) => o.seen).length, person.id).toBe(1);
+    }
+  });
+
+  // What a person tells is never what the sight told of already needed, and
+  // never a far place's key: a key must be there for anyone on the road.
+  it("teach only in return for a sight, and never a far place's key", () => {
+    const keys = destinations.map((d) => d.needs);
+    for (const person of people) {
+      for (const option of person.options) {
+        if (option.seen) {
+          expect(destinations.map((d) => d.id), `${person.id}/${option.id}`).toContain(option.seen);
+        }
+        for (const out of Object.values(option.outcomes).filter((o) => o.learn)) {
+          expect(option.seen, `${person.id}/${option.id}`).toBeDefined();
+          expect(keys, `${person.id}/${option.id}`).not.toContain(out.learn);
+        }
       }
     }
   });

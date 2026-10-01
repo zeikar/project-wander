@@ -26,7 +26,7 @@ When a journey ends, the player should want to set out again — **not because s
 
 ## What carries over
 
-**Only what you know.** No levels, no gear, no gold. The traveler does not get stronger; the player does.
+**Only what you know.** No levels, no gear, no gold. The traveler does not get stronger; the player does. What you know includes where you have been and whom you have met: the far places and the people remember the traveler, and a return is told as one.
 
 Knowledge works as a lens, in three ways:
 
@@ -51,6 +51,14 @@ A journey starts from any village you know. The first region stays playable.
 An animal is something you can guess at and be right. Knowing it shows what things cost and adds a way through.
 
 A monster is where ordinary sense is wrong. The creature tells you which guess is unsafe before it costs anything; the warning is there even before you know how to read it. Knowing turns the warning into a resource, and it is still a trade. A monster is never an animal with bigger numbers.
+
+## People
+
+A few people live along the roads: a shepherd, a charcoal burner, a reed cutter, an eel fisher. Each says their trouble plainly — wolves at the flock, boars at the spring — and wants what the traveler knows. Knowing the animal behind the trouble is a way to help, and help is paid in a bed and a meal. Anyone can rest by their fire or work a day for food; only knowing does both at once.
+
+Tell someone what you saw at a far place and they tell you something they know in return. It is never the key to a far place: the road keeps that for anyone. The two marsh people each know what the other needs.
+
+People remember the traveler. Meeting someone again is told as a return.
 
 ## The marsh
 

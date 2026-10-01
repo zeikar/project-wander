@@ -75,6 +75,19 @@ describe.each(regions)("generateMap in $id", (region) => {
     }
   });
 
+  it("brings people now and then, and never the same one twice on a map", () => {
+    let withPeople = 0;
+    for (const seed of SEEDS) {
+      const met = generateMap(seed, region)
+        .layers.flat()
+        .flatMap((n) => (n.sceneId && region.people.includes(n.sceneId) ? [n.sceneId] : []));
+      expect(new Set(met).size, `${seed}: ${met.join()}`).toBe(met.length);
+      if (met.length > 0) withPeople++;
+    }
+    expect(withPeople).toBeGreaterThan(SEEDS.length * 0.3);
+    expect(withPeople).toBeLessThan(SEEDS.length * 0.9);
+  });
+
   it.each(SEEDS)("seed %i: a sky for every day, and scent scenes follow the wind", (seed) => {
     const map = generateMap(seed, region);
     expect(map.weather).toHaveLength(map.layers.length);
@@ -104,7 +117,9 @@ describe.each(regions)("generateMap in $id", (region) => {
     );
     for (const scene of scenesSeen) {
       expect(
-        region.places.includes(scene.id) || (scene.species && region.species.includes(scene.species)),
+        region.places.includes(scene.id) ||
+          region.people.includes(scene.id) ||
+          (scene.species && region.species.includes(scene.species)),
         scene.id,
       ).toBe(true);
     }

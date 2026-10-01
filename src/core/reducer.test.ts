@@ -212,6 +212,46 @@ describe("what a far place remembers", () => {
   });
 });
 
+describe("people", () => {
+  const meet = (over: Partial<GameState> = {}) =>
+    reduce(
+      atScene("old-shepherd", "only", { phase: "map", at: "0-0", day: 0, path: ["0-0"], ...over }),
+      { type: "MOVE", nodeId: "1-0" },
+    );
+
+  it("hear a far place told only by one who has seen it", () => {
+    expect(ids(meet())).not.toContain("tell-of-rock");
+    expect(ids(meet({ been: { "wolf-rock": { missed: 2, saw: 0 } } }))).not.toContain("tell-of-rock");
+    expect(ids(meet({ been: { "wolf-rock": { missed: 2, saw: 1 } } }))).toContain("tell-of-rock");
+  });
+
+  it("want what the traveler knows, and pay for it", () => {
+    expect(ids(meet())).not.toContain("stand-guard");
+    const helped = reduce(meet({ known: ["wolves.chase"] }), { type: "CHOOSE", optionId: "stand-guard" });
+    expect([helped.hp, helped.food]).toEqual([5, 2]);
+  });
+
+  it("stop asking for a story once what it would teach is known", () => {
+    const seen = { "wolf-rock": { missed: 0, saw: 1 } };
+    const told = reduce(meet({ been: seen }), { type: "CHOOSE", optionId: "tell-of-rock" });
+    expect(told.known).toContain("deer.drive");
+    expect(ids(meet({ been: seen, known: told.known }))).not.toContain("tell-of-rock");
+  });
+
+  it("remember being met, across journeys, and nobody else is counted", () => {
+    const once = meet();
+    expect(once.met).toEqual({ "old-shepherd": 1 });
+    expect(meet({ met: once.met }).met).toEqual({ "old-shepherd": 2 });
+    const boar = reduce(
+      atScene("ford-boar", "rooting", { phase: "map", at: "0-0", day: 0, path: ["0-0"] }),
+      { type: "MOVE", nodeId: "1-0" },
+    );
+    expect(boar.met).toEqual({});
+    const next = reduce({ ...createInitialState([], ["fields"], {}, once.met) }, { type: "START", seed: 9, region: "fields" });
+    expect(next.met).toEqual(once.met);
+  });
+});
+
 describe("CHOOSE", () => {
   it("plays out the variant that is actually there", () => {
     const rooting = reduce(atScene("ford-boar", "rooting"), { type: "CHOOSE", optionId: "cross" });

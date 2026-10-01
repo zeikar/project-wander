@@ -49,11 +49,14 @@ export function generateMap(seed: number, region: Region): WorldMap {
     const row: MapNode[] = [];
     for (let index = 0; index < width; index++) {
       // No day offers the same thing twice: no scene beside itself, and one
-      // quiet road at most.
+      // quiet road at most. Nor does a map hold the same person twice.
       let node: MapNode;
       do {
         node = roadNode(layer, index, weather[layer]!, region, roll, pick);
-      } while (row.some((n) => (n.sceneId ?? "quiet") === (node.sceneId ?? "quiet")));
+      } while (
+        row.some((n) => (n.sceneId ?? "quiet") === (node.sceneId ?? "quiet")) ||
+        (region.people.includes(node.sceneId!) && layers.flat().some((n) => n.sceneId === node.sceneId))
+      );
       row.push(node);
     }
     layers.push(row);
@@ -124,7 +127,8 @@ export function generateMap(seed: number, region: Region): WorldMap {
 }
 
 // Whether anyone stopping at this node could learn `fact` there: an option
-// that needs nothing known teaches it in what is going on.
+// that needs nothing known teaches it in what is going on. (People teach only
+// for a sight told, and never a key — content.test.ts holds them to it.)
 function teaches(node: MapNode, fact: FactId): boolean {
   const scene = node.sceneId === undefined ? undefined : findScene(node.sceneId);
   return (
@@ -163,6 +167,10 @@ function roadNode(
   }
   if (r < NODE_ODDS.animal + NODE_ODDS.place) {
     const scene = pick(scenes.filter((s) => s.kind === "place" && region.places.includes(s.id)));
+    return { id, layer, index, kind: "scene", sceneId: scene.id, variant: variantOf(scene) };
+  }
+  if (r < NODE_ODDS.animal + NODE_ODDS.place + NODE_ODDS.person) {
+    const scene = findScene(pick(region.people))!;
     return { id, layer, index, kind: "scene", sceneId: scene.id, variant: variantOf(scene) };
   }
   return { id, layer, index, kind: "quiet" };

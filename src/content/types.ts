@@ -43,6 +43,9 @@ export interface SceneOption {
   id: string;
   // Offered only once this fact is known: what knowing buys.
   needs?: FactId;
+  // Offered only to a traveler who has seen this far place's sight — the
+  // destination id. Something to tell, not something to read.
+  seen?: string;
   // The option exists to learn. Once what it would teach is already known,
   // it is not offered — watching the same thing twice is not a choice.
   study?: true;
@@ -56,8 +59,9 @@ export interface SceneOption {
 export interface Scene {
   id: string;
   // A monster is a scene where ordinary sense is wrong and the tell says which
-  // guess is unsafe — never an animal with bigger numbers.
-  kind: "animal" | "place" | "monster";
+  // guess is unsafe — never an animal with bigger numbers. A person says what
+  // the trouble is plainly, and wants what the traveler knows or has seen.
+  kind: "animal" | "place" | "monster" | "person";
   species?: SpeciesId;
   // What can be going on in this scene. One is rolled per map node; the
   // description shows a tell, and `reads` is the fact that lets you read it.
@@ -86,6 +90,7 @@ export interface Region {
   id: RegionId;
   species: readonly SpeciesId[];
   places: readonly string[];
+  people: readonly string[];
   destinations: readonly Destination[];
   skyOdds: { rain: number; fog: number };
   gate?: { destinationId: string; to: RegionId };
