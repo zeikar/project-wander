@@ -1,6 +1,6 @@
 import { findScene } from "../content/scenes";
 import { speciesOfFact } from "../content/species";
-import type { Outcome, Scene, SceneOption } from "../content/types";
+import type { Outcome, Scene, SceneOption, Weather } from "../content/types";
 import {
   MAX_FOOD,
   MAX_HP,
@@ -92,6 +92,19 @@ export function preview(
   return null;
 }
 
+// The weather over a layer's day; layer defaults to where the traveler is.
+export function weatherAt(state: GameState, layer?: number): Weather | undefined {
+  const at = layer ?? currentNode(state)?.layer;
+  return at === undefined ? undefined : state.map?.weather[at];
+}
+
+// Whether today's sky makes an option impossible. It stays on the menu with
+// its reason, so the traveler learns what the weather takes away.
+export function isClosed(state: GameState, option: SceneOption): boolean {
+  const sky = weatherAt(state)?.sky;
+  return sky !== undefined && (option.closedIn ?? []).includes(sky);
+}
+
 // Food is the one thing an option can ask for that the pack may not have.
 export function canAfford(state: GameState, option: SceneOption): boolean {
   const cheapest = Math.min(...Object.values(option.outcomes).map((o) => o.food));
@@ -179,7 +192,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
       }
       const option = offeredOptions(state).find((o) => o.id === action.optionId);
       const node = currentNode(state)!;
-      if (!option || !canAfford(state, option)) {
+      if (!option || !canAfford(state, option) || isClosed(state, option)) {
         return state;
       }
       const outcome = option.outcomes[node.variant!]!;

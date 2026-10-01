@@ -239,6 +239,20 @@ h2 {
   margin: 1rem 0 0.2rem;
 }
 
+.weather {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0.2rem 0 0.6rem;
+}
+
+.weather b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
 /* ---- cover ----------------------------------------------------------------- */
 
 .cover {

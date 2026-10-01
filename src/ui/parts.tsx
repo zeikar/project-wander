@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { findScene } from "../content/scenes";
 import { species, speciesOfFact } from "../content/species";
-import type { SpeciesId } from "../content/types";
+import type { SpeciesId, Weather } from "../content/types";
 import { MAX_FOOD, MAX_HP } from "../content/world";
 import type { MapNode } from "../core/map";
 import { knowsSpeciesOf } from "../core/reducer";
@@ -72,6 +72,20 @@ export function StatusBar({ state }: { state: GameState }) {
         <span>{ui.stat(ui.food, state.food, MAX_FOOD)}</span>
       </span>
     </header>
+  );
+}
+
+// The sky over a day, with what it does said where the choice is made. In
+// rain the wind's line is left out: rain keeps scent from carrying at all.
+export function WeatherLine({ weather, when }: { weather: Weather; when: "today" | "tomorrow" }) {
+  const { ui, weather: w } = useStrings();
+  const wind = weather.sky === "rain" ? "" : w.windNote[weather.wind];
+  return (
+    <p className={`weather sky-${weather.sky}`}>
+      <b>{ui[when](w.sky[weather.sky], w.wind[weather.wind])}</b>
+      {wind && <span>{wind}</span>}
+      {w.skyNote[weather.sky] && <span>{w.skyNote[weather.sky]}</span>}
+    </p>
   );
 }
 
@@ -146,9 +160,14 @@ export function signOf(
     const d = strings.destinations[node.destinationId!]!;
     return { place: d.name, sign: d.rumor };
   }
+  // Fog hides what is on a road, never what the road is called.
+  const fog = state.map?.weather[node.layer]?.sky === "fog";
   if (node.kind === "scene") {
     const scene = findScene(node.sceneId!)!;
     const text = strings.scenes[scene.id]!;
+    if (fog) {
+      return { place: text.place, sign: strings.weather.fogSign };
+    }
     const known = knowsSpeciesOf(state, scene);
     return {
       place: text.place,
@@ -156,5 +175,5 @@ export function signOf(
       species: known ? scene.species : undefined,
     };
   }
-  return { place: strings.quiet.place, sign: strings.quiet.sign };
+  return { place: strings.quiet.place, sign: fog ? strings.weather.fogSign : strings.quiet.sign };
 }

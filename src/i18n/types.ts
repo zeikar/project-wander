@@ -10,7 +10,7 @@
 // Anything that varies with a number or a name is a function, so each
 // language handles its own grammar (plurals, Korean particles) where it is
 // written instead of through a template syntax.
-import type { FactId, SpeciesId } from "../content/types";
+import type { FactId, Sky, SpeciesId, Wind } from "../content/types";
 
 export interface SceneText {
   // What the node is called on the map.
@@ -26,7 +26,9 @@ export interface SceneText {
   variants: Record<string, { tell?: string; reading?: string }>;
   // Per option: its label, and what happened, per variant. "*" answers for
   // every variant that has no line of its own.
-  options: Record<string, { label: string; result: Record<string, string> }>;
+  // `closed` is the reason shown when the sky rules the option out; required
+  // for every option that has `closedIn`.
+  options: Record<string, { label: string; result: Record<string, string>; closed?: string }>;
 }
 
 export interface DestinationText {
@@ -82,6 +84,20 @@ export interface Strings {
     // The label on what the notebook makes of a scene.
     reading: string;
     language: string;
+    // The weather line: the next day's sky over the map, today's in a scene.
+    tomorrow: (sky: string, wind: string) => string;
+    today: (sky: string, wind: string) => string;
+  };
+  weather: {
+    sky: Record<Sky, string>;
+    wind: Record<Wind, string>;
+    // What a sky does, said where the choice is made. Empty for clear.
+    skyNote: Record<Sky, string>;
+    // What the wind does to the traveler's scent. Not shown in rain, which
+    // keeps scent from carrying at all.
+    windNote: Record<Wind, string>;
+    // A road's sign on a day of fog.
+    fogSign: string;
   };
   village: { name: string; description: string };
   quiet: { place: string; sign: string; lines: readonly string[] };

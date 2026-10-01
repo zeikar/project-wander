@@ -6,14 +6,26 @@ import {
   canRead,
   currentNode,
   currentScene,
+  isClosed,
   knowsSpeciesOf,
   nextNodes,
   offeredOptions,
   preview,
+  weatherAt,
 } from "../core/reducer";
 import type { GameAction, GameState } from "../core/state";
 import { MapView } from "./MapView";
-import { LastEvent, Layout, Notebook, ROOMY, StatusBar, signOf, spot, useMedia } from "./parts";
+import {
+  LastEvent,
+  Layout,
+  Notebook,
+  ROOMY,
+  StatusBar,
+  WeatherLine,
+  signOf,
+  spot,
+  useMedia,
+} from "./parts";
 import { useStrings } from "./strings";
 
 type ScreenProps = { state: GameState; dispatch: Dispatch<GameAction>; newSeed: () => number };
@@ -46,6 +58,7 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
   const strings = useStrings();
   const { ui } = strings;
   const roomy = useMedia(ROOMY);
+  const tomorrow = weatherAt(state, currentNode(state)!.layer + 1);
 
   const story =
     state.day === 0 ? (
@@ -72,6 +85,7 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
       choices={
         <>
           <h3 className="label">{ui.whereNext}</h3>
+          {tomorrow && <WeatherLine weather={tomorrow} when="tomorrow" />}
           <ol className="index">
             {nextNodes(state).map((node) => {
               const { place, sign, species } = signOf(strings, state, node);
@@ -111,7 +125,11 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
         ? strings.species[scene.species!].name
         : ui.unknownAnimal;
 
+  const today = weatherAt(state);
   const hint = (option: SceneOption, affordable: boolean) => {
+    if (isClosed(state, option)) {
+      return text.options[option.id]!.closed!;
+    }
     if (!affordable) {
       return ui.noFood;
     }
@@ -127,6 +145,7 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
       story={
         <article className={`scene ${spot(scene.species)}`}>
           <p className="toll">{state.hungry ? ui.hungry : ui.fed}</p>
+          {today && <WeatherLine weather={today} when="today" />}
           <p className="kicker">{kicker}</p>
           <h2>{text.title}</h2>
           <p>{text.description}</p>
@@ -152,12 +171,13 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
         <ol className={`index ${spot(scene.species)}`}>
           {offeredOptions(state).map((option, i) => {
             const affordable = canAfford(state, option);
+            const closed = isClosed(state, option);
             const certain = preview(state, option) !== null;
             return (
               <li key={option.id}>
                 <button
                   className={`row ${option.needs ? "informed" : ""} ${certain ? "" : "unknown"}`}
-                  disabled={!affordable}
+                  disabled={!affordable || closed}
                   onClick={() => dispatch({ type: "CHOOSE", optionId: option.id })}
                 >
                   <span className="k" aria-hidden="true">

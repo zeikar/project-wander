@@ -61,4 +61,27 @@ describe("generateMap", () => {
       }
     }
   });
+
+  it.each(SEEDS)("seed %i: a sky for every day, and scent scenes follow the wind", (seed) => {
+    const map = generateMap(seed);
+    expect(map.weather).toHaveLength(map.layers.length);
+    for (const node of map.layers.flat()) {
+      const scene = node.sceneId ? findScene(node.sceneId) : undefined;
+      if (!scene?.byWind) {
+        continue;
+      }
+      const w = map.weather[node.layer]!;
+      expect(node.variant).toBe(w.sky === "rain" ? scene.byWind.rain : scene.byWind[w.wind]);
+    }
+  });
+
+  it("brings every sky and both winds over enough journeys", () => {
+    const all = SEEDS.flatMap((s) => generateMap(s).weather);
+    for (const sky of ["clear", "rain", "fog"]) {
+      expect(all.some((w) => w.sky === sky), sky).toBe(true);
+    }
+    for (const wind of ["behind", "ahead"]) {
+      expect(all.some((w) => w.wind === wind), wind).toBe(true);
+    }
+  });
 });

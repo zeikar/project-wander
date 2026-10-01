@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { scenes } from "../content/scenes";
-import type { FactId } from "../content/types";
+import type { FactId, Sky } from "../content/types";
 import { MAX_HP, START_FOOD, START_HP } from "../content/world";
 import type { MapNode, WorldMap } from "./map";
 import {
   canAfford,
   canRead,
   currentScene,
+  isClosed,
   nextNodes,
   offeredOptions,
   preview,
@@ -21,6 +22,7 @@ function roadThrough(
   sceneId: string,
   variant: string,
   destinationId = "white-stag-lake",
+  sky: Sky = "clear",
 ): WorldMap {
   const start: MapNode = { id: "0-0", layer: 0, index: 0, kind: "start" };
   const scene: MapNode = { id: "1-0", layer: 1, index: 0, kind: "scene", sceneId, variant };
@@ -28,6 +30,7 @@ function roadThrough(
   return {
     layers: [[start], [scene], [dest]],
     next: { "0-0": ["1-0"], "1-0": ["2-0"], "2-0": [] },
+    weather: [0, 1, 2].map(() => ({ sky, wind: "ahead" as const })),
   };
 }
 
@@ -35,11 +38,12 @@ function atScene(
   sceneId: string,
   variant: string,
   over: Partial<GameState> = {},
+  sky: Sky = "clear",
 ): GameState {
   return {
     ...createInitialState(),
     phase: "scene",
-    map: roadThrough(sceneId, variant),
+    map: roadThrough(sceneId, variant, "white-stag-lake", sky),
     at: "1-0",
     day: 1,
     hp: 4,
@@ -177,15 +181,17 @@ describe("what knowing changes", () => {
     expect(ids(atScene("wallow-boar", "sow", knowsSow))).not.toContain("watch");
   });
 
-  // An empty pack must never leave only a gamble.
+  // An empty pack must never leave only a gamble — under any sky.
   it("leaves at least one certain, affordable way through at food 0", () => {
-    for (const scene of scenes) {
-      for (const variant of scene.variants) {
-        const state = atScene(scene.id, variant, { food: 0 });
-        const certain = offeredOptions(state).filter(
-          (o) => canAfford(state, o) && preview(state, o) !== null,
-        );
-        expect(certain.length, `${scene.id}/${variant}`).toBeGreaterThan(0);
+    for (const sky of ["clear", "rain", "fog"] as const) {
+      for (const scene of scenes) {
+        for (const variant of scene.variants) {
+          const state = atScene(scene.id, variant, { food: 0 }, sky);
+          const certain = offeredOptions(state).filter(
+            (o) => canAfford(state, o) && !isClosed(state, o) && preview(state, o) !== null,
+          );
+          expect(certain.length, `${sky}: ${scene.id}/${variant}`).toBeGreaterThan(0);
+        }
       }
     }
   });
@@ -200,5 +206,19 @@ describe("what knowing changes", () => {
     const reading = { ...blind, known: ["boar.nose"] as FactId[] };
     expect(canRead(reading, currentScene(reading)!)).toBe(true);
     expect(preview(reading, option("cross"))).toMatchObject({ hp: -2 });
+  });
+});
+
+describe("weather", () => {
+  it("keeps a closed option on the menu but refuses it", () => {
+    const wet = atScene("pine-wolves", "passing", {}, "rain");
+    expect(ids(wet)).toContain("fire");
+    const fire = offeredOptions(wet).find((o) => o.id === "fire")!;
+    expect(isClosed(wet, fire)).toBe(true);
+    expect(reduce(wet, { type: "CHOOSE", optionId: "fire" })).toBe(wet);
+
+    const dry = atScene("pine-wolves", "passing", {}, "clear");
+    expect(isClosed(dry, fire)).toBe(false);
+    expect(reduce(dry, { type: "CHOOSE", optionId: "fire" }).food).toBe(dry.food - 1);
   });
 });

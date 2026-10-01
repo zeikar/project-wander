@@ -64,4 +64,12 @@ describe("scenes", () => {
       expect(taught.has(d.needs), d.id).toBe(true);
     }
   });
+
+  it("only drive a scene by the wind with variants it has", () => {
+    for (const scene of scenes.filter((s) => s.byWind)) {
+      for (const variant of Object.values(scene.byWind!)) {
+        expect(scene.variants, scene.id).toContain(variant);
+      }
+    }
+  });
 });

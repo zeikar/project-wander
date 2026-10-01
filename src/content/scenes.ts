@@ -25,6 +25,7 @@ export const scenes: readonly Scene[] = [
     species: "boar",
     variants: FORD,
     reads: "boar.nose",
+    byWind: { behind: "alert", ahead: "rooting", rain: "rooting" },
     options: [
       {
         id: "cross",
@@ -89,6 +90,7 @@ export const scenes: readonly Scene[] = [
     species: "wolves",
     variants: PINES,
     reads: "wolves.chase",
+    byWind: { behind: "stalking", ahead: "passing", rain: "passing" },
     options: [
       {
         id: "keep-walking",
@@ -98,7 +100,11 @@ export const scenes: readonly Scene[] = [
         },
       },
       { id: "climb", outcomes: always(PINES, { hp: -1, food: 0 }) },
-      { id: "fire", outcomes: always(PINES, { hp: 0, food: -1 }) },
+      {
+        id: "fire",
+        closedIn: ["rain"],
+        outcomes: always(PINES, { hp: 0, food: -1 }),
+      },
       {
         id: "watch",
         study: true,
@@ -181,6 +187,7 @@ export const scenes: readonly Scene[] = [
     species: "deer",
     variants: WATER,
     reads: "deer.dawn",
+    byWind: { behind: "upwind", ahead: "downwind", rain: "downwind" },
     options: [
       { id: "fill-and-go", outcomes: always(WATER, { hp: 0, food: 0 }) },
       { id: "rest", outcomes: always(WATER, { hp: 1, food: 0 }) },

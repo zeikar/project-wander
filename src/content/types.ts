@@ -12,6 +12,14 @@ export type FactId =
   | "deer.drive"
   | "deer.dawn";
 
+// The sky over one day of road, and which way the wind blows along it.
+export type Sky = "clear" | "rain" | "fog";
+export type Wind = "behind" | "ahead";
+export interface Weather {
+  sky: Sky;
+  wind: Wind;
+}
+
 export interface Species {
   id: SpeciesId;
   facts: readonly FactId[];
@@ -32,6 +40,8 @@ export interface SceneOption {
   // The option exists to learn. Once what it would teach is already known,
   // it is not offered — watching the same thing twice is not a choice.
   study?: true;
+  // Skies under which this simply cannot be done. Still shown, with a reason.
+  closedIn?: readonly Sky[];
   // One outcome per variant of the scene. The same choice can go very
   // differently depending on what is actually going on in front of you.
   outcomes: Readonly<Record<string, Outcome>>;
@@ -45,6 +55,10 @@ export interface Scene {
   // description shows a tell, and `reads` is the fact that lets you read it.
   variants: readonly string[];
   reads?: FactId;
+  // Scenes that turn on scent take their variant from the day's weather
+  // instead of a roll: the wind carries the traveler's smell ahead or behind,
+  // and rain keeps it from carrying at all.
+  byWind?: Readonly<Record<Wind | "rain", string>>;
   options: readonly SceneOption[];
 }
 

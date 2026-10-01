@@ -21,6 +21,7 @@ When a journey ends, the player should want to set out again — **not because s
 1. In the village you hear a few rumours. Each one is a place at the far edge of the map.
 2. The region is a map made fresh from a seed. Every day you choose the next road. From a day away you can see only a **sign** — tracks, smoke, a silence.
 3. Where the road takes you, something is going on: an animal, a place, a sky. You read it and choose.
+   Every day has a sky and a wind, and tomorrow's is shown over the map. The wind carries your scent ahead or behind; rain keeps it from carrying and puts out fires; fog hides what is on the roads but not their names. An animal you know plus a wind you can read is a day you can see coming.
 4. The journey ends when you reach one of the far places, or when the road ends you.
 
 ## What carries over

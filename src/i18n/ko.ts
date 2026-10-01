@@ -45,6 +45,23 @@ export const ko: Strings = {
     aPlace: "지나는 곳",
     reading: "해설",
     language: "언어",
+    tomorrow: (sky, wind) => `내일 하늘 · ${sky}, ${wind}`,
+    today: (sky, wind) => `오늘 하늘 · ${sky}, ${wind}`,
+  },
+
+  weather: {
+    sky: { clear: "맑음", rain: "비", fog: "안개" },
+    wind: { behind: "등바람", ahead: "맞바람" },
+    skyNote: {
+      clear: "",
+      rain: "빗속에서는 냄새가 멀리 가지 못하고, 불이 붙지 않는다.",
+      fog: "안개가 짙어 멀리 있는 흔적이 보이지 않는다.",
+    },
+    windNote: {
+      behind: "바람이 등 뒤에서 앞으로 분다. 냄새가 먼저 간다.",
+      ahead: "바람이 앞에서 불어온다. 냄새는 뒤로 흩어진다.",
+    },
+    fogSign: "안개에 가려 보이지 않는다.",
   },
 
   village: {
@@ -232,6 +249,7 @@ export const ko: Strings = {
         },
         fire: {
           label: "불을 피우고 날이 밝기를 기다린다",
+          closed: "비에 젖어 불이 붙지 않는다",
           result: {
             "*": "밤새 불가에 앉아 마른 빵을 씹는다. 새벽에 보니 그림자들은 가고 없다.",
           },

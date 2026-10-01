@@ -4,7 +4,8 @@
 import { rollRandom } from "./rng";
 import { scenes } from "../content/scenes";
 import { species } from "../content/species";
-import { NODE_ODDS, ROAD_DAYS, destinations } from "../content/world";
+import type { Scene, Weather } from "../content/types";
+import { NODE_ODDS, ROAD_DAYS, SKY_ODDS, destinations } from "../content/world";
 
 export interface MapNode {
   id: string;
@@ -19,6 +20,8 @@ export interface MapNode {
 export interface WorldMap {
   layers: readonly (readonly MapNode[])[];
   next: Readonly<Record<string, readonly string[]>>;
+  // The sky over each layer's day, indexed like `layers`.
+  weather: readonly Weather[];
 }
 
 export function generateMap(seed: number): WorldMap {
@@ -31,13 +34,22 @@ export function generateMap(seed: number): WorldMap {
   const pick = <T>(items: readonly T[]): T =>
     items[Math.floor(roll() * items.length)]!;
 
+  const weather: Weather[] = [];
+  for (let layer = 0; layer <= ROAD_DAYS + 1; layer++) {
+    const r = roll();
+    weather.push({
+      sky: r < SKY_ODDS.rain ? "rain" : r < SKY_ODDS.rain + SKY_ODDS.fog ? "fog" : "clear",
+      wind: roll() < 0.5 ? "behind" : "ahead",
+    });
+  }
+
   const layers: MapNode[][] = [[{ id: "0-0", layer: 0, index: 0, kind: "start" }]];
 
   for (let layer = 1; layer <= ROAD_DAYS; layer++) {
     const width = roll() < 0.5 ? 2 : 3;
     const row: MapNode[] = [];
     for (let index = 0; index < width; index++) {
-      row.push(roadNode(layer, index, roll, pick));
+      row.push(roadNode(layer, index, weather[layer]!, roll, pick));
     }
     layers.push(row);
   }
@@ -72,27 +84,37 @@ export function generateMap(seed: number): WorldMap {
     next[node.id] = [];
   }
 
-  return { layers, next };
+  return { layers, next, weather };
 }
 
 function roadNode(
   layer: number,
   index: number,
+  weather: Weather,
   roll: () => number,
   pick: <T>(items: readonly T[]) => T,
 ): MapNode {
   const id = `${layer}-${index}`;
   const r = roll();
+  // A scent scene is decided by the day's sky; the roll is still taken so the
+  // rest of the map does not shift when a scene gains or loses `byWind`.
+  const variantOf = (scene: Scene) => {
+    const rolled = pick(scene.variants);
+    if (!scene.byWind) {
+      return rolled;
+    }
+    return weather.sky === "rain" ? scene.byWind.rain : scene.byWind[weather.wind];
+  };
   if (r < NODE_ODDS.animal) {
     // Species first, then its situation, so an animal with more situations is
     // not met more often than the others.
     const animal = pick(species).id;
     const scene = pick(scenes.filter((s) => s.species === animal));
-    return { id, layer, index, kind: "scene", sceneId: scene.id, variant: pick(scene.variants) };
+    return { id, layer, index, kind: "scene", sceneId: scene.id, variant: variantOf(scene) };
   }
   if (r < NODE_ODDS.animal + NODE_ODDS.place) {
     const scene = pick(scenes.filter((s) => s.kind === "place"));
-    return { id, layer, index, kind: "scene", sceneId: scene.id, variant: pick(scene.variants) };
+    return { id, layer, index, kind: "scene", sceneId: scene.id, variant: variantOf(scene) };
   }
   return { id, layer, index, kind: "quiet" };
 }

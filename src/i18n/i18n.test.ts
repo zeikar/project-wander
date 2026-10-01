@@ -38,6 +38,9 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       );
       for (const option of scene.options) {
         expect(text.options[option.id]!.label).toBeTruthy();
+        if (option.closedIn) {
+          expect(text.options[option.id]!.closed, `${scene.id}/${option.id}`).toBeTruthy();
+        }
         // A misspelt variant key would silently fall back to "*".
         for (const key of Object.keys(text.options[option.id]!.result)) {
           expect([...scene.variants, "*"], `${scene.id}/${option.id}: ${key}`).toContain(key);

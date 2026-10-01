@@ -12,6 +12,9 @@ export const MAX_FOOD = 6;
 // destinations sit one day beyond the last of them.
 export const ROAD_DAYS = 5;
 
+// How often each sky comes. Wind is even odds.
+export const SKY_ODDS = { rain: 0.2, fog: 0.2 } as const; // rest: clear
+
 // How a road node is filled. Rolled per node when the map is made.
 export const NODE_ODDS = { animal: 0.55, place: 0.3 } as const; // rest: quiet
 
