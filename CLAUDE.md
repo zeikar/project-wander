@@ -57,13 +57,13 @@ ui → i18n → content (types only)
 
 ## Determinism
 
-Everything random is decided when the map is generated from the seed — layout, each day's weather, which scene stands where, and which variant of it is going on (scent scenes take theirs from the wind). Play itself uses no randomness. `Math.random` appears only in the UI — picking a new seed, and the decorative weather animation, which never touches state.
+Everything random is decided when the map is generated from the seed and the region — layout, each day's weather, which scene stands where, and which variant of it is going on (scent scenes take theirs from the wind). Play itself uses no randomness. `Math.random` appears only in the UI — picking a new seed, and the decorative weather animation, which never touches state.
 
 ## Languages
 
 Every player-facing string lives in `src/i18n/<locale>.ts`, shaped by `Strings` in `src/i18n/types.ts`:
 
-- Game text is keyed by the ids in `content/` (scenes, variants, options, facts, destinations).
+- Game text is keyed by the ids in `content/` (regions, scenes, variants, options, facts, destinations).
 - UI text is a fixed interface, so a missing key fails `typecheck`.
 - Anything that depends on a number or a name is a **function**, so each language handles its own grammar (Korean particles, plurals) instead of stitching fragments together.
 - State never stores prose — only ids. Text is looked up at render time, so switching language re-renders everything.
