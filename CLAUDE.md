@@ -86,7 +86,8 @@ When fixing a gameplay bug, add a regression test.
 
 ## Working agreements
 
-- **Never push without being asked.** Pushing `main` deploys to GitHub Pages.
+- **Finished work ships without asking.** Work on a branch; when a change is done and verified — `npm test`, `npm run typecheck` and `npm run build` green, and any review converged — merge it into `main` and push. Pushing `main` deploys to GitHub Pages, and the user plays the deployed site, often away from this machine. Then confirm the deploy succeeded and say so.
+- Still ask first before anything that cannot be undone with a new commit: force-pushing, rewriting history, deleting a remote branch or tag.
 - The repo is public, deliberately. Never change its visibility.
 - `git status` must come back clean: throwaway harnesses and screenshots live outside the repo or are deleted.
 
