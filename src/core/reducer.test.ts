@@ -365,6 +365,10 @@ describe("what the buttons promise", () => {
     const knowsBoth = atScene("rut-stag", "holding", { known: ["deer.drive", "deer.dawn"] as FactId[] });
     expect(ids(knowsBoth)).not.toContain("step-uphill");
 
+    // Following the lantern teaches what it shows, by variant.
+    expect(reduce(atScene("lantern-light", "dawn"), { type: "CHOOSE", optionId: "follow" }).known).toContain("lantern.dawn");
+    expect(reduce(atScene("lantern-light", "night"), { type: "CHOOSE", optionId: "follow" }).known).toContain("lantern.drift");
+
     const knowsChase = atScene("pine-wolves", "stalking", { known: ["wolves.chase"] as FactId[] });
     expect(reduce(knowsChase, { type: "CHOOSE", optionId: "back-away" }).known).toContain("wolves.rank");
   });
