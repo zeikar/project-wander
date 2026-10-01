@@ -498,6 +498,10 @@ button {
   padding-top: 0.5rem;
 }
 
+.hint p {
+  margin: 0 0 0.4rem;
+}
+
 .road-behind {
   font-size: 0.9rem;
   color: var(--ink-soft);
@@ -644,6 +648,15 @@ button {
 
 .map .node[class*="spot-"] .label.road {
   fill: var(--spot);
+}
+
+/* Where a miss could have been learned: ringed in ink, not a spot colour —
+   the traveler does not know it yet. */
+.map .node.marked .ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-dasharray: 3 2.5;
 }
 
 .map .label.dest {

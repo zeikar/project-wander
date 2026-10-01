@@ -1,12 +1,14 @@
-// The notebook and the chosen language outlive a page load. Browser storage
+// The notebook, the far places reached and the chosen language outlive a page load. Browser storage
 // can be missing or refuse (private windows, blocked site data); the game then
 // simply starts with an empty notebook.
 import { allFacts } from "../content/species";
 import type { FactId, RegionId } from "../content/types";
-import { FIRST_REGION, regions } from "../content/world";
+import { FIRST_REGION, destinations, regions } from "../content/world";
+import type { Been } from "../core/state";
 
 const KNOWN_KEY = "wander.v1.known";
 const OPEN_KEY = "wander.v1.open";
+const BEEN_KEY = "wander.v1.been";
 const LOCALE_KEY = "wander.v1.locale";
 
 export function loadKnown(): FactId[] {
@@ -54,6 +56,37 @@ export function saveOpen(open: readonly RegionId[]): void {
     localStorage.setItem(OPEN_KEY, JSON.stringify(open));
   } catch (error) {
     console.warn("Could not save the ways:", error);
+  }
+}
+
+export function loadBeen(): Been {
+  try {
+    const raw = localStorage.getItem(BEEN_KEY);
+    const parsed: unknown = raw === null ? {} : JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) {
+      return {};
+    }
+    const count = (n: unknown) => (Number.isInteger(n) && (n as number) > 0 ? (n as number) : 0);
+    const been: Record<string, { missed: number; saw: number }> = {};
+    for (const { id } of destinations) {
+      const entry = (parsed as Record<string, unknown>)[id];
+      if (typeof entry === "object" && entry !== null) {
+        const { missed, saw } = entry as Record<string, unknown>;
+        been[id] = { missed: count(missed), saw: count(saw) };
+      }
+    }
+    return been;
+  } catch (error) {
+    console.warn("Could not read the saved far places:", error);
+    return {};
+  }
+}
+
+export function saveBeen(been: Been): void {
+  try {
+    localStorage.setItem(BEEN_KEY, JSON.stringify(been));
+  } catch (error) {
+    console.warn("Could not save the far places:", error);
   }
 }
 

@@ -9,6 +9,7 @@ import {
   isClosed,
   knowsSpeciesOf,
   nextNodes,
+  nodeById,
   offeredOptions,
   preview,
   teachesForSure,
@@ -44,11 +45,15 @@ export function TitleScreen({ state, dispatch, newSeed }: ScreenProps) {
   );
 }
 
-function MapFigure({ state, dispatch }: Pick<ScreenProps, "state" | "dispatch">) {
+function MapFigure({
+  state,
+  dispatch,
+  mark,
+}: Pick<ScreenProps, "state" | "dispatch"> & { mark?: string }) {
   const strings = useStrings();
   return (
     <figure className="map-figure">
-      <MapView state={state} dispatch={dispatch} />
+      <MapView state={state} dispatch={dispatch} mark={mark} />
       <figcaption>{strings.ui.mapCaption(
           strings.regions[state.region].name,
           strings.regions[state.region].village.name,
@@ -220,8 +225,34 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
     .map((id) => state.map!.layers.flat().find((n) => n.id === id)!)
     .filter((n) => n.kind === "scene")
     .map((n) => strings.scenes[n.sceneId!]!.title);
-  const destination =
-    ending.kind === "arrived" ? strings.destinations[ending.destinationId]! : null;
+
+  let title = ui.diedTitle;
+  let told = ending.kind === "died" ? ui.diedOf[ending.cause] : "";
+  let visits = 1;
+  let hint: string | null = null;
+  let lead: string | null = null;
+  let mark: string | undefined;
+  if (ending.kind === "arrived") {
+    const destination = strings.destinations[ending.destinationId]!;
+    const been = state.been[ending.destinationId]!;
+    title = destination.name;
+    visits = been.missed + been.saw;
+    if (ending.saw) {
+      told = been.saw > 1 ? destination.sightAgain : destination.sight;
+    } else {
+      told = been.missed > 1 ? destination.missedAgain : destination.missed;
+      hint = destination.hint;
+      const node = ending.lead ? nodeById(state, ending.lead.nodeId)! : null;
+      const scene = node ? strings.scenes[node.sceneId!]! : null;
+      const fork = ending.lead?.fork ?? null;
+      lead = !node
+        ? ui.noLead
+        : fork === null
+          ? ui.leadTaken(node.layer, scene!.title)
+          : ui.leadLeft(fork, scene!.place);
+      mark = node?.id;
+    }
+  }
 
   return (
     <Layout
@@ -230,17 +261,17 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
         <>
           {ending.kind === "died" && state.last?.kind === "chose" && <LastEvent state={state} />}
           <div className="ending">
-            <p className="kicker">{ui.daysWalked(state.day)}</p>
-            <h2>{destination ? destination.name : ui.diedTitle}</h2>
-            <p>
-              {destination
-                ? ending.kind === "arrived" && ending.saw
-                  ? destination.sight
-                  : destination.missed
-                : ending.kind === "died" && ui.diedOf[ending.cause]}
+            <p className="kicker">
+              {ui.daysWalked(state.day)}
+              {visits > 1 && ` ${ui.nthVisit(visits)}`}
             </p>
-            {destination && ending.kind === "arrived" && !ending.saw && (
-              <p className="hint">{destination.hint}</p>
+            <h2>{title}</h2>
+            <p>{told}</p>
+            {hint && (
+              <div className="hint">
+                <p>{hint}</p>
+                <p>{lead}</p>
+              </div>
             )}
             {ending.kind === "arrived" && ending.opened && (
               <>
@@ -263,7 +294,7 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
           </section>
         </>
       }
-      map={<MapFigure state={state} dispatch={dispatch} />}
+      map={<MapFigure state={state} dispatch={dispatch} mark={mark} />}
       choices={
         <>
           {path.length > 0 && (
