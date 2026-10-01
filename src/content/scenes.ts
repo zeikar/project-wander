@@ -371,11 +371,9 @@ export const scenes: readonly Scene[] = [
     options: [
       {
         id: "follow",
-        // Each variant teaches what following it shows: into deep water at
-        // night, along the dry way the lights make at dawn.
         outcomes: {
           night: { hp: -3, food: 0, learn: "lantern.drift" },
-          dawn: { hp: 0, food: 0, learn: "lantern.dawn" },
+          dawn: { hp: -1, food: 0, learn: "lantern.dawn" },
         },
       },
       { id: "call-out", outcomes: always(LIGHT, { hp: -1, food: 0 }) },
