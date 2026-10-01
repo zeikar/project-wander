@@ -92,8 +92,8 @@ export interface Strings {
     // scene's title: a road walked on `day` where it was passed up, or where the
     // pack was too empty to stop for it; or one on the way not taken at the fork
     // on `day` (`another`: a scene of the same kind was walked elsewhere, with
-    // something else going on). `noLead` is for a journey offered it nowhere,
-    // which only a sky ruling the lesson out could leave.
+    // something else going on). `noLead` is a fallback for a miss with no
+    // lead at all; every map holds each far place's key, so it should not show.
     leadTaken: (day: number, title: string) => string;
     leadUnfed: (day: number, title: string) => string;
     leadLeft: (day: number, title: string, another: boolean) => string;
