@@ -8,10 +8,12 @@ import {
   loadBeen,
   loadKnown,
   loadLocale,
+  loadMet,
   loadOpen,
   saveBeen,
   saveKnown,
   saveLocale,
+  saveMet,
   saveOpen,
 } from "./storage";
 import { StringsContext } from "./strings";
@@ -28,7 +30,7 @@ export default function App() {
     detectLocale(loadLocale(), navigator.languages ?? []),
   );
   const [state, dispatch] = useReducer(reduce, undefined, () =>
-    createInitialState(loadKnown(), loadOpen(), loadBeen()),
+    createInitialState(loadKnown(), loadOpen(), loadBeen(), loadMet()),
   );
 
   useEffect(() => {
@@ -40,6 +42,9 @@ export default function App() {
   useEffect(() => {
     saveBeen(state.been);
   }, [state.been]);
+  useEffect(() => {
+    saveMet(state.met);
+  }, [state.met]);
   // Only an explicit choice is saved. Saving the detected language would pin
   // every returning player to it, even after their own language ships.
   const chooseLocale = (id: LocaleId) => {

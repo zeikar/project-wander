@@ -22,6 +22,8 @@ export interface SceneText {
   signKnown?: string;
   title: string;
   description: string;
+  // For a person: what is said on meeting them again. They remember.
+  again?: string;
   // Per variant: the telling detail, and — for scenes that are not places —
   // what the notebook makes of it once the right fact is known.
   variants: Record<string, { tell?: string; reading?: string }>;
@@ -110,6 +112,7 @@ export interface Strings {
     // A monster the notebook knows nothing of: nobody can yet say it is an animal at all.
     unknownThing: string;
     aPlace: string;
+    aPerson: string;
     // The label on what the notebook makes of a scene.
     reading: string;
     language: string;

@@ -58,6 +58,9 @@ export function offeredOptions(state: GameState): readonly SceneOption[] {
     if (option.needs !== undefined && !state.known.includes(option.needs)) {
       return false;
     }
+    if (option.seen !== undefined && !((state.been[option.seen]?.saw ?? 0) > 0)) {
+      return false;
+    }
     if (!option.study) {
       return true;
     }
@@ -228,7 +231,12 @@ export function reduce(state: GameState, action: GameAction): GameState {
       if (node.kind === "quiet") {
         return { ...walked, last: { kind: "quiet" } };
       }
-      return { ...walked, phase: "scene" };
+      const person = findScene(node.sceneId!)!.kind === "person";
+      return {
+        ...walked,
+        phase: "scene",
+        met: person ? { ...state.met, [node.sceneId!]: (state.met[node.sceneId!] ?? 0) + 1 } : state.met,
+      };
     }
 
     case "CHOOSE": {

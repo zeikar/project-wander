@@ -130,7 +130,9 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
   const kicker =
     scene.kind === "place"
       ? ui.aPlace
-      : knowsSpeciesOf(state, scene)
+      : scene.kind === "person"
+        ? ui.aPerson
+        : knowsSpeciesOf(state, scene)
         ? strings.species[scene.species!].name
         : scene.kind === "monster"
           ? ui.unknownThing
@@ -162,7 +164,8 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
           {today && <WeatherLine weather={today} when="today" />}
           <p className="kicker">{kicker}</p>
           <h2>{text.title}</h2>
-          <p>{text.description}</p>
+          {/* A person met before remembers; the count already holds this meeting. */}
+          <p>{(state.met[scene.id] ?? 0) > 1 && text.again ? text.again : text.description}</p>
           {/* Unread, the tell is printed out of register — the animal's colour
               a hair off the black. Reading it brings the plate into line. */}
           {v.tell && (

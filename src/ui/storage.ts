@@ -1,4 +1,5 @@
-// The notebook, the far places reached and the chosen language outlive a page load. Browser storage
+// The notebook, the far places reached, the people met and the chosen language
+// outlive a page load. Browser storage
 // can be missing or refuse (private windows, blocked site data); the game then
 // simply starts with an empty notebook.
 import { allFacts } from "../content/species";
@@ -9,6 +10,7 @@ import type { Been } from "../core/state";
 const KNOWN_KEY = "wander.v1.known";
 const OPEN_KEY = "wander.v1.open";
 const BEEN_KEY = "wander.v1.been";
+const MET_KEY = "wander.v1.met";
 const LOCALE_KEY = "wander.v1.locale";
 
 export function loadKnown(): FactId[] {
@@ -87,6 +89,35 @@ export function saveBeen(been: Been): void {
     localStorage.setItem(BEEN_KEY, JSON.stringify(been));
   } catch (error) {
     console.warn("Could not save the far places:", error);
+  }
+}
+
+export function loadMet(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(MET_KEY);
+    const parsed: unknown = raw === null ? {} : JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) {
+      return {};
+    }
+    const met: Record<string, number> = {};
+    for (const id of regions.flatMap((r) => r.people)) {
+      const n = (parsed as Record<string, unknown>)[id];
+      if (Number.isInteger(n) && (n as number) > 0) {
+        met[id] = n as number;
+      }
+    }
+    return met;
+  } catch (error) {
+    console.warn("Could not read the people met:", error);
+    return {};
+  }
+}
+
+export function saveMet(met: Readonly<Record<string, number>>): void {
+  try {
+    localStorage.setItem(MET_KEY, JSON.stringify(met));
+  } catch (error) {
+    console.warn("Could not save the people met:", error);
   }
 }
 

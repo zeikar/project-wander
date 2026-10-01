@@ -44,6 +44,8 @@ export interface GameState {
   open: readonly RegionId[];
   // The far places as remembered: arriving again is told as a return.
   been: Been;
+  // The people met, by scene id, and how often: they remember the traveler.
+  met: Readonly<Record<string, number>>;
   learnedThisJourney: readonly FactId[];
   path: readonly string[];
   last: LastEvent | null;
@@ -59,6 +61,7 @@ export function createInitialState(
   known: readonly FactId[] = [],
   open: readonly RegionId[] = [FIRST_REGION],
   been: Been = {},
+  met: Readonly<Record<string, number>> = {},
 ): GameState {
   return {
     phase: "title",
@@ -73,6 +76,7 @@ export function createInitialState(
     known,
     open,
     been,
+    met,
     learnedThisJourney: [],
     path: [],
     last: null,

@@ -454,6 +454,80 @@ export const scenes: readonly Scene[] = [
       { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
     ],
   },
+
+  // --- people ---------------------------------------------------------------
+  // Each wants one thing the traveler may know, and pays for it in kind: a bed
+  // and a meal (+1, +1), beside the rest (+2, -1) and the work (-1, +2) anyone
+  // can have. Telling what was seen at a far place earns what they know.
+  {
+    id: "old-shepherd",
+    kind: "person",
+    variants: ONE,
+    options: [
+      { id: "sit-by-fire", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "walk-the-flock", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "stand-guard", needs: "wolves.chase", outcomes: always(ONE, { hp: 1, food: 1 }) },
+      {
+        id: "tell-of-rock",
+        seen: "wolf-rock",
+        study: true,
+        outcomes: always(ONE, { hp: 0, food: 0, learn: "deer.drive" }),
+      },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "charcoal-burner",
+    kind: "person",
+    variants: ONE,
+    options: [
+      { id: "rest-by-kiln", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "carry-wood", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "fetch-water", needs: "boar.nose", outcomes: always(ONE, { hp: 1, food: 1 }) },
+      {
+        id: "tell-of-valley",
+        seen: "acorn-valley",
+        study: true,
+        outcomes: always(ONE, { hp: 0, food: 0, learn: "lantern.drift" }),
+      },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  // The two marsh people each know what the other needs.
+  {
+    id: "reed-cutter",
+    kind: "person",
+    variants: ONE,
+    options: [
+      { id: "share-supper", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "bundle-reeds", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "watch-herons", needs: "heron.lift", outcomes: always(ONE, { hp: 1, food: 1 }) },
+      {
+        id: "tell-of-island",
+        seen: "heron-island",
+        study: true,
+        outcomes: always(ONE, { hp: 0, food: 0, learn: "otter.raid" }),
+      },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "eel-fisher",
+    kind: "person",
+    variants: ONE,
+    options: [
+      { id: "share-fire", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "haul-traps", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "guard-the-catch", needs: "otter.raid", outcomes: always(ONE, { hp: 1, food: 1 }) },
+      {
+        id: "tell-of-weir",
+        seen: "otter-weir",
+        study: true,
+        outcomes: always(ONE, { hp: 0, food: 0, learn: "heron.lift" }),
+      },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
 ];
 
 export function findScene(id: string): Scene | undefined {

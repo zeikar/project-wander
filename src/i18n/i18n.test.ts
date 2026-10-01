@@ -11,7 +11,12 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
   // road away: each is shared by more than one kind of road in its region.
   it.each(regions)("names no road of $id that fog would give away", (region) => {
     const roads = scenes
-      .filter((s) => region.places.includes(s.id) || (s.species && region.species.includes(s.species)))
+      .filter(
+        (s) =>
+          region.places.includes(s.id) ||
+          region.people.includes(s.id) ||
+          (s.species && region.species.includes(s.species)),
+      )
       .map((s) => strings.scenes[s.id]!.place);
     const names = [...roads, strings.regions[region.id].quiet.place];
     for (const name of names) {
@@ -28,8 +33,11 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       for (const field of [text.place, text.sign, text.title, text.description]) {
         expect(field, scene.id).not.toBe("");
       }
-      if (scene.kind !== "place") {
+      if (scene.kind === "animal" || scene.kind === "monster") {
         expect(text.signKnown, scene.id).toBeTruthy();
+      }
+      if (scene.kind === "person") {
+        expect(text.again, scene.id).toBeTruthy();
       }
 
       expect(Object.keys(text.variants).sort(), scene.id).toEqual(
@@ -37,7 +45,7 @@ describe.each(Object.entries(locales))("locale %s", (_, strings) => {
       );
       for (const variant of scene.variants) {
         const v = text.variants[variant]!;
-        if (scene.kind !== "place") {
+        if (scene.kind === "animal" || scene.kind === "monster") {
           expect(v.tell, `${scene.id}/${variant}`).toBeTruthy();
         }
         if (scene.reads !== undefined) {
