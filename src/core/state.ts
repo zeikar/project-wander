@@ -18,33 +18,10 @@ export type LastEvent =
     }
   | { kind: "quiet" };
 
-// Where a journey went past what it was missing at the far place: a road
-// walked where it was on offer and passed up, one walked where it was there
-// but the pack was too empty to stop for it, or one turned away from at the
-// fork on day `fork`.
-export type Lead =
-  | { kind: "walked"; nodeId: string }
-  | { kind: "unfed"; nodeId: string }
-  | { kind: "left"; nodeId: string; fork: number };
-
 export type Ending =
-  // `opened`: the way found on this journey, if any. `lead`: only for a miss.
-  | {
-      kind: "arrived";
-      destinationId: string;
-      saw: boolean;
-      opened: RegionId | null;
-      lead: Lead | null;
-    }
+  // `opened`: the way found on this journey, if any.
+  | { kind: "arrived"; destinationId: string; saw: boolean; opened: RegionId | null }
   | { kind: "died"; cause: "wounds" | "hunger" };
-
-// A lesson that was there on a road walked: an option offered to the traveler,
-// as they stood, that would have taught `fact` — `fed` if they could pay for it.
-export interface Chance {
-  nodeId: string;
-  fact: FactId;
-  fed: boolean;
-}
 
 // How often the traveler has reached each far place, by destination id. Facts
 // are never lost, so every miss of a place comes before its first sight.
@@ -68,10 +45,6 @@ export interface GameState {
   // The far places as remembered: arriving again is told as a return.
   been: Been;
   learnedThisJourney: readonly FactId[];
-  chances: readonly Chance[];
-  // What the traveler knew at each fork, by day: the road they turned from is
-  // judged by it.
-  knewAtFork: readonly (readonly FactId[])[];
   path: readonly string[];
   last: LastEvent | null;
   ending: Ending | null;
@@ -101,8 +74,6 @@ export function createInitialState(
     open,
     been,
     learnedThisJourney: [],
-    chances: [],
-    knewAtFork: [],
     path: [],
     last: null,
     ending: null,

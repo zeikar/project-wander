@@ -60,8 +60,8 @@ export function generateMap(seed: number, region: Region): WorldMap {
   }
 
   // Every far place's key can be learned somewhere on the map by anyone who
-  // stops there, so a miss can always point at a road that held it. Where the
-  // roll left none, one road becomes one that does — never the only road
+  // stops there, so any journey can come to see any far place if it finds the
+  // road. Where the roll left none, one road becomes one that does — never the only road
   // holding another far place's key, and never a scene its day already has.
   const road = () => layers.slice(1).flat();
   const ownScenes = scenes.filter(

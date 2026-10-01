@@ -1,13 +1,12 @@
 // The region as a figure in the guide: the village at the bottom, the far
 // places at the top. Roads leading on from here carry their names, so the
-// list beside the map reads as its legend; a road to an animal the traveler
-// knows is printed in that animal's colour. The rest is a dot on the page.
-// `mark`: after a miss, the road where what was missing could have been learned.
+// list beside the map reads as its legend. All in ink: a road is chosen by
+// what its sign says, not by a colour picking it out. The rest is a dot.
 import type { Dispatch } from "react";
 import type { MapNode } from "../core/map";
 import { nextNodes } from "../core/reducer";
 import type { GameAction, GameState } from "../core/state";
-import { signOf, spot } from "./parts";
+import { signOf } from "./parts";
 import { useStrings } from "./strings";
 
 const W = 340;
@@ -19,11 +18,9 @@ const MARGIN = 62;
 export function MapView({
   state,
   dispatch,
-  mark,
 }: {
   state: GameState;
   dispatch: Dispatch<GameAction>;
-  mark?: string;
 }) {
   const strings = useStrings();
   const map = state.map!;
@@ -63,14 +60,13 @@ export function MapView({
         const status =
           node.id === state.at ? "current" : isOpen ? "open" : visited.has(node.id) ? "visited" : "unseen";
         const sign = isOpen ? signOf(strings, state, node) : null;
-        const marked = node.id === mark;
         // Labels sit on the outer side of a node, where no road runs into it;
         // the middle column takes the right.
         const right = x >= W / 2;
         return (
           <g
             key={node.id}
-            className={`node ${node.kind} ${status} ${spot(sign?.species)}${marked ? " marked" : ""}`}
+            className={`node ${node.kind} ${status}`}
             onClick={isOpen ? () => dispatch({ type: "MOVE", nodeId: node.id }) : undefined}
             transform={`translate(${x} ${y})`}
           >
@@ -90,14 +86,6 @@ export function MapView({
               <text className="label" y={22} textAnchor="middle">
                 {strings.regions[state.region].village.name}
               </text>
-            )}
-            {marked && (
-              <>
-                <circle className="ring" r={11} />
-                <text className="label road" x={right ? 15 : -15} y={4} textAnchor={right ? "start" : "end"}>
-                  {strings.scenes[node.sceneId!]!.place}
-                </text>
-              </>
             )}
             {sign && node.kind !== "destination" && (
               <text className="label road" x={right ? 12 : -12} y={4} textAnchor={right ? "start" : "end"}>

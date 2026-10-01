@@ -409,12 +409,9 @@ button {
   content: "— ";
 }
 
-.row.informed {
-  background: color-mix(in srgb, var(--spot) 11%, transparent);
-}
-
-.row.informed .k,
-.row.road.informed .l {
+/* An answer only knowing offers: its key, and nothing else, in the animal's
+   colour — enough to notice, not enough to pick it out for you. */
+.row.informed .k {
   color: var(--spot);
   font-weight: 800;
 }
@@ -423,11 +420,6 @@ button {
 .row:focus-visible {
   background: color-mix(in srgb, var(--ink) 5%, transparent);
   outline: none;
-}
-
-.row.informed:hover:not(:disabled),
-.row.informed:focus-visible {
-  background: color-mix(in srgb, var(--spot) 18%, transparent);
 }
 
 .row:focus-visible {
@@ -496,10 +488,6 @@ button {
   color: var(--ink-soft);
   border-top: 1px dotted var(--faint);
   padding-top: 0.5rem;
-}
-
-.hint p {
-  margin: 0 0 0.4rem;
 }
 
 .road-behind {
@@ -625,14 +613,9 @@ button {
   stroke-width: 1.4;
 }
 
-/* A road to an animal the traveler knows, printed in its colour. */
-.map .node.open[class*="spot-"] circle {
-  fill: var(--spot);
-}
-
 .map .node.open:hover circle,
 .map .node.open:hover rect {
-  fill: color-mix(in srgb, var(--spot) 35%, var(--paper));
+  fill: color-mix(in srgb, var(--ink) 35%, var(--paper));
 }
 
 .map .label {
@@ -644,19 +627,6 @@ button {
 
 .map .label.road {
   font-size: 13px;
-}
-
-.map .node[class*="spot-"] .label.road {
-  fill: var(--spot);
-}
-
-/* Where a miss could have been learned: ringed in ink, not a spot colour —
-   the traveler does not know it yet. */
-.map .node.marked .ring {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 1.6;
-  stroke-dasharray: 3 2.5;
 }
 
 .map .label.dest {
