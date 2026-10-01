@@ -86,10 +86,18 @@ export function preview(
   }
   const all = Object.values(option.outcomes);
   const same = all.every((o) => o.hp === all[0]!.hp && o.food === all[0]!.food);
-  if (same || canRead(state, scene)) {
-    return option.outcomes[variant]!;
+  if (!same && !canRead(state, scene)) {
+    return null;
   }
-  return null;
+  // A gain is shown as what will actually land: resting at full health gives
+  // nothing back, and the button must not promise otherwise. Losses stay as
+  // they are — a wound bigger than what is left is still the wound.
+  const o = option.outcomes[variant]!;
+  return {
+    ...o,
+    hp: o.hp > 0 ? Math.min(o.hp, MAX_HP - state.hp) : o.hp,
+    food: o.food > 0 ? Math.min(o.food, MAX_FOOD - state.food) : o.food,
+  };
 }
 
 // Whether choosing a study option is certain to teach something new, as far as
@@ -122,9 +130,16 @@ export function isClosed(state: GameState, option: SceneOption): boolean {
 }
 
 // Food is the one thing an option can ask for that the pack may not have.
+// Unread, it is judged on the dearest variant so the menu cannot give away
+// which one is there; read, on the one that is.
 export function canAfford(state: GameState, option: SceneOption): boolean {
-  const cheapest = Math.min(...Object.values(option.outcomes).map((o) => o.food));
-  return state.food + cheapest >= 0;
+  const scene = currentScene(state);
+  const variant = currentNode(state)?.variant;
+  const costs =
+    scene && variant !== undefined && canRead(state, scene)
+      ? [option.outcomes[variant]!.food]
+      : Object.values(option.outcomes).map((o) => o.food);
+  return state.food + Math.min(...costs) >= 0;
 }
 
 export function reduce(state: GameState, action: GameAction): GameState {

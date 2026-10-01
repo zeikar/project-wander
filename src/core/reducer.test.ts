@@ -334,3 +334,43 @@ describe("weather", () => {
     expect(reduce(dry, { type: "CHOOSE", optionId: "fire" }).food).toBe(dry.food - 1);
   });
 });
+
+// From the 2026-10-01 playtest: a button must not promise what the result
+// will not give, and reading a scene must never make the menu stingier.
+describe("what the buttons promise", () => {
+  it("shows a gain as what will land, not past the pool", () => {
+    const full = atScene("old-camp", "only", { hp: MAX_HP, food: 2 });
+    const rest = offeredOptions(full).find((o) => o.id === "rest")!;
+    expect(preview(full, rest)).toMatchObject({ hp: 0, food: -1 });
+    const hurt = atScene("old-camp", "only", { hp: MAX_HP - 1, food: 2 });
+    expect(preview(hurt, rest)).toMatchObject({ hp: 1, food: -1 });
+  });
+
+  it("lets a traveler who can read the scene take what costs no food here", () => {
+    const read = atScene("otter-camp", "clean", { food: 0, known: ["otter.raid"] as FactId[] });
+    const sleep = offeredOptions(read).find((o) => o.id === "sleep")!;
+    expect(canAfford(read, sleep)).toBe(true);
+    expect(reduce(read, { type: "CHOOSE", optionId: "sleep" }).phase).toBe("map");
+    // Unread, it is still judged on the dearest variant — no leak.
+    const unread = atScene("otter-camp", "clean", { food: 0 });
+    const sleep2 = offeredOptions(unread).find((o) => o.id === "sleep")!;
+    expect(canAfford(unread, sleep2)).toBe(false);
+  });
+
+  it("turns one fact into the way to the next, then steps aside", () => {
+    const knowsDrive = atScene("rut-stag", "holding", { known: ["deer.drive"] as FactId[] });
+    expect(ids(knowsDrive)).toContain("step-uphill");
+    const after = reduce(knowsDrive, { type: "CHOOSE", optionId: "step-uphill" });
+    expect(after.known).toContain("deer.dawn");
+    const knowsBoth = atScene("rut-stag", "holding", { known: ["deer.drive", "deer.dawn"] as FactId[] });
+    expect(ids(knowsBoth)).not.toContain("step-uphill");
+
+    // Following the lantern teaches what it shows, by variant.
+    expect(reduce(atScene("lantern-light", "dawn"), { type: "CHOOSE", optionId: "follow" }).known).toContain("lantern.dawn");
+    expect(reduce(atScene("lantern-light", "night"), { type: "CHOOSE", optionId: "follow" }).known).toContain("lantern.drift");
+
+    const knowsChase = atScene("pine-wolves", "stalking", { known: ["wolves.chase"] as FactId[] });
+    expect(reduce(knowsChase, { type: "CHOOSE", optionId: "back-away" }).known).toContain("wolves.rank");
+  });
+});
+
