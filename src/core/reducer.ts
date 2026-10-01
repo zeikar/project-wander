@@ -1,6 +1,6 @@
 import { findScene } from "../content/scenes";
 import { speciesOfFact } from "../content/species";
-import type { Outcome, Scene, SceneOption, Weather } from "../content/types";
+import type { FactId, Outcome, Scene, SceneOption, Weather } from "../content/types";
 import {
   MAX_FOOD,
   MAX_HP,
@@ -10,7 +10,7 @@ import {
 } from "../content/world";
 import { generateMap } from "./map";
 import type { MapNode } from "./map";
-import type { GameAction, GameState } from "./state";
+import type { GameAction, GameState, Lead } from "./state";
 
 const clamp = (n: number, max: number) => Math.max(0, Math.min(max, n));
 
@@ -142,6 +142,44 @@ export function canAfford(state: GameState, option: SceneOption): boolean {
   return state.food + Math.min(...costs) >= 0;
 }
 
+// Whether a road, as it stood on this map, would have taught `fact` to this
+// traveler: by an option that needs nothing, or only what they knew setting out.
+function taught(state: GameState, node: MapNode, fact: FactId): boolean {
+  const scene = node.sceneId === undefined ? undefined : findScene(node.sceneId);
+  const knewBefore = (f: FactId) =>
+    state.known.includes(f) && !state.learnedThisJourney.includes(f);
+  return (
+    scene !== undefined &&
+    scene.options.some(
+      (o) =>
+        (o.needs === undefined || knewBefore(o.needs)) &&
+        o.outcomes[node.variant!]!.learn === fact,
+    )
+  );
+}
+
+// Where this journey went past a fact it was missing: the first road walked
+// that would have taught it; else the nearest one ahead of the last fork that
+// still led to one.
+export function findLead(state: GameState, fact: FactId): Lead | null {
+  const passed = state.path.find((id) => taught(state, nodeById(state, id)!, fact));
+  if (passed) {
+    return { nodeId: passed, fork: null };
+  }
+  for (let day = state.path.length - 1; day >= 0; day--) {
+    // Breadth first, so the nearest road ahead is found first.
+    const ahead = [...(state.map!.next[state.path[day]!] ?? [])];
+    for (let i = 0; i < ahead.length; i++) {
+      const id = ahead[i]!;
+      if (taught(state, nodeById(state, id)!, fact)) {
+        return { nodeId: id, fork: day };
+      }
+      ahead.push(...(state.map!.next[id] ?? []).filter((n) => !ahead.includes(n)));
+    }
+  }
+  return null;
+}
+
 export function reduce(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "START": {
@@ -211,11 +249,24 @@ export function reduce(state: GameState, action: GameAction): GameState {
         // new, so the end screen says so once.
         const to = region.gate?.destinationId === destination.id ? region.gate.to : null;
         const opened = saw && to !== null && !state.open.includes(to) ? to : null;
+        const been = state.been[destination.id] ?? { missed: 0, saw: 0 };
         return {
           ...walked,
           phase: "end",
           open: opened ? [...state.open, opened] : state.open,
-          ending: { kind: "arrived", destinationId: destination.id, saw, opened },
+          been: {
+            ...state.been,
+            [destination.id]: saw
+              ? { ...been, saw: been.saw + 1 }
+              : { ...been, missed: been.missed + 1 },
+          },
+          ending: {
+            kind: "arrived",
+            destinationId: destination.id,
+            saw,
+            opened,
+            lead: saw ? null : findLead(walked, destination.needs),
+          },
         };
       }
       if (node.kind === "quiet") {

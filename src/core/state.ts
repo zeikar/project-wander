@@ -18,10 +18,28 @@ export type LastEvent =
     }
   | { kind: "quiet" };
 
+// Where a journey went past what it was missing at the far place: a road that
+// would have taught it, walked (`fork` null) or turned away from at the fork
+// on day `fork`.
+export interface Lead {
+  nodeId: string;
+  fork: number | null;
+}
+
 export type Ending =
-  // `opened`: the way found on this journey, if any.
-  | { kind: "arrived"; destinationId: string; saw: boolean; opened: RegionId | null }
+  // `opened`: the way found on this journey, if any. `lead`: only for a miss.
+  | {
+      kind: "arrived";
+      destinationId: string;
+      saw: boolean;
+      opened: RegionId | null;
+      lead: Lead | null;
+    }
   | { kind: "died"; cause: "wounds" | "hunger" };
+
+// How often the traveler has reached each far place, by destination id. Facts
+// are never lost, so every miss of a place comes before its first sight.
+export type Been = Readonly<Record<string, { missed: number; saw: number }>>;
 
 export interface GameState {
   phase: Phase;
@@ -38,6 +56,8 @@ export interface GameState {
   known: readonly FactId[];
   // The ways the traveler knows — the notebook's other page, kept like `known`.
   open: readonly RegionId[];
+  // The far places as remembered: arriving again is told as a return.
+  been: Been;
   learnedThisJourney: readonly FactId[];
   path: readonly string[];
   last: LastEvent | null;
@@ -52,6 +72,7 @@ export type GameAction =
 export function createInitialState(
   known: readonly FactId[] = [],
   open: readonly RegionId[] = [FIRST_REGION],
+  been: Been = {},
 ): GameState {
   return {
     phase: "title",
@@ -65,6 +86,7 @@ export function createInitialState(
     hungry: false,
     known,
     open,
+    been,
     learnedThisJourney: [],
     path: [],
     last: null,

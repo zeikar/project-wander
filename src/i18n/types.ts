@@ -36,8 +36,12 @@ export interface DestinationText {
   rumor: string;
   // What is there, for the traveler who knew enough to see it.
   sight: string;
+  // Coming back after seeing it: something not there the first time.
+  sightAgain: string;
   // What happened instead, for the one who did not.
   missed: string;
+  // Missing it again: closer to what was missing, still never the answer.
+  missedAgain: string;
   // What would have made the difference. Names the kind of knowledge, never
   // the answer.
   hint: string;
@@ -81,6 +85,14 @@ export interface Strings {
     diedTitle: string;
     diedOf: { wounds: string; hunger: string };
     daysWalked: (n: number) => string;
+    // The end-screen line for a far place reached before; n counts this time.
+    nthVisit: (n: number) => string;
+    // After a miss, where this journey went past what was missing: a road walked
+    // on `day` (named by its scene's title), or one on the way not taken at the
+    // fork on `day` (named as the map names it), or none on this map.
+    leadTaken: (day: number, title: string) => string;
+    leadLeft: (day: number, place: string) => string;
+    noLead: string;
     learnedThisJourney: string;
     nothingLearned: string;
     theRoadBehind: string;

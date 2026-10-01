@@ -4,7 +4,16 @@ import { createInitialState } from "../core/state";
 import { detectLocale, locales } from "../i18n";
 import type { LocaleId } from "../i18n";
 import { EndScreen, MapScreen, SceneScreen, TitleScreen } from "./screens";
-import { loadKnown, loadLocale, loadOpen, saveKnown, saveLocale, saveOpen } from "./storage";
+import {
+  loadBeen,
+  loadKnown,
+  loadLocale,
+  loadOpen,
+  saveBeen,
+  saveKnown,
+  saveLocale,
+  saveOpen,
+} from "./storage";
 import { StringsContext } from "./strings";
 import { WeatherSky } from "./WeatherSky";
 
@@ -19,7 +28,7 @@ export default function App() {
     detectLocale(loadLocale(), navigator.languages ?? []),
   );
   const [state, dispatch] = useReducer(reduce, undefined, () =>
-    createInitialState(loadKnown(), loadOpen()),
+    createInitialState(loadKnown(), loadOpen(), loadBeen()),
   );
 
   useEffect(() => {
@@ -28,6 +37,9 @@ export default function App() {
   useEffect(() => {
     saveOpen(state.open);
   }, [state.open]);
+  useEffect(() => {
+    saveBeen(state.been);
+  }, [state.been]);
   // Only an explicit choice is saved. Saving the detected language would pin
   // every returning player to it, even after their own language ships.
   const chooseLocale = (id: LocaleId) => {

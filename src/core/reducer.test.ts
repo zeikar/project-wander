@@ -123,9 +123,21 @@ describe("MOVE", () => {
   it("sees the destination's sight only with the fact it needs", () => {
     const before = atScene("ford-boar", "rooting", { phase: "map" });
     const missed = reduce(before, { type: "MOVE", nodeId: "2-0" });
-    expect(missed.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: false, opened: null });
+    expect(missed.ending).toEqual({
+      kind: "arrived",
+      destinationId: "white-stag-lake",
+      saw: false,
+      opened: null,
+      lead: null,
+    });
     const saw = reduce({ ...before, known: ["deer.dawn"] }, { type: "MOVE", nodeId: "2-0" });
-    expect(saw.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: true, opened: "marsh" });
+    expect(saw.ending).toEqual({
+      kind: "arrived",
+      destinationId: "white-stag-lake",
+      saw: true,
+      opened: "marsh",
+      lead: null,
+    });
   });
 
   it("opens the way to the marsh only by seeing the white stag", () => {
@@ -145,7 +157,13 @@ describe("MOVE", () => {
       map: roadThrough("ford-boar", "rooting", "wolf-rock"),
     });
     const atRock = reduce(rock, { type: "MOVE", nodeId: "2-0" });
-    expect(atRock.ending).toEqual({ kind: "arrived", destinationId: "wolf-rock", saw: true, opened: null });
+    expect(atRock.ending).toEqual({
+      kind: "arrived",
+      destinationId: "wolf-rock",
+      saw: true,
+      opened: null,
+      lead: null,
+    });
     expect(atRock.open).toEqual(["fields"]);
 
     const again = atScene("ford-boar", "rooting", {
@@ -171,7 +189,80 @@ describe("MOVE", () => {
       destinationId: "heron-island",
       saw: true,
       opened: null,
+      lead: null,
     });
+  });
+});
+
+describe("what a far place remembers", () => {
+  const arrive = (state: GameState) => reduce(state, { type: "MOVE", nodeId: "2-0" });
+  const before = (sceneId: string, variant: string, over: Partial<GameState> = {}) =>
+    atScene(sceneId, variant, { phase: "map", ...over });
+
+  it("names the road walked that would have taught what was missing", () => {
+    expect(arrive(before("dawn-water", "upwind")).ending).toMatchObject({
+      saw: false,
+      lead: { nodeId: "1-0", fork: null },
+    });
+  });
+
+  it("names a road only if what was going on there taught it", () => {
+    const acorns = (variant: string) =>
+      before("wallow-boar", variant, { map: roadThrough("wallow-boar", variant, "acorn-valley") });
+    expect(arrive(acorns("sow")).ending).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
+    expect(arrive(acorns("sleeping")).ending).toMatchObject({ lead: null });
+  });
+
+  // The stag would teach the dawn only by stepping uphill, which takes knowing
+  // the drive. Learned on the way it may have come after the stag, so only
+  // what was known setting out counts.
+  it("counts a lesson that needs knowing only if it was known setting out", () => {
+    const stag = (over: Partial<GameState>) => arrive(before("rut-stag", "grazing", over)).ending;
+    expect(stag({})).toMatchObject({ lead: null });
+    expect(stag({ known: ["deer.drive"] })).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
+    expect(stag({ known: ["deer.drive"], learnedThisJourney: ["deer.drive"] })).toMatchObject({
+      lead: null,
+    });
+  });
+
+  // village -> ford (walked) or cart -> wallow with the sow (never walked) -> lake
+  it("names a road turned away from, at the last fork that still led there", () => {
+    const node = (id: string, layer: number, index: number, sceneId: string, variant: string): MapNode =>
+      ({ id, layer, index, kind: "scene", sceneId, variant });
+    const map: WorldMap = {
+      layers: [
+        [{ id: "0-0", layer: 0, index: 0, kind: "start" }],
+        [node("1-0", 1, 0, "ford-boar", "rooting"), node("1-1", 1, 1, "overturned-cart", "only")],
+        [node("2-0", 2, 0, "old-camp", "only"), node("2-1", 2, 1, "wallow-boar", "sow")],
+        [{ id: "3-0", layer: 3, index: 0, kind: "destination", destinationId: "acorn-valley" }],
+      ],
+      next: { "0-0": ["1-0", "1-1"], "1-0": ["2-0"], "1-1": ["2-0", "2-1"], "2-0": ["3-0"], "2-1": ["3-0"] },
+      weather: [0, 1, 2, 3].map(() => ({ sky: "clear" as const, wind: "ahead" as const })),
+    };
+    const walked = { ...createInitialState(), phase: "map" as const, map, at: "2-0", day: 2, hp: 4, food: 2 };
+    expect(
+      reduce({ ...walked, path: ["0-0", "1-0", "2-0"] }, { type: "MOVE", nodeId: "3-0" }).ending,
+    ).toMatchObject({ saw: false, lead: { nodeId: "2-1", fork: 0 } });
+    // Through the cart the wallow was offered the next morning, and left.
+    expect(
+      reduce({ ...walked, path: ["0-0", "1-1", "2-0"] }, { type: "MOVE", nodeId: "3-0" }).ending,
+    ).toMatchObject({ lead: { nodeId: "2-1", fork: 1 } });
+  });
+
+  it("counts misses and sights per far place, and a sight names no road", () => {
+    const missed = arrive(before("dawn-water", "upwind"));
+    expect(missed.been).toEqual({ "white-stag-lake": { missed: 1, saw: 0 } });
+    const again = arrive(before("dawn-water", "upwind", { been: missed.been }));
+    expect(again.been).toEqual({ "white-stag-lake": { missed: 2, saw: 0 } });
+    const saw = arrive(before("dawn-water", "upwind", { been: again.been, known: ["deer.dawn"] }));
+    expect(saw.been).toEqual({ "white-stag-lake": { missed: 2, saw: 1 } });
+    expect(saw.ending).toMatchObject({ saw: true, lead: null });
+  });
+
+  it("keeps what it remembers across a new journey", () => {
+    const been = { "wolf-rock": { missed: 1, saw: 0 } };
+    const next = reduce(createInitialState([], ["fields"], been), { type: "START", seed: 3, region: "fields" });
+    expect(next.been).toEqual(been);
   });
 });
 
