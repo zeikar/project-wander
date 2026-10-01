@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scenes } from "../content/scenes";
 import type { FactId, Sky } from "../content/types";
-import { MAX_HP, START_FOOD, START_HP } from "../content/world";
+import { FIRST_REGION, MAX_HP, START_FOOD, START_HP } from "../content/world";
 import type { MapNode, WorldMap } from "./map";
 import {
   canAfford,
@@ -14,7 +14,7 @@ import {
   reduce,
 } from "./reducer";
 import { createInitialState } from "./state";
-import type { GameState } from "./state";
+import type { GameAction, GameState } from "./state";
 
 // A hand-made road: village -> one scene -> one destination, so each rule can
 // be put in front of exactly the scene it is about.
@@ -58,7 +58,7 @@ const ids = (state: GameState) => offeredOptions(state).map((o) => o.id);
 describe("START", () => {
   it("sets out from the village with a fresh pack and the old notebook", () => {
     const known: FactId[] = ["boar.nose"];
-    const state = reduce(createInitialState(known), { type: "START", seed: 7 });
+    const state = reduce(createInitialState(known), { type: "START", seed: 7, region: "fields" });
     expect(state.phase).toBe("map");
     expect(state.at).toBe("0-0");
     expect(state.hp).toBe(START_HP);
@@ -69,7 +69,17 @@ describe("START", () => {
 
   it("is ignored in the middle of a journey", () => {
     const state = atScene("ford-boar", "rooting");
-    expect(reduce(state, { type: "START", seed: 1 })).toBe(state);
+    expect(reduce(state, { type: "START", seed: 1, region: "fields" })).toBe(state);
+  });
+
+  it("ignores a region the notebook has no way to", () => {
+    const title = createInitialState();
+    const unknown = { type: "START", seed: 1, region: "nowhere" } as unknown as GameAction;
+    expect(reduce(title, unknown)).toBe(title);
+  });
+
+  it("opens only the first region on a fresh notebook", () => {
+    expect(createInitialState().open).toEqual([FIRST_REGION]);
   });
 });
 
@@ -99,9 +109,9 @@ describe("MOVE", () => {
   it("sees the destination's sight only with the fact it needs", () => {
     const before = atScene("ford-boar", "rooting", { phase: "map" });
     const missed = reduce(before, { type: "MOVE", nodeId: "2-0" });
-    expect(missed.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: false });
+    expect(missed.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: false, opened: null });
     const saw = reduce({ ...before, known: ["deer.dawn"] }, { type: "MOVE", nodeId: "2-0" });
-    expect(saw.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: true });
+    expect(saw.ending).toEqual({ kind: "arrived", destinationId: "white-stag-lake", saw: true, opened: null });
   });
 });
 
@@ -124,9 +134,14 @@ describe("CHOOSE", () => {
   it("keeps the notebook across the next START", () => {
     const learned = reduce(atScene("ford-boar", "alert"), { type: "CHOOSE", optionId: "watch" });
     const ended = { ...learned, phase: "end" as const };
-    const again = reduce(ended, { type: "START", seed: 3 });
+    const again = reduce(ended, { type: "START", seed: 3, region: "fields" });
     expect(again.known).toEqual(["boar.nose"]);
     expect(again.learnedThisJourney).toEqual([]);
+  });
+
+  it("keeps the open ways across the next START", () => {
+    const ended = { ...atScene("ford-boar", "alert"), phase: "end" as const, open: ["fields" as const] };
+    expect(reduce(ended, { type: "START", seed: 3, region: "fields" }).open).toEqual(["fields"]);
   });
 
   it("clamps health at the pool you set out with", () => {

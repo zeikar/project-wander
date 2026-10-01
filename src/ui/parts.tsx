@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import type { Dispatch, ReactNode } from "react";
 import { findScene } from "../content/scenes";
 import { species, speciesOfFact } from "../content/species";
-import type { SpeciesId, Weather } from "../content/types";
+import type { RegionId, SpeciesId, Weather } from "../content/types";
 import { MAX_FOOD, MAX_HP } from "../content/world";
 import type { MapNode } from "../core/map";
 import { knowsSpeciesOf } from "../core/reducer";
-import type { GameState } from "../core/state";
+import type { GameAction, GameState } from "../core/state";
 import type { Strings } from "../i18n";
 import { resultText } from "../i18n";
 import { useStrings } from "./strings";
@@ -89,9 +89,61 @@ export function WeatherLine({ weather, when }: { weather: Weather; when: "today"
   );
 }
 
+// Where the next journey starts. One village is one button, as it always was;
+// from the second open region on, the villages are listed to choose from.
+export function SetOut({
+  state,
+  dispatch,
+  newSeed,
+  label,
+}: {
+  state: GameState;
+  dispatch: Dispatch<GameAction>;
+  newSeed: () => number;
+  label: string;
+}) {
+  const { ui, regions } = useStrings();
+  if (state.open.length === 1) {
+    return (
+      <button
+        className="primary"
+        onClick={() => dispatch({ type: "START", seed: newSeed(), region: state.open[0]! })}
+      >
+        {label}
+      </button>
+    );
+  }
+  return (
+    <>
+      <h3 className="label">{ui.setOutFrom}</h3>
+      <ol className="index">
+        {state.open.map((id) => (
+          <li key={id}>
+            <button
+              className="row"
+              onClick={() => dispatch({ type: "START", seed: newSeed(), region: id })}
+            >
+              <span className="l">{regions[id].village.name}</span>
+              <span className="v">{regions[id].name}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+}
+
 // The notebook, one animal at a time. It never counts what is left — only
 // says that there is more, so there is something to go and find out.
-export function Notebook({ known, open = false }: { known: GameState["known"]; open?: boolean }) {
+export function Notebook({
+  known,
+  ways,
+  open = false,
+}: {
+  known: GameState["known"];
+  ways: readonly RegionId[];
+  open?: boolean;
+}) {
   const strings = useStrings();
   const entries = species.filter((s) => s.facts.some((f) => known.includes(f)));
   return (
@@ -113,6 +165,16 @@ export function Notebook({ known, open = false }: { known: GameState["known"]; o
           )}
         </section>
       ))}
+      {ways.length > 1 && (
+        <section>
+          <h3>{strings.ui.ways}</h3>
+          {ways.slice(1).map((id) => (
+            <p key={id} className="note">
+              {strings.regions[id].way}
+            </p>
+          ))}
+        </section>
+      )}
     </details>
   );
 }
@@ -125,7 +187,7 @@ export function LastEvent({ state }: { state: GameState }) {
     return null;
   }
   if (last.kind === "quiet") {
-    const lines = strings.quiet.lines;
+    const lines = strings.regions[state.region].quiet.lines;
     return (
       <div className="event">
         <p className="toll">{state.hungry ? strings.ui.hungry : strings.ui.fed}</p>
@@ -175,5 +237,6 @@ export function signOf(
       species: known ? scene.species : undefined,
     };
   }
-  return { place: strings.quiet.place, sign: fog ? strings.weather.fogSign : strings.quiet.sign };
+  const quiet = strings.regions[state.region].quiet;
+  return { place: quiet.place, sign: fog ? strings.weather.fogSign : quiet.sign };
 }

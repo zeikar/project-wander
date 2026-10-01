@@ -40,7 +40,11 @@ export const ko: Strings = {
     theRoadBehind: "지나온 길",
     road: (places) => places.join(" → "),
     stat: (label, value, max) => `${label} ${value}/${max}`,
-    mapCaption: (village) => `${village}에서 먼 곳까지. 굵은 선이 걸어온 길이다.`,
+    mapCaption: (region, village) =>
+      `${region}, ${village}에서 먼 곳까지. 굵은 선이 걸어온 길이다.`,
+    setOutFrom: "어느 마을에서 떠날까",
+    ways: "알고 있는 길",
+    newWay: "새로 알게 된 길",
     unknownAnimal: "처음 보는 동물",
     aPlace: "지나는 곳",
     reading: "해설",
@@ -64,21 +68,25 @@ export const ko: Strings = {
     fogSign: "안개에 가려 보이지 않는다.",
   },
 
-  village: {
-    name: "잿골",
-    description:
-      "굴뚝 연기와 진흙 골목이 전부인 작은 마을이다. 떠나는 사람에게 마을 사람들은 저마다 들은 이야기를 하나씩 건넨다.",
-  },
-
-  quiet: {
-    place: "들길",
-    sign: "아무 흔적도 없다.",
-    lines: [
-      "아무 일도 없는 하루다. 바람이 풀을 쓸고 간다.",
-      "새소리만 따라오는 길이다.",
-      "구름 그림자가 앞서 걸어간다.",
-      "길가 돌무더기에 누군가 작은 돌 하나를 얹어 두었다. 하나를 더 얹고 간다.",
-    ],
+  regions: {
+    fields: {
+      name: "잿골 들녘",
+      village: {
+        name: "잿골",
+        description:
+          "굴뚝 연기와 진흙 골목이 전부인 작은 마을이다. 떠나는 사람에게 마을 사람들은 저마다 들은 이야기를 하나씩 건넨다.",
+      },
+      quiet: {
+        place: "들길",
+        sign: "아무 흔적도 없다.",
+        lines: [
+          "아무 일도 없는 하루다. 바람이 풀을 쓸고 간다.",
+          "새소리만 따라오는 길이다.",
+          "구름 그림자가 앞서 걸어간다.",
+          "길가 돌무더기에 누군가 작은 돌 하나를 얹어 두었다. 하나를 더 얹고 간다.",
+        ],
+      },
+    },
   },
 
   species: {

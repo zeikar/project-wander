@@ -1,6 +1,6 @@
 import type { Dispatch } from "react";
 import type { SceneOption } from "../content/types";
-import { destinations } from "../content/world";
+import { regionById } from "../content/world";
 import {
   canAfford,
   canRead,
@@ -20,6 +20,7 @@ import {
   Layout,
   Notebook,
   ROOMY,
+  SetOut,
   StatusBar,
   WeatherLine,
   signOf,
@@ -36,10 +37,8 @@ export function TitleScreen({ state, dispatch, newSeed }: ScreenProps) {
     <div className="cover">
       <h1>{ui.title}</h1>
       <p className="premise">{ui.premise}</p>
-      <button className="primary" onClick={() => dispatch({ type: "START", seed: newSeed() })}>
-        {ui.setOut}
-      </button>
-      {state.known.length > 0 && <Notebook known={state.known} open />}
+      <SetOut state={state} dispatch={dispatch} newSeed={newSeed} label={ui.setOut} />
+      {state.known.length > 0 && <Notebook known={state.known} ways={state.open} open />}
     </div>
   );
 }
@@ -49,7 +48,10 @@ function MapFigure({ state, dispatch }: Pick<ScreenProps, "state" | "dispatch">)
   return (
     <figure className="map-figure">
       <MapView state={state} dispatch={dispatch} />
-      <figcaption>{strings.ui.mapCaption(strings.village.name)}</figcaption>
+      <figcaption>{strings.ui.mapCaption(
+          strings.regions[state.region].name,
+          strings.regions[state.region].village.name,
+        )}</figcaption>
     </figure>
   );
 }
@@ -59,15 +61,17 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
   const { ui } = strings;
   const roomy = useMedia(ROOMY);
   const tomorrow = weatherAt(state, currentNode(state)!.layer + 1);
+  const region = strings.regions[state.region];
 
   const story =
     state.day === 0 ? (
       <div className="event">
-        <h2>{strings.village.name}</h2>
-        <p>{strings.village.description}</p>
+        <p className="kicker">{region.name}</p>
+        <h2>{region.village.name}</h2>
+        <p>{region.village.description}</p>
         <h3 className="label">{ui.rumors}</h3>
         <ul className="rumors">
-          {destinations.map((d) => (
+          {regionById(state.region).destinations.map((d) => (
             <li key={d.id}>{strings.destinations[d.id]!.rumor}</li>
           ))}
         </ul>
@@ -104,7 +108,7 @@ export function MapScreen({ state, dispatch }: ScreenProps) {
           </ol>
         </>
       }
-      notes={<Notebook known={state.known} open={roomy} />}
+      notes={<Notebook known={state.known} ways={state.open} open={roomy} />}
     />
   );
 }
@@ -192,7 +196,7 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
         </ol>
       }
       map={<MapFigure state={state} dispatch={dispatch} />}
-      notes={<Notebook known={state.known} open={roomy} />}
+      notes={<Notebook known={state.known} ways={state.open} open={roomy} />}
     />
   );
 }
@@ -232,6 +236,12 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
             {destination && ending.kind === "arrived" && !ending.saw && (
               <p className="hint">{destination.hint}</p>
             )}
+            {ending.kind === "arrived" && ending.opened && (
+              <>
+                <h3 className="label">{ui.newWay}</h3>
+                <p className="hint">{strings.regions[ending.opened].way}</p>
+              </>
+            )}
           </div>
           <section className="learned-list">
             <h3 className="label">{ui.learnedThisJourney}</h3>
@@ -255,12 +265,10 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
               <span className="label">{ui.theRoadBehind}</span> {ui.road(path)}
             </p>
           )}
-          <button className="primary" onClick={() => dispatch({ type: "START", seed: newSeed() })}>
-            {ui.setOutAgain}
-          </button>
+          <SetOut state={state} dispatch={dispatch} newSeed={newSeed} label={ui.setOutAgain} />
         </>
       }
-      notes={<Notebook known={state.known} open />}
+      notes={<Notebook known={state.known} ways={state.open} open />}
     />
   );
 }

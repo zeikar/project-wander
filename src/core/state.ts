@@ -1,4 +1,5 @@
-import type { FactId } from "../content/types";
+import type { FactId, RegionId } from "../content/types";
+import { FIRST_REGION } from "../content/world";
 import type { WorldMap } from "./map";
 
 export type Phase = "title" | "map" | "scene" | "end";
@@ -18,12 +19,14 @@ export type LastEvent =
   | { kind: "quiet" };
 
 export type Ending =
-  | { kind: "arrived"; destinationId: string; saw: boolean }
+  // `opened`: the way found on this journey, if any.
+  | { kind: "arrived"; destinationId: string; saw: boolean; opened: RegionId | null }
   | { kind: "died"; cause: "wounds" | "hunger" };
 
 export interface GameState {
   phase: Phase;
   seed: number;
+  region: RegionId; // the country this journey crosses
   map: WorldMap | null;
   at: string | null; // the node the traveler is standing on
   day: number;
@@ -33,6 +36,8 @@ export interface GameState {
   hungry: boolean;
   // The notebook. The only thing that survives a journey.
   known: readonly FactId[];
+  // The ways the traveler knows — the notebook's other page, kept like `known`.
+  open: readonly RegionId[];
   learnedThisJourney: readonly FactId[];
   path: readonly string[];
   last: LastEvent | null;
@@ -40,14 +45,18 @@ export interface GameState {
 }
 
 export type GameAction =
-  | { type: "START"; seed: number }
+  | { type: "START"; seed: number; region: RegionId }
   | { type: "MOVE"; nodeId: string }
   | { type: "CHOOSE"; optionId: string };
 
-export function createInitialState(known: readonly FactId[] = []): GameState {
+export function createInitialState(
+  known: readonly FactId[] = [],
+  open: readonly RegionId[] = [FIRST_REGION],
+): GameState {
   return {
     phase: "title",
     seed: 0,
+    region: FIRST_REGION,
     map: null,
     at: null,
     day: 0,
@@ -55,6 +64,7 @@ export function createInitialState(known: readonly FactId[] = []): GameState {
     food: 0,
     hungry: false,
     known,
+    open,
     learnedThisJourney: [],
     path: [],
     last: null,

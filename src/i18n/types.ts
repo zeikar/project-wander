@@ -10,7 +10,7 @@
 // Anything that varies with a number or a name is a function, so each
 // language handles its own grammar (plurals, Korean particles) where it is
 // written instead of through a template syntax.
-import type { FactId, Sky, SpeciesId, Wind } from "../content/types";
+import type { FactId, RegionId, Sky, SpeciesId, Wind } from "../content/types";
 
 export interface SceneText {
   // What the node is called on the map.
@@ -41,6 +41,16 @@ export interface DestinationText {
   // What would have made the difference. Names the kind of knowledge, never
   // the answer.
   hint: string;
+}
+
+export interface RegionText {
+  name: string;
+  village: { name: string; description: string };
+  // The country's quiet days: its own places, so they live under the region.
+  quiet: { place: string; sign: string; lines: readonly string[] };
+  // The notebook's line for a region reached through a gate; required for every
+  // region some gate points to, absent for the first.
+  way?: string;
 }
 
 export interface Strings {
@@ -76,8 +86,14 @@ export interface Strings {
     road: (places: readonly string[]) => string;
     // A resource as the status line shows it.
     stat: (label: string, value: number, max: number) => string;
-    // The caption under the map, which names the village it starts from.
-    mapCaption: (village: string) => string;
+    // The caption under the map, which names the region and the village it starts from.
+    mapCaption: (region: string, village: string) => string;
+    // Heading over the list of villages to set out from.
+    setOutFrom: string;
+    // The notebook's heading for the ways the traveler knows.
+    ways: string;
+    // The end-screen label over a way found on this journey.
+    newWay: string;
     // The line above a scene's title: what kind of thing this is.
     unknownAnimal: string;
     aPlace: string;
@@ -99,8 +115,7 @@ export interface Strings {
     // A road's sign on a day of fog.
     fogSign: string;
   };
-  village: { name: string; description: string };
-  quiet: { place: string; sign: string; lines: readonly string[] };
+  regions: Record<RegionId, RegionText>;
   species: Record<SpeciesId, { name: string; more: string }>;
   facts: Record<FactId, string>;
   scenes: Record<string, SceneText>;

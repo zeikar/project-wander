@@ -6,8 +6,6 @@ import {
   MAX_HP,
   START_FOOD,
   START_HP,
-  FIRST_REGION,
-  destinations,
   regionById,
 } from "../content/world";
 import { generateMap } from "./map";
@@ -119,12 +117,16 @@ export function reduce(state: GameState, action: GameAction): GameState {
       if (state.phase !== "title" && state.phase !== "end") {
         return state;
       }
-      const map = generateMap(action.seed, regionById(FIRST_REGION));
+      if (!state.open.includes(action.region)) {
+        return state;
+      }
+      const map = generateMap(action.seed, regionById(action.region));
       const start = map.layers[0]![0]!;
       return {
         ...state,
         phase: "map",
         seed: action.seed >>> 0,
+        region: action.region,
         map,
         at: start.id,
         day: 0,
@@ -169,17 +171,20 @@ export function reduce(state: GameState, action: GameAction): GameState {
         };
       }
       if (node.kind === "destination") {
-        const destination = destinations.find(
+        const region = regionById(state.region);
+        const destination = region.destinations.find(
           (d) => d.id === node.destinationId,
         )!;
+        const saw = walked.known.includes(destination.needs);
+        // Only the first sight finds the way; the second visit finds nothing
+        // new, so the end screen says so once.
+        const to = region.gate?.destinationId === destination.id ? region.gate.to : null;
+        const opened = saw && to !== null && !state.open.includes(to) ? to : null;
         return {
           ...walked,
           phase: "end",
-          ending: {
-            kind: "arrived",
-            destinationId: destination.id,
-            saw: walked.known.includes(destination.needs),
-          },
+          open: opened ? [...state.open, opened] : state.open,
+          ending: { kind: "arrived", destinationId: destination.id, saw, opened },
         };
       }
       if (node.kind === "quiet") {
