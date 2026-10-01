@@ -2,8 +2,8 @@
 // happen on it — which scene stands at each node, and what is actually going
 // on there — is decided here, so play itself needs no randomness at all.
 import { rollRandom } from "./rng";
-import { scenes } from "../content/scenes";
-import type { Region, Scene, Weather } from "../content/types";
+import { findScene, scenes } from "../content/scenes";
+import type { FactId, Region, Scene, Weather } from "../content/types";
 import { NODE_ODDS, ROAD_DAYS } from "../content/world";
 
 export interface MapNode {
@@ -48,9 +48,46 @@ export function generateMap(seed: number, region: Region): WorldMap {
     const width = roll() < 0.5 ? 2 : 3;
     const row: MapNode[] = [];
     for (let index = 0; index < width; index++) {
-      row.push(roadNode(layer, index, weather[layer]!, region, roll, pick));
+      // No day offers the same thing twice: no scene beside itself, and one
+      // quiet road at most.
+      let node: MapNode;
+      do {
+        node = roadNode(layer, index, weather[layer]!, region, roll, pick);
+      } while (row.some((n) => (n.sceneId ?? "quiet") === (node.sceneId ?? "quiet")));
+      row.push(node);
     }
     layers.push(row);
+  }
+
+  // Every far place's key can be learned somewhere on the map by anyone who
+  // stops there, so a miss can always point at a road that held it. Where the
+  // roll left none, one road becomes one that does — never the only road
+  // holding another far place's key, and never a scene its day already has.
+  const road = () => layers.slice(1).flat();
+  const ownScenes = scenes.filter(
+    (s) => region.places.includes(s.id) || (s.species !== undefined && region.species.includes(s.species)),
+  );
+  for (const { needs } of region.destinations) {
+    if (road().some((n) => teaches(n, needs))) {
+      continue;
+    }
+    const others = region.destinations.map((d) => d.needs).filter((f) => f !== needs);
+    const choices = road()
+      .filter((spot) => !others.some((f) => teaches(spot, f) && road().filter((n) => teaches(n, f)).length === 1))
+      .flatMap((spot) =>
+        ownScenes.flatMap((scene) =>
+          scene.variants
+            .map((variant) => ({ ...spot, kind: "scene" as const, sceneId: scene.id, variant }))
+            .filter(
+              (node) =>
+                teaches(node, needs) &&
+                node.variant === variantFor(scene, weather[spot.layer]!, node.variant) &&
+                !layers[spot.layer]!.some((n) => n !== spot && n.sceneId === scene.id),
+            ),
+        ),
+      );
+    const chosen = pick(choices);
+    layers[chosen.layer]![chosen.index] = chosen;
   }
 
   const shuffled = [...region.destinations];
@@ -86,6 +123,24 @@ export function generateMap(seed: number, region: Region): WorldMap {
   return { layers, next, weather };
 }
 
+// Whether anyone stopping at this node could learn `fact` there: an option
+// that needs nothing known teaches it in what is going on.
+function teaches(node: MapNode, fact: FactId): boolean {
+  const scene = node.sceneId === undefined ? undefined : findScene(node.sceneId);
+  return (
+    scene !== undefined &&
+    scene.options.some((o) => o.needs === undefined && o.outcomes[node.variant!]!.learn === fact)
+  );
+}
+
+// A scent scene's variant is the day's sky and wind; any other keeps its roll.
+function variantFor(scene: Scene, weather: Weather, rolled: string): string {
+  if (!scene.byWind) {
+    return rolled;
+  }
+  return weather.sky === "rain" ? scene.byWind.rain : scene.byWind[weather.wind];
+}
+
 function roadNode(
   layer: number,
   index: number,
@@ -98,13 +153,7 @@ function roadNode(
   const r = roll();
   // A scent scene is decided by the day's sky; the roll is still taken so the
   // rest of the map does not shift when a scene gains or loses `byWind`.
-  const variantOf = (scene: Scene) => {
-    const rolled = pick(scene.variants);
-    if (!scene.byWind) {
-      return rolled;
-    }
-    return weather.sky === "rain" ? scene.byWind.rain : scene.byWind[weather.wind];
-  };
+  const variantOf = (scene: Scene) => variantFor(scene, weather, pick(scene.variants));
   if (r < NODE_ODDS.animal) {
     // Species first, then its situation, so an animal with more situations is
     // not met more often than the others.
@@ -119,41 +168,30 @@ function roadNode(
   return { id, layer, index, kind: "quiet" };
 }
 
-// Roads between two layers: each node reaches the nodes roughly across from
-// it, never crossing another road, and every node has a way in and a way out.
+// Roads between two layers: every node leads on to the two nodes nearest
+// across from it, ties settled by the roll, and every node has a way in.
+// Roads may cross, as roads do; kept apart, a third of all days would have a
+// single road on, and that is no choice at all.
 function connect(
   a: number,
   b: number,
   roll: () => number,
 ): [number, number][] {
   const pos = (i: number, n: number) => (n === 1 ? 0.5 : i / (n - 1));
-  let edges: [number, number][] = [];
+  const gap = (j: number, k: number) => Math.abs(pos(j, a) - pos(k, b));
+  const edges: [number, number][] = [];
   for (let j = 0; j < a; j++) {
-    for (let k = 0; k < b; k++) {
-      if (Math.abs(pos(j, a) - pos(k, b)) <= 0.5 + 1e-9) {
-        edges.push([j, k]);
-      }
+    const near = Array.from({ length: b }, (_, k) => ({ k, d: gap(j, k) + roll() * 1e-6 }))
+      .sort((x, y) => x.d - y.d)
+      .slice(0, 2);
+    edges.push(...near.map(({ k }): [number, number] => [j, k]));
+  }
+  for (let k = 0; k < b; k++) {
+    if (!edges.some(([, t]) => t === k)) {
+      const j = Array.from({ length: a }, (_, i) => i).reduce((x, y) => (gap(y, k) < gap(x, k) ? y : x));
+      edges.push([j, k]);
     }
   }
-
-  // Two lanes side by side: open one diagonal so the lanes can be switched.
-  if (a === 2 && b === 2 && roll() < 0.7) {
-    edges.push(roll() < 0.5 ? [0, 1] : [1, 0]);
-  }
-
-  // Crossing pairs only come from the diagonals; drop one of each pair.
-  const crosses = (p: [number, number], q: [number, number]) =>
-    (p[0] < q[0] && p[1] > q[1]) || (p[0] > q[0] && p[1] < q[1]);
-  for (;;) {
-    const pair = edges
-      .flatMap((p, i) => edges.slice(i + 1).map((q) => [p, q] as const))
-      .find(([p, q]) => crosses(p, q));
-    if (!pair) {
-      break;
-    }
-    const drop = roll() < 0.5 ? pair[0] : pair[1];
-    edges = edges.filter((e) => e !== drop);
-  }
-
-  return edges;
+  // Listed left to right, the way the map draws them.
+  return edges.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
 }

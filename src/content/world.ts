@@ -1,10 +1,10 @@
 import type { Destination, Region, RegionId } from "./types";
 
-// Sanity-swept over 2000 seeds (2026-10-01): a careful player who knows
-// nothing — random roads, guesses weighed by their average outcome — dies on
-// about 17% of first journeys in the fields (20% before the weather and the
-// repricing); one who knows everything almost never does. At 5 hp / 3 food
-// the first figure was 42%.
+// Sanity-swept (2026-10-01, 600 seeds): a careful player who knows nothing —
+// random roads, guesses weighed by their average outcome — dies on about 20%
+// of first journeys in the fields; one who knows everything almost never does.
+// It was 17% before every map held each far place's key (more stops to
+// study), and 42% at 5 hp / 3 food.
 export const START_HP = 6;
 export const MAX_HP = 6;
 export const START_FOOD = 4;
@@ -34,8 +34,8 @@ export const regions: readonly Region[] = [
     // The stag leaves along the lake's far shore: seeing it is what shows the way past the lake.
     gate: { destinationId: "white-stag-lake", to: "marsh" },
   },
-  // Sanity-swept over 2000 seeds (2026-10-01), the same careful player as by
-  // START_HP: knowing nothing dies on 19% of journeys here (fields 17%). One who
+  // Sanity-swept over 2000 seeds (2026-10-01, before every map held each far
+  // place's key), the same careful player as by START_HP then: knowing nothing dies on 19% of journeys here (fields 17%). One who
   // never takes an option with an unread outcome dies on 15% (fields 5%) — the
   // marsh has fewer certain ways to food. Knowing everything: 0.1%.
   {

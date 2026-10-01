@@ -64,9 +64,9 @@ export function MapView({
           node.id === state.at ? "current" : isOpen ? "open" : visited.has(node.id) ? "visited" : "unseen";
         const sign = isOpen ? signOf(strings, state, node) : null;
         const marked = node.id === mark;
-        // Labels sit on the side with more room, so the outer columns never
-        // run off the figure.
-        const right = x <= W / 2;
+        // Labels sit on the outer side of a node, where no road runs into it;
+        // the middle column takes the right.
+        const right = x >= W / 2;
         return (
           <g
             key={node.id}

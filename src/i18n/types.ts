@@ -13,7 +13,8 @@
 import type { FactId, RegionId, Sky, SpeciesId, Wind } from "../content/types";
 
 export interface SceneText {
-  // What the node is called on the map.
+  // What the node is called on the map: the lie of the land, shared with other
+  // roads of its region, so that fog — which leaves names — leaves a guess.
   place: string;
   // What can be seen of it a day away, before choosing the road.
   sign: string;
@@ -87,11 +88,15 @@ export interface Strings {
     daysWalked: (n: number) => string;
     // The end-screen line for a far place reached before; n counts this time.
     nthVisit: (n: number) => string;
-    // After a miss, where this journey went past what was missing: a road walked
-    // on `day` (named by its scene's title), or one on the way not taken at the
-    // fork on `day` (named as the map names it), or none on this map.
+    // After a miss, where this journey went past what was missing, named by its
+    // scene's title: a road walked on `day` where it was passed up, or where the
+    // pack was too empty to stop for it; or one on the way not taken at the fork
+    // on `day` (`another`: a scene of the same kind was walked elsewhere, with
+    // something else going on). `noLead` is a fallback for a miss with no
+    // lead at all; every map holds each far place's key, so it should not show.
     leadTaken: (day: number, title: string) => string;
-    leadLeft: (day: number, place: string) => string;
+    leadUnfed: (day: number, title: string) => string;
+    leadLeft: (day: number, title: string, another: boolean) => string;
     noLead: string;
     learnedThisJourney: string;
     nothingLearned: string;
@@ -108,6 +113,8 @@ export interface Strings {
     ways: string;
     // The end-screen label over a way found on this journey.
     newWay: string;
+    // A road on offer told apart from another of the same name by where it lies.
+    onSide: (place: string, side: "left" | "middle" | "right") => string;
     // The line above a scene's title: what kind of thing this is.
     unknownAnimal: string;
     // A monster the notebook knows nothing of: nobody can yet say it is an animal at all.

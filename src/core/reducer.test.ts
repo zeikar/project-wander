@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { scenes } from "../content/scenes";
 import type { FactId, Sky } from "../content/types";
-import { FIRST_REGION, MAX_HP, START_FOOD, START_HP } from "../content/world";
+import { FIRST_REGION, MAX_HP, START_FOOD, START_HP, regions } from "../content/world";
+import { rollRandom } from "./rng";
 import type { MapNode, WorldMap } from "./map";
 import {
   canAfford,
@@ -209,14 +210,14 @@ describe("what a far place remembers", () => {
   it("names the road walked where what was missing was on offer and passed up", () => {
     expect(walk("dawn-water", "upwind", "fill-and-go")).toMatchObject({
       saw: false,
-      lead: { nodeId: "1-0", fork: null },
+      lead: { kind: "walked", nodeId: "1-0" },
     });
   });
 
   it("names a road only if what was going on there taught it", () => {
     const acorns = (variant: string) =>
       walk("wallow-boar", variant, "pass", { map: roadThrough("wallow-boar", variant, "acorn-valley") });
-    expect(acorns("sow")).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
+    expect(acorns("sow")).toMatchObject({ lead: { kind: "walked", nodeId: "1-0" } });
     expect(acorns("sleeping")).toMatchObject({ lead: null });
   });
 
@@ -226,11 +227,13 @@ describe("what a far place remembers", () => {
     expect(walk("rut-stag", "grazing", "wait")).toMatchObject({ lead: null });
     expect(
       walk("rut-stag", "grazing", "wait", { known: ["deer.drive"], learnedThisJourney: ["deer.drive"] }),
-    ).toMatchObject({ lead: { nodeId: "1-0", fork: null } });
+    ).toMatchObject({ lead: { kind: "walked", nodeId: "1-0" } });
   });
 
-  it("does not name a road whose lesson the pack could not pay for there", () => {
-    expect(walk("dawn-water", "upwind", "fill-and-go", { food: 0 })).toMatchObject({ lead: null });
+  it("says so when the road held it but the pack could not pay for stopping", () => {
+    expect(walk("dawn-water", "upwind", "fill-and-go", { food: 0 })).toMatchObject({
+      lead: { kind: "unfed", nodeId: "1-0" },
+    });
   });
 
   // Play a hand-made map from the village: a road id moves, an option id chooses.
@@ -289,11 +292,11 @@ describe("what a far place remembers", () => {
     const next = { "0-0": ["1-0", "1-1"], "1-0": ["2-0"], "1-1": ["2-0", "2-1"], "2-0": ["3-0"], "2-1": ["3-0"] };
     expect(play(layers, next, "acorn-valley", ["1-0", "detour", "2-0", "pass", "3-0"])).toMatchObject({
       saw: false,
-      lead: { nodeId: "2-1", fork: 0 },
+      lead: { kind: "left", nodeId: "2-1", fork: 0 },
     });
     // Through the cart the wallow was offered the next morning, and left.
     expect(play(layers, next, "acorn-valley", ["1-1", "pass", "2-0", "pass", "3-0"])).toMatchObject({
-      lead: { nodeId: "2-1", fork: 1 },
+      lead: { kind: "left", nodeId: "2-1", fork: 1 },
     });
   });
 
@@ -306,7 +309,7 @@ describe("what a far place remembers", () => {
     ];
     const next = { "0-0": ["1-0"], "1-0": ["2-0", "2-1"], "2-0": ["3-0"], "2-1": ["3-0"] };
     expect(play(layers, next, "white-stag-lake", ["1-0", "watch", "2-0", "pass", "3-0"])).toMatchObject({
-      lead: { nodeId: "2-1", fork: 1 },
+      lead: { kind: "left", nodeId: "2-1", fork: 1 },
     });
     expect(play(layers, next, "white-stag-lake", ["1-0", "wait", "2-0", "pass", "3-0"])).toMatchObject({
       lead: null,
@@ -319,6 +322,32 @@ describe("what a far place remembers", () => {
     expect(play(later, next, "white-stag-lake", ["1-0", "detour", "2-0", "watch", "3-0"])).toMatchObject({
       lead: null,
     });
+  });
+
+  // Every map holds each far place's key, so whatever was done on the way,
+  // a miss always has a road to point at.
+  it.each(regions)("names a road on every miss in $id", (region) => {
+    for (let seed = 1; seed <= 300; seed++) {
+      let r = seed;
+      const rnd = () => {
+        const x = rollRandom(r);
+        r = x.nextState;
+        return x.value;
+      };
+      let state = reduce(createInitialState([], ["fields", "marsh"]), { type: "START", seed, region: region.id });
+      while (state.phase !== "end") {
+        if (state.phase === "map") {
+          const roads = nextNodes(state);
+          state = reduce(state, { type: "MOVE", nodeId: roads[Math.floor(rnd() * roads.length)]!.id });
+        } else {
+          const ok = offeredOptions(state).filter((o) => canAfford(state, o) && !isClosed(state, o) && !o.study);
+          state = reduce(state, { type: "CHOOSE", optionId: ok[Math.floor(rnd() * ok.length)]!.id });
+        }
+      }
+      if (state.ending!.kind === "arrived" && !state.ending!.saw) {
+        expect(state.ending!.lead, `seed ${seed}`).not.toBeNull();
+      }
+    }
   });
 
   it("counts misses and sights per far place, and a sight names no road", () => {

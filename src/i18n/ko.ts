@@ -42,8 +42,11 @@ export const ko: Strings = {
     daysWalked: (n) => `${n}일을 걸었다.`,
     nthVisit: (n) => `이곳에 온 것은 ${ordinal(n)}다.`,
     leadTaken: (day, title) => `그건 ${dayName(day)} 지나온 ‘${title}’에서 알 수 있었다.`,
-    leadLeft: (day, place) => `그건 ${dayName(day)} 갈림길에서 가지 않은 길 위, ‘${place}’에서 알 수 있었다.`,
-    noLead: "이번 지도에는 그걸 알 수 있는 곳이 없었다.",
+    leadUnfed: (day, title) =>
+      `그건 ${dayName(day)} 지나온 ‘${title}’에서 알 수 있었다. 그때는 식량이 모자랐다.`,
+    leadLeft: (day, title, another) =>
+      `그건 ${dayName(day)} 갈림길에서 가지 않은 길 위, ${another ? "다른 " : ""}‘${title}’에서 알 수 있었다.`,
+    noLead: "이번 길에서는 그걸 알 기회가 없었다.",
     learnedThisJourney: "이번 길에 알게 된 것",
     nothingLearned: "이번 길에는 수첩에 적은 것이 없다.",
     theRoadBehind: "지나온 길",
@@ -54,6 +57,7 @@ export const ko: Strings = {
     setOutFrom: "어느 마을에서 떠날까",
     ways: "알고 있는 길",
     newWay: "새로 알게 된 길",
+    onSide: (place, side) => `${{ left: "왼쪽", middle: "가운데", right: "오른쪽" }[side]} ${place}`,
     unknownAnimal: "처음 보는 동물",
     unknownThing: "처음 보는 것",
     aPlace: "지나는 곳",
@@ -156,7 +160,7 @@ export const ko: Strings = {
 
   scenes: {
     "ford-boar": {
-      place: "여울",
+      place: "물가",
       sign: "하류로 흙탕물이 번져 온다.",
       signKnown: "하류로 흙탕물이 번져 온다. 멧돼지가 여울을 파헤치고 있다.",
       title: "여울의 멧돼지",
@@ -215,7 +219,7 @@ export const ko: Strings = {
     },
 
     "wallow-boar": {
-      place: "진흙 골",
+      place: "숲",
       sign: "땅이 쟁기질한 듯 온통 뒤집혀 있다.",
       signKnown: "땅이 온통 뒤집혀 있다. 멧돼지가 뒹구는 진흙 골이다.",
       title: "진흙 속의 멧돼지",
@@ -267,7 +271,7 @@ export const ko: Strings = {
     },
 
     "pine-wolves": {
-      place: "소나무 능선",
+      place: "숲",
       sign: "발자국 여럿이 한 줄로 이어진다.",
       signKnown: "늑대 무리의 발자국이 한 줄로 이어진다.",
       title: "소나무 사이의 회색 그림자",
@@ -328,7 +332,7 @@ export const ko: Strings = {
     },
 
     "kill-wolves": {
-      place: "빈터",
+      place: "골짜기",
       sign: "까마귀 떼가 한곳을 맴돈다.",
       signKnown: "까마귀가 맴도는 곳에 늑대들이 사냥한 것이 있다.",
       title: "사냥이 끝난 빈터",
@@ -506,7 +510,7 @@ export const ko: Strings = {
     },
 
     "heron-shallows": {
-      place: "잠긴 길",
+      place: "물가",
       sign: "앞쪽에서 길이 물속으로 들어간다.",
       signKnown: "앞쪽에서 길이 물속으로 들어간다. 그 물에 왜가리 한 마리가 서 있다.",
       title: "잠긴 길의 왜가리",
@@ -627,7 +631,7 @@ export const ko: Strings = {
     },
 
     "otter-bank": {
-      place: "둑 밑",
+      place: "물가",
       sign: "둑에 매끈하게 닳은 미끄럼 자국이 있다. 진흙에 비늘이 반짝인다.",
       signKnown: "둑에 매끈하게 닳은 미끄럼 자국이 있다. 수달이 드나드는 둑이다.",
       title: "둑 밑의 수달",
@@ -678,7 +682,7 @@ export const ko: Strings = {
     },
 
     "otter-camp": {
-      place: "둔덕",
+      place: "물가",
       sign: "물 위로 마른 둔덕 하나가 솟아 있다. 사방에 마른 땅은 거기뿐이다.",
       signKnown: "물 위로 마른 둔덕 하나가 솟아 있다. 수달이 사는 물이다.",
       title: "둔덕의 밤",
@@ -730,7 +734,7 @@ export const ko: Strings = {
     },
 
     "lantern-light": {
-      place: "긴 둑",
+      place: "둑길",
       sign: "둑 너머 먼 물 위에 불빛 하나가 떠 있다.",
       signKnown: "둑 너머 먼 물 위에 불빛 하나가 떠 있다. 늪등불이다.",
       title: "물 위의 불빛",
@@ -789,7 +793,7 @@ export const ko: Strings = {
     },
 
     "old-camp": {
-      place: "야영지",
+      place: "숲",
       sign: "가느다란 연기 한 줄기가 오른다.",
       title: "버려진 야영지",
       description:
@@ -812,7 +816,7 @@ export const ko: Strings = {
     },
 
     "overturned-cart": {
-      place: "갈림길",
+      place: "들길",
       sign: "바퀴 자국이 길을 벗어나 있다.",
       title: "길을 벗어난 수레",
       description:
@@ -831,7 +835,7 @@ export const ko: Strings = {
     },
 
     "shepherd-hut": {
-      place: "오두막",
+      place: "골짜기",
       sign: "비탈에 돌담 오두막이 보인다.",
       title: "철 지난 양치기 오두막",
       description:
@@ -856,7 +860,7 @@ export const ko: Strings = {
     },
 
     "reed-hut": {
-      place: "갈대 오두막",
+      place: "갈대밭",
       sign: "갈대밭 위로 기둥에 얹힌 지붕 하나가 솟아 있다.",
       title: "물 위의 갈대 오두막",
       description:
@@ -877,7 +881,7 @@ export const ko: Strings = {
     },
 
     "sunken-boat": {
-      place: "가라앉은 배",
+      place: "둑길",
       sign: "둑 아래 물가에 배 한 척이 비스듬히 기울어 있다.",
       title: "둑 아래 가라앉은 배",
       description:

@@ -38,13 +38,13 @@ describe.each(regions)("generateMap in $id", (region) => {
     );
   });
 
-  it.each(SEEDS)("seed %i: every node is reachable and leads on, with no roads crossing", (seed) => {
+  it.each(SEEDS)("seed %i: every node is reachable, and every road is a choice of two", (seed) => {
     const { layers, next } = generateMap(seed, region);
     for (let layer = 0; layer < layers.length - 1; layer++) {
       const from = layers[layer]!;
       const to = layers[layer + 1]!;
       for (const node of from) {
-        expect(next[node.id]!.length, node.id).toBeGreaterThan(0);
+        expect(next[node.id]!.length, node.id).toBeGreaterThanOrEqual(2);
         for (const target of next[node.id]!) {
           expect(to.map((n) => n.id)).toContain(target);
         }
@@ -52,14 +52,26 @@ describe.each(regions)("generateMap in $id", (region) => {
       for (const node of to) {
         expect(from.some((f) => next[f.id]!.includes(node.id)), node.id).toBe(true);
       }
-      const edges = from.flatMap((f) =>
-        next[f.id]!.map((t) => [f.index, to.find((n) => n.id === t)!.index] as const),
+    }
+  });
+
+  it.each(SEEDS)("seed %i: no day offers the same thing twice", (seed) => {
+    for (const row of generateMap(seed, region).layers.slice(1, -1)) {
+      const kinds = row.map((n) => n.sceneId ?? "quiet");
+      expect(new Set(kinds).size, kinds.join()).toBe(kinds.length);
+    }
+  });
+
+  // A miss can then always point at a road that held what was missing.
+  it.each(SEEDS)("seed %i: every far place's key can be learned somewhere on the map", (seed) => {
+    const nodes = generateMap(seed, region).layers.flat();
+    for (const { id, needs } of region.destinations) {
+      const taught = nodes.some(
+        (n) =>
+          n.sceneId !== undefined &&
+          findScene(n.sceneId)!.options.some((o) => !o.needs && o.outcomes[n.variant!]!.learn === needs),
       );
-      for (const [a, b] of edges) {
-        for (const [c, d] of edges) {
-          expect(a < c && b > d, `${seed}: ${a}->${b} crosses ${c}->${d}`).toBe(false);
-        }
-      }
+      expect(taught, id).toBe(true);
     }
   });
 
