@@ -67,6 +67,9 @@ export interface GameState {
   been: Been;
   learnedThisJourney: readonly FactId[];
   chances: readonly Chance[];
+  // What the traveler knew at each fork, by day: the road they turned from is
+  // judged by it.
+  knewAtFork: readonly (readonly FactId[])[];
   path: readonly string[];
   last: LastEvent | null;
   ending: Ending | null;
@@ -97,6 +100,7 @@ export function createInitialState(
     been,
     learnedThisJourney: [],
     chances: [],
+    knewAtFork: [],
     path: [],
     last: null,
     ending: null,

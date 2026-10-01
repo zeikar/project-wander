@@ -142,18 +142,16 @@ export function canAfford(state: GameState, option: SceneOption): boolean {
   return state.food + Math.min(...costs) >= 0;
 }
 
-// Whether a road not walked would have taught `fact`: by an option that needs
-// nothing, or only what the traveler knew setting out. What they would have
-// known or carried by then cannot be told, so nothing more is claimed.
-function wouldTeach(state: GameState, node: MapNode, fact: FactId): boolean {
+// Whether a road not walked would have taught `fact` to someone who knew
+// `knew`: by an option that needs nothing, or only what they knew. What they
+// would have carried by then cannot be told, so nothing more is claimed.
+function wouldTeach(node: MapNode, fact: FactId, knew: readonly FactId[]): boolean {
   const scene = node.sceneId === undefined ? undefined : findScene(node.sceneId);
-  const knewBefore = (f: FactId) =>
-    state.known.includes(f) && !state.learnedThisJourney.includes(f);
   return (
     scene !== undefined &&
     scene.options.some(
       (o) =>
-        (o.needs === undefined || knewBefore(o.needs)) &&
+        (o.needs === undefined || knew.includes(o.needs)) &&
         o.outcomes[node.variant!]!.learn === fact,
     )
   );
@@ -161,18 +159,18 @@ function wouldTeach(state: GameState, node: MapNode, fact: FactId): boolean {
 
 // Where this journey went past a fact it was missing: the first road walked
 // where it was on offer; else the nearest road not walked ahead of the last
-// fork that still led to one.
+// fork that still led to one, judged by what was known at that fork.
 export function findLead(state: GameState, fact: FactId): Lead | null {
   const passed = state.chances.find((c) => c.fact === fact);
   if (passed) {
     return { nodeId: passed.nodeId, fork: null };
   }
-  for (let day = state.path.length - 1; day >= 0; day--) {
+  for (let day = state.knewAtFork.length - 1; day >= 0; day--) {
     // Breadth first, so the nearest road ahead is found first.
     const ahead = [...(state.map!.next[state.path[day]!] ?? [])];
     for (let i = 0; i < ahead.length; i++) {
       const id = ahead[i]!;
-      if (!state.path.includes(id) && wouldTeach(state, nodeById(state, id)!, fact)) {
+      if (!state.path.includes(id) && wouldTeach(nodeById(state, id)!, fact, state.knewAtFork[day]!)) {
         return { nodeId: id, fork: day };
       }
       ahead.push(...(state.map!.next[id] ?? []).filter((n) => !ahead.includes(n)));
@@ -205,6 +203,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         hungry: false,
         learnedThisJourney: [],
         chances: [],
+        knewAtFork: [],
         path: [start.id],
         last: null,
         ending: null,
@@ -229,6 +228,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
         food: hungry ? 0 : state.food - 1,
         hp: hungry ? state.hp - 1 : state.hp,
         hungry,
+        knewAtFork: [...state.knewAtFork, state.known],
         path: [...state.path, node.id],
         last: null,
       };
