@@ -142,10 +142,7 @@ h2 {
   column-gap: 3rem;
 }
 
-.layout--scene {
-  grid-template-areas: "status" "story" "choices" "map" "notes";
-}
-
+.layout--scene,
 .layout--end {
   grid-template-areas: "status" "story" "choices" "map" "notes";
 }
@@ -181,14 +178,7 @@ h2 {
     align-items: start;
   }
   .layout--map,
-  .layout--scene {
-    grid-template-areas:
-      "status status"
-      "map story"
-      "map choices"
-      "notes choices";
-    grid-template-rows: auto auto auto 1fr;
-  }
+  .layout--scene,
   .layout--end {
     grid-template-areas:
       "status status"
@@ -208,13 +198,7 @@ h2 {
     grid-template-columns: minmax(18rem, 22rem) minmax(0, 36rem) minmax(15rem, 19rem);
   }
   .layout--map,
-  .layout--scene {
-    grid-template-areas:
-      "status status status"
-      "map story notes"
-      "map choices notes";
-    grid-template-rows: auto auto 1fr;
-  }
+  .layout--scene,
   .layout--end {
     grid-template-areas:
       "status status status"
@@ -310,7 +294,7 @@ h2 {
 
 /* Out of register: the animal's plate printed a hair off the black. */
 .tell.off-register {
-  text-shadow: 1px 0.75px 0 var(--spot);
+  text-shadow: 1.5px 1px 0 var(--spot);
 }
 
 /* In register, and ruled under in the animal's colour. */
@@ -482,7 +466,8 @@ button {
 
 .rumors li {
   position: relative;
-  padding-left: 1.3rem;
+  padding-left: 1.7rem;
+  margin-bottom: 0.35rem;
 }
 
 .rumors li::before {
@@ -490,10 +475,6 @@ button {
   position: absolute;
   left: 0;
   color: var(--faint);
-}
-
-.rumors li {
-  margin-bottom: 0.35rem;
 }
 
 .ending {

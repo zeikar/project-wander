@@ -162,7 +162,7 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
         <article className={`scene ${spot(scene.species)}`}>
           <p className="toll">{state.hungry ? ui.hungry : ui.fed}</p>
           {today && <WeatherLine weather={today} when="today" />}
-          {/* Only a known animal's name is printed in its colour. */}
+          {/* Printed in the creature's colour only once something about it is known. */}
           <p className={`kicker ${knowsSpeciesOf(state, scene) ? "" : "plain"}`}>{kicker}</p>
           <h2>{text.title}</h2>
           {/* A person met before remembers; the count already holds this meeting. */}
