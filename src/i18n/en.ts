@@ -60,8 +60,8 @@ export const en: Strings = {
     newWay: "A new way",
     onSide: (place, side) =>
       `${place} ${{ left: "on the left", middle: "in the middle", right: "on the right" }[side]}`,
-    unknownAnimal: "An animal not seen before",
-    unknownThing: "Something not seen before",
+    unknownAnimal: "An animal you do not know yet",
+    unknownThing: "Something you do not know yet",
     aPlace: "A place along the way",
     aPerson: "Someone met on the road",
     reading: "Reading",
@@ -923,7 +923,7 @@ export const en: Strings = {
         "walk-the-flock": {
           label: "Spend a day herding the flock with him",
           result: {
-            "*": "Until sundown you go up and down the slopes, gathering the strays. Your legs are shaking. The old man wraps up a piece of cheese for you.",
+            "*": "Until sundown you go up and down the slopes, gathering the strays. Your legs are shaking. The old man wraps up a piece of cheese for you and points towards the pine ridge. If you want to know the ways of wolves, he says, hide up there and watch them.",
           },
         },
         "stand-guard": {
@@ -958,13 +958,13 @@ export const en: Strings = {
         "rest-by-kiln": {
           label: "Rest the night by the kiln",
           result: {
-            "*": "All night the warmth of the kiln is at your back. You share what you have. The charcoal burner says little, but he never once lets the fire go out.",
+            "*": "All night the warmth of the kiln is at your back. You share what you have. The charcoal burner says little, but he never once lets the fire go out. Before sleep he says one thing: if you want to know the ways of boars, go and watch them at the ford downstream. They dig for roots there.",
           },
         },
         "carry-wood": {
           label: "Spend a day bringing in firewood for him",
           result: {
-            "*": "Until sundown you carry loads of dry branches. Your shoulders are raw. The charcoal burner gives you a sack of baked potatoes.",
+            "*": "Until sundown you carry loads of dry branches. Your shoulders are raw. The charcoal burner gives you a sack of baked potatoes. Anyone who had watched the boars at the ford downstream could fetch his water easily enough, he says, and laughs.",
           },
         },
         "fetch-water": {
@@ -999,13 +999,13 @@ export const en: Strings = {
         "share-supper": {
           label: "Share what you have and stay in his hut",
           result: {
-            "*": "You eat supper together in the reed hut on its posts. Water laps beneath the floor. For the first time in a long while, you sleep deeply.",
+            "*": "You eat supper together in the reed hut on its posts. Water laps beneath the floor. Before sleep he tells you of a reed bed where the herons come down; they seem to know what is in the reeds, he says. Go and watch them there. For the first time in a long while, you sleep deeply.",
           },
         },
         "bundle-reeds": {
           label: "Spend a day tying reed bundles for him",
           result: {
-            "*": "Tying and carrying wet reeds, your palms are cut by the leaves and sting. He gives you a few dried fish.",
+            "*": "Tying and carrying wet reeds, your palms are cut by the leaves and sting. He gives you a few dried fish, and nods towards the reed bed where the herons come down. If a man could read those birds, he says, he could work on past sundown.",
           },
         },
         "watch-herons": {
@@ -1040,13 +1040,13 @@ export const en: Strings = {
         "share-fire": {
           label: "Share what you have by his fire, and rest",
           result: {
-            "*": "He roasts eels over the fire, and you bring out what you have. The marsh night is loud with frogs. Even so, you sleep well.",
+            "*": "He roasts eels over the fire, and you bring out what you have. The marsh night is loud with frogs. By the fire he points into the marsh. There is a dry mound out on the water; spend a night on it, he says, and you will learn who goes through the catch. He has never dared.",
           },
         },
         "haul-traps": {
           label: "Spend a day hauling traps with him",
           result: {
-            "*": "Waist-deep in the water, you haul the traps and stake them again. You are frozen through. He gives you two smoked eels.",
+            "*": "Waist-deep in the water, you haul the traps and stake them again. You are frozen through. He gives you two smoked eels. He wishes someone would sit up a night on the mound, he mutters.",
           },
         },
         "guard-the-catch": {

@@ -67,6 +67,8 @@ export interface Scene {
   // description shows a tell, and `reads` is the fact that lets you read it.
   variants: readonly string[];
   reads?: FactId;
+  // A variant that a second fact also reads: what it shows is that fact itself.
+  alsoReads?: Readonly<Record<string, FactId>>;
   // Scenes that turn on scent take their variant from the day's weather
   // instead of a roll: the wind carries the traveler's smell ahead or behind,
   // and rain keeps it from carrying at all. The text of whatever variant rain

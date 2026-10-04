@@ -368,6 +368,8 @@ export const scenes: readonly Scene[] = [
     species: "lantern",
     variants: LIGHT,
     reads: "lantern.drift",
+    // Lights settling at dawn are what the dawn lesson describes.
+    alsoReads: { dawn: "lantern.dawn" },
     options: [
       {
         id: "follow",
