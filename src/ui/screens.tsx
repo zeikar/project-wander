@@ -162,7 +162,8 @@ export function SceneScreen({ state, dispatch }: ScreenProps) {
         <article className={`scene ${spot(scene.species)}`}>
           <p className="toll">{state.hungry ? ui.hungry : ui.fed}</p>
           {today && <WeatherLine weather={today} when="today" />}
-          <p className="kicker">{kicker}</p>
+          {/* Only a known animal's name is printed in its colour. */}
+          <p className={`kicker ${knowsSpeciesOf(state, scene) ? "" : "plain"}`}>{kicker}</p>
           <h2>{text.title}</h2>
           {/* A person met before remembers; the count already holds this meeting. */}
           <p>{(state.met[scene.id] ?? 0) > 1 && text.again ? text.again : text.description}</p>
@@ -248,6 +249,7 @@ export function EndScreen({ state, dispatch, newSeed }: ScreenProps) {
   return (
     <Layout
       kind="end"
+      status={<StatusBar state={state} />}
       story={
         <>
           {ending.kind === "died" && state.last?.kind === "chose" && <LastEvent state={state} />}

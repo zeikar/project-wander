@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { Fragment, useEffect, useReducer, useState } from "react";
 import { currentNode, reduce, weatherAt } from "../core/reducer";
 import { createInitialState } from "../core/state";
 import { detectLocale, locales } from "../i18n";
@@ -86,21 +86,23 @@ export default function App() {
       <main className="page">
         {/* The guide's running head. The cover carries its own title, so the
             name is left off there. */}
-        <header className="masthead">
+        <header className={`masthead ${state.phase === "title" ? "masthead--cover" : ""}`}>
           <span className="name">{state.phase === "title" ? "" : strings.ui.title}</span>
           <nav>
             {localeIds.length > 1 && (
               <span className="langs" role="group" aria-label={strings.ui.language}>
-                {localeIds.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    lang={locales[id].meta.htmlLang}
-                    aria-pressed={id === locale}
-                    onClick={() => chooseLocale(id)}
-                  >
-                    {locales[id].meta.name}
-                  </button>
+                {localeIds.map((id, i) => (
+                  <Fragment key={id}>
+                    {i > 0 && <span aria-hidden="true">·</span>}
+                    <button
+                      type="button"
+                      lang={locales[id].meta.htmlLang}
+                      aria-pressed={id === locale}
+                      onClick={() => chooseLocale(id)}
+                    >
+                      {locales[id].meta.name}
+                    </button>
+                  </Fragment>
                 ))}
               </span>
             )}
