@@ -701,19 +701,66 @@ button {
   }
 }
 
-/* ---- footer ---------------------------------------------------------------- */
+/* ---- masthead ------------------------------------------------------------
+   The guide's running head: its name, the language, where it is kept. Small
+   and faint, so the page below stays the page. */
 
-.footer {
-  margin-top: 3rem;
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
   font-size: 0.8rem;
+  color: var(--faint);
+  margin-bottom: 0.6rem;
+}
+
+.masthead .name {
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.masthead nav {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.masthead .langs button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0.35rem 0.25rem;
+  cursor: pointer;
+}
+
+.masthead .langs button + button::before {
+  content: "·";
+  margin-right: 0.5rem;
   color: var(--faint);
 }
 
-.footer select {
-  font: inherit;
-  background: transparent;
+.masthead .langs button[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.masthead a {
   color: inherit;
-  border: 1px solid var(--hair);
+  text-decoration: none;
+  border-bottom: 1px solid var(--hair);
+}
+
+.masthead button:hover,
+.masthead a:hover {
+  color: var(--ink);
+}
+
+.masthead button:focus-visible,
+.masthead a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

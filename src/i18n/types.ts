@@ -116,6 +116,8 @@ export interface Strings {
     // The label on what the notebook makes of a scene.
     reading: string;
     language: string;
+    // The link to the game's source, in the running head.
+    source: string;
     // The weather line: the next day's sky over the map, today's in a scene.
     tomorrow: (sky: string, wind: string) => string;
     today: (sky: string, wind: string) => string;
