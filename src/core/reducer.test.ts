@@ -148,6 +148,23 @@ describe("MOVE", () => {
     expect(missed.open).toEqual(["fields"]);
   });
 
+  it("opens the way to the hills only by seeing the lantern shoal", () => {
+    const shoal = (known: FactId[]) =>
+      reduce(
+        atScene("lantern-light", "dawn", {
+          phase: "map",
+          region: "marsh",
+          known,
+          open: ["fields", "marsh"],
+          map: roadThrough("lantern-light", "dawn", "lantern-shoal"),
+        }),
+        { type: "MOVE", nodeId: "2-0" },
+      );
+    expect(shoal(["lantern.dawn"]).open).toEqual(["fields", "marsh", "hills"]);
+    expect(shoal(["lantern.dawn"]).ending).toMatchObject({ saw: true, opened: "hills" });
+    expect(shoal([]).open).toEqual(["fields", "marsh"]);
+  });
+
   it("opens nothing at a far place that is not the gate, or by a way already known", () => {
     const rock = atScene("ford-boar", "rooting", {
       phase: "map",
@@ -391,7 +408,7 @@ describe("what knowing changes", () => {
 
   // An empty pack must never leave only a gamble — under any sky.
   it("leaves at least one certain, affordable way through at food 0", () => {
-    for (const sky of ["clear", "rain", "fog"] as const) {
+    for (const sky of ["clear", "rain", "fog", "gale"] as const) {
       for (const scene of scenes) {
         for (const variant of scene.variants) {
           const state = atScene(scene.id, variant, { food: 0 }, sky);
@@ -428,6 +445,17 @@ describe("weather", () => {
     const dry = atScene("pine-wolves", "passing", {}, "clear");
     expect(isClosed(dry, fire)).toBe(false);
     expect(reduce(dry, { type: "CHOOSE", optionId: "fire" }).food).toBe(dry.food - 1);
+  });
+
+  it("closes the ridges in a gale", () => {
+    for (const [sceneId, variant, optionId] of [
+      ["goat-scree", "online", "detour"],
+      ["hill-horse", "waiting", "go-around"],
+    ] as const) {
+      const option = findScene(sceneId)!.options.find((o) => o.id === optionId)!;
+      expect(isClosed(atScene(sceneId, variant, {}, "gale"), option), sceneId).toBe(true);
+      expect(isClosed(atScene(sceneId, variant, {}, "clear"), option), sceneId).toBe(false);
+    }
   });
 });
 

@@ -32,7 +32,7 @@ export const regions: readonly Region[] = [
       { id: "acorn-valley", needs: "boar.sow" },
     ],
     // How often each sky comes. Wind is even odds.
-    skyOdds: { rain: 0.2, fog: 0.2 }, // rest: clear
+    skyOdds: { rain: 0.2, fog: 0.2, gale: 0 }, // rest: clear
     // The stag leaves along the lake's far shore: seeing it is what shows the way past the lake.
     gate: { destinationId: "white-stag-lake", to: "marsh" },
   },
@@ -51,7 +51,24 @@ export const regions: readonly Region[] = [
       { id: "lantern-shoal", needs: "lantern.dawn" },
     ],
     // Fog is the marsh's weather; rain keeps the fields' odds.
-    skyOdds: { rain: 0.2, fog: 0.4 },
+    skyOdds: { rain: 0.2, fog: 0.4, gale: 0 },
+    // The dawn lights join into a dry way across the open water, to the hills.
+    gate: { destinationId: "lantern-shoal", to: "hills" },
+  },
+  // Sanity-swept (2026-10-04, 1500 seeds), knowing the fields and the marsh and
+  // nothing here: random roads and guesses die on 24% (marsh 21%), a learner on 9%.
+  {
+    id: "hills",
+    species: ["goat", "raven", "hillhorse"],
+    places: ["bothy", "peat-cutting"],
+    people: ["goatherd", "horse-catcher"],
+    destinations: [
+      { id: "goat-pass", needs: "goat.scree" },
+      { id: "inner-fold", needs: "raven.dusk" },
+      { id: "horse-hollow", needs: "hillhorse.track" },
+    ],
+    // The gale is the hills' weather: it closes the ridges.
+    skyOdds: { rain: 0.15, fog: 0.15, gale: 0.3 },
   },
 ];
 

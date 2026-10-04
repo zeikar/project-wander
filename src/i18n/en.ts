@@ -72,12 +72,13 @@ export const en: Strings = {
   },
 
   weather: {
-    sky: { clear: "clear", rain: "rain", fog: "fog" },
+    sky: { clear: "clear", rain: "rain", fog: "fog", gale: "gale" },
     wind: { behind: "wind from behind", ahead: "wind from ahead" },
     skyNote: {
       clear: "",
       rain: "In rain, scent does not carry far, and no fire will light.",
       fog: "The fog is thick. No sign can be seen at a distance.",
+      gale: "The wind is fierce. Crossing a ridge, or standing in the open, is hard going.",
     },
     windNote: {
       behind: "The wind blows from behind you, onward. Your scent goes ahead of you.",
@@ -124,6 +125,25 @@ export const en: Strings = {
       },
       way: "The white stag went back along the far shore of the lake. Where that shore ends and the reeds begin, there is a ferry landing: Willow Ferry. You can set out from there too.",
     },
+    hills: {
+      name: "The Windy Hills",
+      village: {
+        name: "Sand's End",
+        description:
+          "Where the sandbank the dawn lights join up comes to an end and the hills begin, a few peat roofs huddle with their backs to the wind. To anyone setting out, those who have come down from the hills each pass on one thing they have heard.",
+      },
+      quiet: {
+        place: "Pass",
+        sign: "No sign of anything.",
+        lines: [
+          "A day with nothing in it. The wind combs the heather over to one side as it passes.",
+          "A road with only the wind moaning between the stones for company.",
+          "A cloud drifts low over the pass. Its shadow slides away down the slope.",
+          "At the top of the pass is a cairn someone has built. You add a stone and go on. The wind whistles over it.",
+        ],
+      },
+      way: "The sandbank the dawn lights join up ends across the water, at the foot of the hills. Where the smoke was rising, there are a few peat roofs: Sand's End. You can set out from there too.",
+    },
   },
 
   species: {
@@ -133,6 +153,9 @@ export const en: Strings = {
     heron: { name: "Grey heron", more: "There is still more to know about grey herons." },
     otter: { name: "Otter", more: "There is still more to know about otters." },
     lantern: { name: "Marsh lantern", more: "There is still more to know about the marsh lantern." },
+    goat: { name: "Wild goat", more: "There is still more to know about wild goats." },
+    raven: { name: "Raven", more: "There is still more to know about ravens." },
+    hillhorse: { name: "Hill horse", more: "There is still more to know about hill horses." },
   },
 
   facts: {
@@ -160,6 +183,18 @@ export const en: Strings = {
       "No one carries the marsh lantern. It does not sway with anyone's step; it glides over the water. Follow it at night and it leads into deep water.",
     "lantern.dawn":
       "At dawn the marsh lanterns settle only on firm ground. Each one soon fades, but join up the places where they have settled and a dry path shows across the water.",
+    "goat.scree":
+      "The stones a wild goat treads on are set fast. Cross scree along the line the goats have taken. Scree the goats go around will slide.",
+    "goat.lee":
+      "Before a gale comes, wild goats leave the ridge and press themselves to the slope out of the wind. Where the goats lie, the wind does not reach.",
+    "raven.circle":
+      "When ravens land and peck, there is only the dead below them. When they only circle and cannot land, something beside the dead is still alive.",
+    "raven.dusk":
+      "At evening, ravens fly in a single line into the wind, towards where people live. Ravens that scatter and cry are going nowhere.",
+    "hillhorse.ride":
+      "A hill horse that takes a rider runs into the wind and over the cliff. On a dry hill, a horse with a wet mane is not one to mount.",
+    "hillhorse.track":
+      "A hill horse's hooves are set on backwards, so its hoofprints point back the way it came. Go where the prints point and you come to the hollow where the horse stood out of the wind.",
   },
 
   scenes: {
@@ -905,6 +940,333 @@ export const en: Strings = {
       },
     },
 
+    "goat-scree": {
+      place: "Slope",
+      sign: "The road crosses a slope of tumbled stone.",
+      signKnown: "The road crosses a slope of tumbled stone. Wild goats are on the slope above.",
+      title: "The goats on the scree",
+      description:
+        "The road slants across a slope of scree. Everything from fist-sized stones to boulders as big as a cow has poured down it. Somewhere above, there are a few wild goats.",
+      variants: {
+        online: {
+          tell: "The goats cross the scree one at a time, along the line of the road. Not a stone rolls under their feet.",
+          reading: "The goats cross on the road. The stones along the line of the road are set fast. Cross along it.",
+        },
+        above: {
+          tell: "The goats go round well above the road, along a ledge of rock. Where the road runs, the stones are raw and fresh in colour.",
+          reading: "The goats keep off the road and go round above it. The scree on the road will slide. Cross by the line they took.",
+        },
+      },
+      options: {
+        cross: {
+          label: "Cross the scree along the road",
+          result: {
+            online: "The stones do not budge underfoot. At the end of the slope you look back; the goats are already settled up on the ledge.",
+            above:
+              "Five paces in, the whole scree begins to slide away under you. You slide a long way down with the stones, and stop only when you catch on a boulder. Your knees and palms are torn raw. Looking up, you see the goats crossing along the ledge above as if nothing had happened. Scree the goats go around will slide.",
+          },
+        },
+        wait: {
+          label: "Sit at the edge of the scree and wait for the stones to settle",
+          result: {
+            "*": "Half a day in the shade of a rock on an empty stomach. Only when the sun sinks and the stones have cooled do you cross, one step at a time. The wind has chilled you through.",
+          },
+        },
+        detour: {
+          label: "Go round the scree over the shoulder above",
+          closed: "the wind is too fierce to cross the shoulder above",
+          result: {
+            "*": "You climb to the shoulder above the slope and go the long way round the scree. It takes half a day. A meal eaten on the way.",
+          },
+        },
+        watch: {
+          label: "Hide behind a rock and watch the goats",
+          result: {
+            online:
+              "Half a day goes, and a meal with it. Coming and going on the road, the goats always pick the very same stones to tread on. The stones they tread on are set fast.",
+            above:
+              "Not once do they come down onto the road. An old billy sets a hoof on the scree by the road, then draws it back at once. From that spot a few stones slide away without a sound. Scree the goats go around will slide.",
+          },
+        },
+        "goat-line": {
+          label: "Cross along the goats' line, picking cowberries from the cracks in the rock",
+          result: {
+            online: "You cross treading only on the stones they trod. Dark red cowberries hang in every crack of the rock. You pick a handful to take with you.",
+            above:
+              "You climb along the ledge by the higher line they took. The way is long and the rock is sharp. The backs of your hands are scraped and bleeding. By the time you have picked a handful of cowberries from the cracks, your legs are shaking.",
+          },
+        },
+      },
+    },
+
+    "goat-lee": {
+      place: "Ridge",
+      sign: "The sky opens wide over the ridge. The slope below is dotted with something.",
+      signKnown: "The sky opens wide over the ridge. The slope below is dotted with wild goats.",
+      title: "The goats on the ridge",
+      description:
+        "A flat place on top of the ridge. You can see down on every side, and the wind passes with nothing to stop it. The day is drawing in, and you must choose where to spend the night. There are wild goats on the slope below.",
+      variants: {
+        grazing: {
+          tell: "The goats graze, scattered close below the ridge. A few kids leap about on the rocks.",
+          reading: "The goats stay by the ridge, grazing. No gale tonight. It is safe to spend the night here.",
+        },
+        huddled: {
+          tell: "The goats have left the ridge and gone down the slope on the side away from the wind. They lie pressed against the rocks. The sky is still clear.",
+          reading:
+            "The goats have gone down into the lee and lain down. A gale is coming tonight. Where they lie, the wind does not reach.",
+        },
+      },
+      options: {
+        "camp-ridge": {
+          label: "Spend the night on the flat of the ridge",
+          result: {
+            grazing: "You sleep on the ridge under a sky thick with stars. All night the wind is gentle. In the morning a kid comes right up to your face, sniffs at you, and goes.",
+            huddled:
+              "Around midnight the wind comes roaring in. Your blanket is torn away, and you spend the night clinging to a rock. At dawn you see that down the slope, where the goats are lying, not a blade of grass stirs. Where the goats lie, the wind does not reach.",
+          },
+        },
+        "push-on": {
+          label: "Do not stop; keep walking through the dark",
+          result: {
+            "*": "On an empty stomach you walk the ridge by starlight. By the time you reach the top of the pass at dawn, you are chilled and shaking.",
+          },
+        },
+        "go-down": {
+          label: "Go all the way down into the valley for the night",
+          result: {
+            "*": "Before dark you go down as far as the stream on the valley floor. Out of the wind, but it was a long way. A meal eaten on the way.",
+          },
+        },
+        watch: {
+          label: "Sit behind a rock and watch the goats",
+          result: {
+            grazing:
+              "Chewing dry bread, you watch until sundown. While the wind stays gentle, they do not leave the ridge. Only before a gale do the goats give up the ridge.",
+            huddled:
+              "Chewing dry bread, you watch. As the sun goes down, they burrow deeper under the rocks on the side away from the wind. In the night the gale comes. You crawl down to where they lie, and only the sound of the wind passes overhead. Where the goats lie, the wind does not reach.",
+          },
+        },
+        "lie-with-goats": {
+          label: "Bed down in the lee, where the goats lie",
+          result: {
+            grazing: "You bed down under the rocks down the slope, where they sleep. The night is calm, and you sleep as well as you would have on the ridge.",
+            huddled:
+              "You press yourself in under the rocks beside them. All night the gale passes overhead, but it does not reach you here. Only the rock is cold, and keeping warm costs you an extra meal.",
+          },
+        },
+      },
+    },
+
+    "raven-circle": {
+      place: "Slope",
+      sign: "A few black birds circle in the sky above the slope.",
+      signKnown: "Ravens circle in the sky above the slope. Something lies below them.",
+      title: "The circling ravens",
+      description:
+        "A slope covered in heather. A little way off the road, something seems to be lying in the heather. Above it are ravens.",
+      variants: {
+        landed: {
+          tell: "The ravens have landed in the heather and are pecking at something. Now and then one croaks and drives another off.",
+          reading: "The ravens have landed and are pecking. There is only the dead below them. It is safe to go closer.",
+        },
+        circling: {
+          tell: "The ravens only circle low over the heather; not one lands. They drop as if to land, then shoot up again as if startled.",
+          reading:
+            "The ravens circle and cannot land. Something in the heather is still alive. Do not go closer now.",
+        },
+      },
+      options: {
+        "go-look": {
+          label: "Push through the heather and go to look",
+          result: {
+            landed: "A hare lies dead. The ravens croak and draw back. You take a hind leg that is still good.",
+            circling:
+              "As you part the heather, a wildcat springs out from beside a fallen deer. It rakes your forearm and is gone into the heather. Blood runs down to your fingertips. You look up; the ravens are still circling, unable to land. When ravens only circle, something beside the dead is still alive.",
+          },
+        },
+        pass: {
+          label: "Keep to the road and go by",
+          result: { "*": "The ravens' croaking follows you a long way." },
+        },
+        watch: {
+          label: "Sit against a rock and watch the ravens",
+          result: {
+            landed:
+              "Half a day goes, and a meal with it. The ravens land and peck and fly up, over and over, and nothing drives them off. Below ravens that land and peck, there is only the dead.",
+            circling:
+              "Until the sun sinks they only circle. Towards evening the heather stirs, and a wildcat licking its lips goes off up the slope. Only then do the ravens all come down at once. When ravens only circle, something beside the dead is still alive.",
+          },
+        },
+        "take-scraps": {
+          label: "Wait for the ravens to land, then take what meat is left",
+          result: {
+            landed: "You chase off the ravens and take the dead hare. Enough for two meals.",
+            circling:
+              "You hide in the shadow of a rock and wait for the ravens to land. Until the sun sinks you crouch in the cold wind. Only when a wildcat has slipped away and the ravens have come down do you go closer, and take a little of the meat that is left.",
+          },
+        },
+      },
+    },
+
+    "raven-dusk": {
+      place: "Pass",
+      sign: "The sun is sinking beyond the pass. Far off, birds are calling.",
+      signKnown: "The sun is sinking beyond the pass. Far off, ravens are calling.",
+      title: "Ravens at dusk",
+      description:
+        "The sun sets at the top of the pass. On every side are hills all of the same shape, and the road blurs into the dark. Ravens pass overhead.",
+      variants: {
+        homing: {
+          tell: "The ravens fly in a single line, into the wind, away over the hills to the west. Not one leaves the line.",
+          reading: "The evening ravens go in a single line into the wind. Over that way, people live.",
+        },
+        scattered: {
+          tell: "The ravens fly scattered this way and that, crying. One flock seems to head east, then comes back again.",
+          reading: "The ravens are scattered and crying. Follow them and you will come to nowhere.",
+        },
+      },
+      options: {
+        "follow-ravens": {
+          label: "Leave the road and go the way the ravens go",
+          result: {
+            homing: "You follow the ravens over one hill, and there in the dark is a shepherd's hut. The hut is empty, but a piece of smoked meat still hangs under the eaves.",
+            scattered:
+              "Following the ravens' cries, you cross one hill after another. They go this way, then that, and scatter into the dark. Lost, you spend the night shivering under a rock. Evening ravens go somewhere only when they fly in a line.",
+          },
+        },
+        "keep-road": {
+          label: "Keep on along the road, dark or not",
+          result: {
+            "*": "On an empty stomach you feel your way along the faint road. Only after midnight do you find a rock to keep off the wind, and lie down. The cold has got into you.",
+          },
+        },
+        camp: {
+          label: "Spend the night under a rock at the top of the pass",
+          result: { "*": "You make your bed under the rock and eat what you have. You fall asleep to the sound of the wind." },
+        },
+        watch: {
+          label: "Climb a rock and watch where the ravens go",
+          result: {
+            homing:
+              "Chewing dry bread, you watch until dark. The ravens go off in a line over the hills to the west, and beyond them, in one place only, the sky is hazed with smoke. Evening ravens go where people live.",
+            scattered:
+              "Chewing dry bread, you watch. They only scatter and cry, then settle one by one on the rocks nearby. There is no smoke anywhere in the sky. Ravens that scatter and cry are going nowhere.",
+          },
+        },
+        "follow-the-line": {
+          label: "Look for ravens flying in a line, and follow the line",
+          result: {
+            homing:
+              "You follow the line of ravens over the hill. In the dark there is light from a shepherd's hut. An old shepherd makes room for you without a word, and ladles out a bowl of porridge.",
+            scattered: "No ravens ever go by in a line. With nothing to follow, you spend the night under a rock by the road and eat what you have.",
+          },
+        },
+      },
+    },
+
+    "hill-horse": {
+      place: "Ridge",
+      sign: "Some grey beast stands on the ridge.",
+      signKnown: "A hill horse stands on the ridge.",
+      title: "The grey horse on the ridge",
+      description:
+        "The road runs along the ridge. The wind is strong, and every step is heavy. Ahead on the road is a grey horse with neither saddle nor bridle. On a day like this, if you could ride it, the pass would not be far.",
+      variants: {
+        waiting: {
+          tell: "The horse stands across the road, looking your way. The wind is as dry as can be, yet water drips from its mane, and from nowhere else.",
+          reading:
+            "A hill horse. Its mane is wet on a dry hill. Whoever climbs on its back, it carries into the wind and over the cliff. Do not mount it.",
+        },
+        running: {
+          tell: "The horse runs off along the ridge with the wind. In the grass where it passed, its hoofprints are pressed, every one of them pointing towards you.",
+          reading: "A hill horse. Not a beast to chase and catch. Only its hoofprints are left where it passed.",
+        },
+      },
+      options: {
+        ride: {
+          label: "Go up to the horse and climb on its back",
+          result: {
+            waiting:
+              "The horse stands quietly and waits. The moment you are on its back, the mane winds round your fingers and will not let go. The horse bolts into the wind, and the cliff at the end of the ridge comes closer. At the last moment the mane snaps and you are flung onto the grass. You look round. The horse has gone over the cliff into empty air, and only the sound of the wind is left. On a dry hill, a horse with a wet mane is not one to mount.",
+            running:
+              "You race along the ridge after the running horse. The wind knocks you down and your knee is split open. When you get up, the horse is gone, and every hoofprint left in the grass points backwards, the way it came.",
+          },
+        },
+        "wait-it-out": {
+          label: "Crouch behind a rock by the road until the horse goes",
+          result: {
+            "*": "On an empty stomach you crouch behind the rock and wait. Only as the sun sinks does the horse go off into the wind. The cold has got into you.",
+          },
+        },
+        "go-around": {
+          label: "Leave the ridge and go round by the slope",
+          closed: "in a gale, there is no keeping your feet on the slope",
+          result: {
+            "*": "You leave the ridge and go the long way round along the slope. It takes half a day. A meal eaten on the way.",
+          },
+        },
+        watch: {
+          label: "Lie flat at a distance and watch the horse",
+          result: {
+            waiting:
+              "Chewing dry bread, you watch until sundown. The horse goes up to a sheep wandering along the road and lowers its back. When the sheep leans against it, the horse bolts, and the two of them vanish over the cliff. For all the dryness of the wind, the horse's mane was wet the whole time. On a dry hill, a horse with a wet mane is not one to mount.",
+            running:
+              "When the horse has gone, you look closely at its hoofprints. The toe of every print points back the way the horse came. You go down the slope the way the prints point, and in a hollow out of the wind there is trampled grass and a clear spring. A hill horse's hoofprints point back the way it came.",
+          },
+        },
+        "follow-tracks": {
+          label: "Go where the hoofprints point, and find the spring in the hollow where the horse rested",
+          result: {
+            waiting:
+              "With the horse standing on the road, finding its tracks means passing right beside it. The wet mane, flung by the wind, lashes your cheek. You look away and go past, and follow the prints to the hollow. Watercress grows thick around the spring.",
+            running:
+              "You go down the slope the way its prints point. In a hollow out of the wind there is a spring, with watercress growing thick around it. You gather an armful to take with you.",
+          },
+        },
+      },
+    },
+
+    bothy: {
+      place: "Pass",
+      sign: "At the top of the pass, a roof on stone walls crouches low.",
+      title: "A bothy at the top of the pass",
+      description:
+        "A shelter of piled stone, roofed with peat. Anyone passing may stay the night. Dry peat is stacked against the inside wall, and in the doorway is a flint someone left behind.",
+      variants: { only: {} },
+      options: {
+        sleep: {
+          label: "Light a peat fire and stay the night",
+          result: { "*": "The peat fire burns low and keeps the bothy warm all night. Outside the wind howls, but you do not wake until morning." },
+        },
+        pass: {
+          label: "Cross the pass without stopping",
+          result: { "*": "You leave the bothy behind and cross the pass. The wind pushes at your back." },
+        },
+      },
+    },
+
+    "peat-cutting": {
+      place: "Slope",
+      sign: "One side of the slope has been cut away in neat squares, baring black earth.",
+      title: "A peat cutting",
+      description:
+        "Someone has been cutting peat here, taking the slope back step by step. The cut blocks are stacked in rows to dry. One of the stacks is much bigger than the rest.",
+      variants: { only: {} },
+      options: {
+        search: {
+          label: "Dig into the big stack of peat",
+          result: {
+            "*": "Lifting the blocks out one by one, you break a nail. Buried in the middle of the stack is barley bread and dried meat, wrapped in oiled paper. Left by whoever comes to cut the peat.",
+          },
+        },
+        pass: {
+          label: "Leave it untouched and go by",
+          result: { "*": "The smell of peat follows you a long way." },
+        },
+      },
+    },
+
     "old-shepherd": {
       place: "Valley",
       sign: "Sheep are scattered across the hillside. A dog is barking.",
@@ -1068,6 +1430,88 @@ export const en: Strings = {
         },
       },
     },
+
+    goatherd: {
+      place: "Ridge",
+      sign: "The sound of bells comes on the wind from the ridge.",
+      title: "The child with the goats",
+      description:
+        "A herd of goats is scattered over the slope below the ridge. A child of about ten stands on a rock with a stick, watching the wind. When a gale comes, she says, the goats scatter every which way, and it takes three days to find them all and bring them in. She does not know where to drive them.",
+      again:
+        "The child knows you first and waves her stick. It's the traveller from last time, she shouts. There are a few more goats than before. The gales still give her trouble, she says.",
+      variants: { only: {} },
+      options: {
+        "stay-the-night": {
+          label: "Spend the night in the child's stone hut",
+          result: {
+            "*": "You share what you have. She talks for a long time about the wild goats on the ridge. Watch them from the ridge, she says, and you would learn where they go down to before a gale; she has never seen it, always too busy chasing her own goats. The hut smells of goat, but it is warm.",
+          },
+        },
+        "herd-the-goats": {
+          label: "Spend a day herding the goats with her",
+          result: {
+            "*": "Until sundown you go up and down the slopes, gathering the strays. Your legs are shaking. The child hands you a piece of goat's cheese. If she knew where the wild goats go down into the lee, she mutters, she could drive her goats there too.",
+          },
+        },
+        "bring-them-in": {
+          label: "Drive the goats into the lee for her before the gale comes",
+          result: {
+            "*": "You drive the goats down the slope, in under the rocks where the wild goats lie. That night a gale sweeps the ridge, but not one goat strays. In the morning the child stares at you round-eyed, and gives you a place in the hut, and cheese.",
+          },
+        },
+        "tell-of-pass": {
+          label: "Tell her what you saw at Goat Pass",
+          result: {
+            "*": "She has never been up to the pass, she says, and listens with shining eyes. When you have finished, she tells you something in turn. If you meet a grey horse on the ridge, never ride it. A horse with a wet mane carries its rider off the cliff, her grandmother says.",
+          },
+        },
+        pass: {
+          label: "Greet her and go on",
+          result: { "*": "The child waves her stick. The sound of the bells follows you a long way." },
+        },
+      },
+    },
+
+    "horse-catcher": {
+      place: "Pass",
+      sign: "Stakes stand in a row beside the road over the pass, and a rope sings in the wind.",
+      title: "The old horse catcher",
+      description:
+        "Beside the road over the pass, someone has driven in stakes and strung a rope between them: a bent-backed old horse catcher. It is for the grey horse that shows itself on the ridge on days of gale, he says. A horse like that would keep a man for life. Once, when he was young, he nearly got on its back, he says, and laughs.",
+      again:
+        "The old horse catcher stops in the middle of driving a stake and looks your way. Back again, he says. The rope is longer than before. He has not caught the grey horse yet, he says.",
+      variants: { only: {} },
+      options: {
+        "share-fire": {
+          label: "Share what you have by his fire, and rest",
+          result: {
+            "*": "Late into the night he talks of the grey horse. Have you ever watched it from a distance on the ridge, he asks. He has only ever seen it up close. The fire is warm.",
+          },
+        },
+        "drive-stakes": {
+          label: "Spend a day helping him drive stakes",
+          result: {
+            "*": "Until sundown you drive stakes into frozen ground. Your palms blister. He gives you a string of dried meat. Watch that horse from a distance some time, he says, and you will see why he does this.",
+          },
+        },
+        "talk-him-out": {
+          label: "Tell him why that horse must never be mounted",
+          result: {
+            "*": "When you tell him of the wet mane, he is silent a long while. The day he nearly got on its back, when he was young, its mane was wet, he says. That night he takes down his rope, and brings out the drink and the meat he had been saving. You have saved his life, he says.",
+          },
+        },
+        "tell-of-hollow": {
+          label: "Tell him about Grey Horse Hollow",
+          result: {
+            "*": "When he hears there is a place where those horses rest, he closes his eyes. He has looked for it all his life, he says. Then he tells you something he knows. If ravens only circle and cannot land, do not go near, he says. Something down there is still alive.",
+          },
+        },
+        pass: {
+          label: "Walk on between the stakes",
+          result: { "*": "Behind you, the horse catcher goes back to his stakes. The sound of the mallet comes on the wind." },
+        },
+      },
+    },
   },
 
   destinations: {
@@ -1148,6 +1592,46 @@ export const en: Strings = {
       missedAgain:
         "Again you meet the dawn at the edge of the open water. This time you watch the lights settle to the very end. They do not settle just anywhere. They seem to have places of their own, but what decides those places, you cannot tell. When the sun is up and the last light goes out, even where those places were grows unclear.",
       hint: "If only you had known what the dawn lights join up.",
+    },
+
+    "goat-pass": {
+      name: "Goat Pass",
+      rumor: "On the highest pass in the hills, they say, wild goats stand in rows along the cliffs at sunrise.",
+      sight:
+        "Before dawn you reach the scree slope. You climb by the line the goats have taken, treading only on the stones that are set fast. As the sun rises you stand on the pass. On every cliff the goats stand in rows, facing the sun. Beyond the pass the land falls away and away, and at its end a single silver line shines in the morning sun. Whether it is the sea or a great river, you cannot tell.",
+      sightAgain:
+        "Again you climb to the pass by the goats' line. Today an old billy stands alone on a rock at the top of the pass, looking down at you. He does not move aside as you come near. Behind him, the silver line seems closer than it was.",
+      missed:
+        "Before dawn you reach the scree slope. You climb along the line of the road, but halfway up the stones begin to slide away under you. You turn and come back down. As the sun rises you look up from the foot of the slope: on every cliff of the pass, the goats stand in rows.",
+      missedAgain:
+        "Again you stand at the foot of the scree. This time you choose a different line, but its stones slip too, every one you tread on. Catching your breath, you look up. A goat is crossing the scree above your head as if it were nothing. Not one stone it treads on rolls.",
+      hint: "If only you had known how wild goats cross scree.",
+    },
+    "inner-fold": {
+      name: "Inner Fold",
+      rumor: "Somewhere deep in the hills, they say, there is a village no road reaches.",
+      sight:
+        "At dusk the ravens go in a single line into the wind. You follow the line over two hills, and deep in a valley that cannot be seen from any road, peat roofs crouch low. A dog barks, and a door opens. Without a word, people make room for you by the fire. An old woman asks where you have come from. When you tell her of the lights on the marsh, she nods: it has been a long time since anyone came over the sandbank. That night they ask your name, and carve it into the doorpost.",
+      sightAgain:
+        "Again you follow the evening ravens to Inner Fold. The children know you first and come running out. The story of the marsh lights you told last time, they have already made into a game of their own. Your name is still there, carved on the doorpost.",
+      missed:
+        "At dusk, from somewhere, comes the smell of burning peat. Once, a dog barks. But every hill is the same shape, and there is no telling which valley it came from. You wander from one valley to the next until night falls. You spend the night under a rock, and in the morning there is no smoke anywhere.",
+      missedAgain:
+        "This time you climb the highest hill before sundown and look for smoke. Overhead, ravens go by in a line, calling. Looking only for smoke, you do not see where the line goes. When dark comes down, there are only the same hills again.",
+      hint: "If only you had known where ravens go at evening.",
+    },
+    "horse-hollow": {
+      name: "Grey Horse Hollow",
+      rumor: "On days of gale, they say, grey horses gather somewhere in the hills.",
+      sight:
+        "On a day of gale, you look for the backward hoofprints in the grass, and go down the slope the way they point. All at once the sound of the wind stops. At the bottom of a deep hollow there is a spring, and a dozen or more grey horses stand with their backs to the wind. Water drips from every mane. One lifts its head and looks your way, but does not come near. You lie at the edge of the hollow until sundown, and draw back before they notice you.",
+      sightAgain:
+        "Again you trace the prints back to the hollow. Today there is a foal in the herd. Its small hooves are set on backwards too. Lapping at the spring, the foal sees you and snorts. Its mother steps in front of it.",
+      missed:
+        "On a day of gale, you find hoofprints in the grass. You follow the ridge the way the horse must have gone, opposite to where the prints point. The wind grows stronger and stronger until you can go no further. There is no hollow anywhere. The wind drives you back.",
+      missedAgain:
+        "Again you find the prints and follow them the way the horse must have gone. This time you go as far as they go. They stop at the edge of a cliff. Below the cliff there is only wind. Turning back, you see that the toe of every hoofprint points the way you are now walking.",
+      hint: "If only you had known what a hill horse's hoofprints point to.",
     },
   },
 };
