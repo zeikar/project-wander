@@ -38,7 +38,7 @@ export const en: Strings = {
     withLesson: (hint) => `${hint} · something for the notebook`,
     withMaybeLesson: (hint) => `${hint} · perhaps something for the notebook`,
     noFood: "not enough food",
-    learned: "Written in the notebook",
+    learned: "Noted down",
     fed: "A day's walking, and a meal eaten on the way.",
     hungry: "Nothing to eat. The day's walking has worn you down.",
     diedTitle: "The road ends here",
@@ -94,7 +94,7 @@ export const en: Strings = {
           "A small village of chimney smoke and muddy lanes, and nothing more. To anyone setting out, each villager passes on one thing they have heard.",
       },
       quiet: {
-        place: "Field path",
+        place: "Track",
         sign: "No sign of anything.",
         lines: [
           "A day with nothing in it. The wind sweeps across the grass.",
@@ -112,7 +112,7 @@ export const en: Strings = {
           "A ferry landing where the causeway meets the reed beds. One flat-bottomed boat and a few reed roofs, and nothing more. To anyone setting out, the ferryman and the reed cutters each pass on one thing they have heard.",
       },
       quiet: {
-        place: "Causeway",
+        place: "Bank",
         sign: "No sign of anything.",
         lines: [
           "A day with nothing in it. The wind lays the reed beds over to one side as it passes.",
@@ -163,7 +163,7 @@ export const en: Strings = {
 
   scenes: {
     "ford-boar": {
-      place: "Waterside",
+      place: "Shore",
       sign: "Muddy water spreads downstream.",
       signKnown: "Muddy water spreads downstream. A boar is digging up the ford.",
       title: "The boar at the ford",
@@ -453,7 +453,7 @@ export const en: Strings = {
     },
 
     "dawn-water": {
-      place: "Waterside",
+      place: "Shore",
       sign: "The sound of water beyond the mist.",
       signKnown: "The sound of water beyond the mist. Deer come down to this water at dawn.",
       title: "Water at dawn",
@@ -513,7 +513,7 @@ export const en: Strings = {
     },
 
     "heron-shallows": {
-      place: "Waterside",
+      place: "Shore",
       sign: "Ahead, the road goes down into the water.",
       signKnown: "Ahead, the road goes down into the water. A heron stands in it.",
       title: "The heron on the flooded road",
@@ -572,7 +572,7 @@ export const en: Strings = {
     },
 
     "heron-reeds": {
-      place: "Reed beds",
+      place: "Reeds",
       sign: "Reed beds cross the road. A few grey birds settle into them.",
       signKnown: "Reed beds cross the road. A few herons settle into them.",
       title: "Herons in the reeds",
@@ -634,7 +634,7 @@ export const en: Strings = {
     },
 
     "otter-bank": {
-      place: "Waterside",
+      place: "Shore",
       sign: "A slide is worn smooth down the bank. Scales glint in the mud.",
       signKnown: "A slide is worn smooth down the bank. Otters come and go here.",
       title: "The otter under the bank",
@@ -685,7 +685,7 @@ export const en: Strings = {
     },
 
     "otter-camp": {
-      place: "Waterside",
+      place: "Shore",
       sign: "One dry mound rises out of the water. It is the only dry ground anywhere.",
       signKnown: "One dry mound rises out of the water. Otters live in this water.",
       title: "Night on the mound",
@@ -737,7 +737,7 @@ export const en: Strings = {
     },
 
     "lantern-light": {
-      place: "Causeway",
+      place: "Bank",
       sign: "Far out on the water past the bank, a single light floats.",
       signKnown: "Far out on the water past the bank, a single light floats. A marsh lantern.",
       title: "A light on the water",
@@ -752,7 +752,7 @@ export const en: Strings = {
         dawn: {
           tell: "The eastern sky is paling. The light has settled low on one spot over the water and does not move. Beneath it, a few tufts of grass stand out of the water.",
           reading:
-            "No one carries this light. But now it is not wandering over the water; it has settled in one place. A light that has settled is not drifting, so following it should not draw you into deep water.",
+            "The light is not wandering over the water; it has settled low in one place, with tufts of grass standing out beneath it. Follow this light and it will not draw you into deep water.",
         },
       },
       options: {
@@ -819,7 +819,7 @@ export const en: Strings = {
     },
 
     "overturned-cart": {
-      place: "Field path",
+      place: "Track",
       sign: "Wheel tracks leave the road.",
       title: "A cart off the road",
       description:
@@ -863,7 +863,7 @@ export const en: Strings = {
     },
 
     "reed-hut": {
-      place: "Reed beds",
+      place: "Reeds",
       sign: "A roof on posts rises above the reed beds.",
       title: "A reed hut over the water",
       description:
@@ -884,7 +884,7 @@ export const en: Strings = {
     },
 
     "sunken-boat": {
-      place: "Causeway",
+      place: "Bank",
       sign: "Below the bank, a boat lies tilted at the water's edge.",
       title: "A boat sunk below the bank",
       description:
@@ -917,7 +917,7 @@ export const en: Strings = {
         "sit-by-fire": {
           label: "Spend the night at the old man's fire",
           result: {
-            "*": "You bring out what you have and share it with him. He used to winter in the stone hut up the valley, he says. He wrote all sorts of things on the wall there; perhaps they are still there. The fire is warm.",
+            "*": "You bring out what you have and share it with him. He used to winter in the stone hut up the valley, he says. He wrote all sorts of things on the wall there; perhaps they are still there. When talk turns to wolves he points towards the pine ridge: if you want to know their ways, hide up there and watch them. The fire is warm.",
           },
         },
         "walk-the-flock": {
@@ -987,7 +987,7 @@ export const en: Strings = {
     },
 
     "reed-cutter": {
-      place: "Reed beds",
+      place: "Reeds",
       sign: "One side of the reed beds has been cut. There is the sound of a sickle.",
       title: "The reed cutter",
       description:
@@ -1028,7 +1028,7 @@ export const en: Strings = {
     },
 
     "eel-fisher": {
-      place: "Waterside",
+      place: "Shore",
       sign: "Below the bank, fish traps are staked in a row at the water's edge.",
       title: "The eel fisher",
       description:
