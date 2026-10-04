@@ -7,6 +7,9 @@ export const species: readonly Species[] = [
   { id: "heron", facts: ["heron.wade", "heron.lift"] },
   { id: "otter", facts: ["otter.cache", "otter.raid"] },
   { id: "lantern", facts: ["lantern.drift", "lantern.dawn"] },
+  { id: "goat", facts: ["goat.scree", "goat.lee"] },
+  { id: "raven", facts: ["raven.circle", "raven.dusk"] },
+  { id: "hillhorse", facts: ["hillhorse.ride", "hillhorse.track"] },
 ];
 
 export const allFacts: readonly FactId[] = species.flatMap((s) => s.facts);

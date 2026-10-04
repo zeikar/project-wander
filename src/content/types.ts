@@ -2,7 +2,16 @@
 // every word a player reads lives in a locale bundle under `src/i18n/`, keyed
 // by the same ids, so adding a language never touches this folder.
 
-export type SpeciesId = "boar" | "wolves" | "deer" | "heron" | "otter" | "lantern";
+export type SpeciesId =
+  | "boar"
+  | "wolves"
+  | "deer"
+  | "heron"
+  | "otter"
+  | "lantern"
+  | "goat"
+  | "raven"
+  | "hillhorse";
 
 export type FactId =
   | "boar.nose"
@@ -16,10 +25,16 @@ export type FactId =
   | "otter.cache"
   | "otter.raid"
   | "lantern.drift"
-  | "lantern.dawn";
+  | "lantern.dawn"
+  | "goat.scree"
+  | "goat.lee"
+  | "raven.circle"
+  | "raven.dusk"
+  | "hillhorse.ride"
+  | "hillhorse.track";
 
 // The sky over one day of road, and which way the wind blows along it.
-export type Sky = "clear" | "rain" | "fog";
+export type Sky = "clear" | "rain" | "fog" | "gale";
 export type Wind = "behind" | "ahead";
 export interface Weather {
   sky: Sky;
@@ -84,7 +99,7 @@ export interface Destination {
   needs: FactId;
 }
 
-export type RegionId = "fields" | "marsh";
+export type RegionId = "fields" | "marsh" | "hills";
 
 // A stretch of country a journey crosses. `gate`: a region opens through exactly
 // one sight; arriving at that destination and seeing it writes `to` into the notebook.
@@ -94,6 +109,6 @@ export interface Region {
   places: readonly string[];
   people: readonly string[];
   destinations: readonly Destination[];
-  skyOdds: { rain: number; fog: number };
+  skyOdds: { rain: number; fog: number; gale: number };
   gate?: { destinationId: string; to: RegionId };
 }

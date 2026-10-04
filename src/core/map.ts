@@ -36,8 +36,9 @@ export function generateMap(seed: number, region: Region): WorldMap {
   const weather: Weather[] = [];
   for (let layer = 0; layer <= ROAD_DAYS + 1; layer++) {
     const r = roll();
+    const { rain, fog, gale } = region.skyOdds;
     weather.push({
-      sky: r < region.skyOdds.rain ? "rain" : r < region.skyOdds.rain + region.skyOdds.fog ? "fog" : "clear",
+      sky: r < rain ? "rain" : r < rain + fog ? "fog" : r < rain + fog + gale ? "gale" : "clear",
       wind: roll() < 0.5 ? "behind" : "ahead",
     });
   }

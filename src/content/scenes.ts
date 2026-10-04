@@ -20,6 +20,11 @@ const REEDS = ["settled", "lifting"] as const;
 const BANK = ["cached", "holed"] as const;
 const CAMP = ["visited", "clean"] as const;
 const LIGHT = ["night", "dawn"] as const;
+const SCREE = ["online", "above"] as const;
+const LEE = ["grazing", "huddled"] as const;
+const CIRCLE = ["landed", "circling"] as const;
+const DUSK = ["homing", "scattered"] as const;
+const HORSE = ["waiting", "running"] as const;
 const ONE = ["only"] as const;
 
 export const scenes: readonly Scene[] = [
@@ -402,6 +407,178 @@ export const scenes: readonly Scene[] = [
     ],
   },
 
+  // --- goat -----------------------------------------------------------------
+  {
+    id: "goat-scree",
+    kind: "animal",
+    species: "goat",
+    variants: SCREE,
+    reads: "goat.scree",
+    options: [
+      {
+        id: "cross",
+        outcomes: {
+          online: { hp: 0, food: 0 },
+          above: { hp: -2, food: 0, learn: "goat.scree" },
+        },
+      },
+      { id: "wait", outcomes: always(SCREE, { hp: -1, food: 0 }) },
+      // The way round goes over the shoulder above, where a gale will not let you stand.
+      { id: "detour", closedIn: ["gale"], outcomes: always(SCREE, { hp: 0, food: -1 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(SCREE, { hp: 0, food: -1, learn: "goat.scree" }),
+      },
+      // Off the path the goats' line is longer and higher: it costs a slip.
+      {
+        id: "goat-line",
+        needs: "goat.scree",
+        outcomes: {
+          online: { hp: 0, food: 1 },
+          above: { hp: -1, food: 1 },
+        },
+      },
+    ],
+  },
+  {
+    id: "goat-lee",
+    kind: "animal",
+    species: "goat",
+    variants: LEE,
+    reads: "goat.lee",
+    options: [
+      {
+        id: "camp-ridge",
+        closedIn: ["gale"],
+        outcomes: {
+          grazing: { hp: 1, food: 0 },
+          huddled: { hp: -2, food: 0, learn: "goat.lee" },
+        },
+      },
+      { id: "push-on", outcomes: always(LEE, { hp: -1, food: 0 }) },
+      { id: "go-down", outcomes: always(LEE, { hp: 1, food: -1 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(LEE, { hp: 0, food: -1, learn: "goat.lee" }),
+      },
+      // Out of the wind is not out of the cold: a gale night still eats a meal.
+      {
+        id: "lie-with-goats",
+        needs: "goat.lee",
+        outcomes: {
+          grazing: { hp: 1, food: 0 },
+          huddled: { hp: 1, food: -1 },
+        },
+      },
+    ],
+  },
+
+  // --- raven ----------------------------------------------------------------
+  {
+    id: "raven-circle",
+    kind: "animal",
+    species: "raven",
+    variants: CIRCLE,
+    reads: "raven.circle",
+    options: [
+      {
+        id: "go-look",
+        outcomes: {
+          landed: { hp: 0, food: 1 },
+          circling: { hp: -2, food: 0, learn: "raven.circle" },
+        },
+      },
+      { id: "pass", outcomes: always(CIRCLE, { hp: 0, food: 0 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(CIRCLE, { hp: 0, food: -1, learn: "raven.circle" }),
+      },
+      // With the guard still there, it takes a cold wait before anything can be taken.
+      {
+        id: "take-scraps",
+        needs: "raven.circle",
+        outcomes: {
+          landed: { hp: 0, food: 2 },
+          circling: { hp: -1, food: 1 },
+        },
+      },
+    ],
+  },
+  {
+    id: "raven-dusk",
+    kind: "animal",
+    species: "raven",
+    variants: DUSK,
+    reads: "raven.dusk",
+    options: [
+      {
+        id: "follow-ravens",
+        outcomes: {
+          homing: { hp: 0, food: 1 },
+          scattered: { hp: -1, food: -1, learn: "raven.dusk" },
+        },
+      },
+      { id: "keep-road", outcomes: always(DUSK, { hp: -1, food: 0 }) },
+      { id: "camp", outcomes: always(DUSK, { hp: 1, food: -1 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: always(DUSK, { hp: 0, food: -1, learn: "raven.dusk" }),
+      },
+      {
+        id: "follow-the-line",
+        needs: "raven.dusk",
+        outcomes: {
+          homing: { hp: 1, food: 1 },
+          scattered: { hp: 0, food: -1 },
+        },
+      },
+    ],
+  },
+
+  // --- hill horse -----------------------------------------------------------
+  // Ordinary sense says a horse is a ride. Its wet mane on a dry hill says not
+  // this one, before anything is lost.
+  {
+    id: "hill-horse",
+    kind: "monster",
+    species: "hillhorse",
+    variants: HORSE,
+    reads: "hillhorse.ride",
+    alsoReads: { running: "hillhorse.track" },
+    options: [
+      {
+        id: "ride",
+        outcomes: {
+          waiting: { hp: -3, food: 0, learn: "hillhorse.ride" },
+          running: { hp: -1, food: 0, learn: "hillhorse.track" },
+        },
+      },
+      { id: "wait-it-out", outcomes: always(HORSE, { hp: -1, food: 0 }) },
+      { id: "go-around", closedIn: ["gale"], outcomes: always(HORSE, { hp: 0, food: -1 }) },
+      {
+        id: "watch",
+        study: true,
+        outcomes: {
+          waiting: { hp: 0, food: -1, learn: "hillhorse.ride" },
+          running: { hp: 0, food: -1, learn: "hillhorse.track" },
+        },
+      },
+      // With the horse still on the path, its tracks have to be found close by it.
+      {
+        id: "follow-tracks",
+        needs: "hillhorse.track",
+        outcomes: {
+          waiting: { hp: -1, food: 1 },
+          running: { hp: 0, food: 1 },
+        },
+      },
+    ],
+  },
+
   // --- places ---------------------------------------------------------------
   {
     id: "old-camp",
@@ -448,6 +625,24 @@ export const scenes: readonly Scene[] = [
   },
   {
     id: "sunken-boat",
+    kind: "place",
+    variants: ONE,
+    options: [
+      { id: "search", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "bothy",
+    kind: "place",
+    variants: ONE,
+    options: [
+      { id: "sleep", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "peat-cutting",
     kind: "place",
     variants: ONE,
     options: [
@@ -525,6 +720,40 @@ export const scenes: readonly Scene[] = [
         seen: "otter-weir",
         study: true,
         outcomes: always(ONE, { hp: 0, food: 0, learn: "heron.lift" }),
+      },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "goatherd",
+    kind: "person",
+    variants: ONE,
+    options: [
+      { id: "stay-the-night", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "herd-the-goats", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "bring-them-in", needs: "goat.lee", outcomes: always(ONE, { hp: 1, food: 1 }) },
+      {
+        id: "tell-of-pass",
+        seen: "goat-pass",
+        study: true,
+        outcomes: always(ONE, { hp: 0, food: 0, learn: "hillhorse.ride" }),
+      },
+      { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
+    ],
+  },
+  {
+    id: "horse-catcher",
+    kind: "person",
+    variants: ONE,
+    options: [
+      { id: "share-fire", outcomes: always(ONE, { hp: 2, food: -1 }) },
+      { id: "drive-stakes", outcomes: always(ONE, { hp: -1, food: 2 }) },
+      { id: "talk-him-out", needs: "hillhorse.ride", outcomes: always(ONE, { hp: 1, food: 1 }) },
+      {
+        id: "tell-of-hollow",
+        seen: "horse-hollow",
+        study: true,
+        outcomes: always(ONE, { hp: 0, food: 0, learn: "raven.circle" }),
       },
       { id: "pass", outcomes: always(ONE, { hp: 0, food: 0 }) },
     ],

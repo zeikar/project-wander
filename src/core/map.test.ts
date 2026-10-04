@@ -106,10 +106,11 @@ describe.each(regions)("generateMap in $id", (region) => {
     }
   });
 
-  it("brings every sky and both winds over enough journeys", () => {
+  it("brings every sky the region has, and no other, and both winds", () => {
     const all = SEEDS.flatMap((s) => generateMap(s, region).weather);
-    for (const sky of ["clear", "rain", "fog"]) {
-      expect(all.some((w) => w.sky === sky), sky).toBe(true);
+    for (const sky of ["clear", "rain", "fog", "gale"] as const) {
+      const has = sky === "clear" || region.skyOdds[sky] > 0;
+      expect(all.some((w) => w.sky === sky), sky).toBe(has);
     }
     for (const wind of ["behind", "ahead"]) {
       expect(all.some((w) => w.wind === wind), wind).toBe(true);
@@ -129,8 +130,10 @@ describe.each(regions)("generateMap in $id", (region) => {
       ).toBe(true);
     }
     const days = SEEDS.flatMap((s) => generateMap(s, region).weather);
-    const fog = days.filter((w) => w.sky === "fog").length / days.length;
-    expect(Math.abs(fog - region.skyOdds.fog)).toBeLessThan(0.08);
+    for (const sky of ["rain", "fog", "gale"] as const) {
+      const share = days.filter((w) => w.sky === sky).length / days.length;
+      expect(Math.abs(share - region.skyOdds[sky]), sky).toBeLessThan(0.08);
+    }
   });
 });
 

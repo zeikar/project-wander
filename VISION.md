@@ -21,7 +21,7 @@ When a journey ends, the player should want to set out again — **not because s
 1. You set out from a village you know, and hear a few rumours there. Each one is a place at the far edge of the map.
 2. The region is a map made fresh from a seed. Every day you choose the next road, from at least two; roads may cross. From a day away you can see only a **sign** — tracks, smoke, a silence.
 3. Where the road takes you, something is going on: an animal, a place, a sky. You read it and choose.
-   Every day has a sky and a wind, and tomorrow's is shown over the map. The wind carries your scent ahead or behind; rain keeps it from carrying and puts out fires; fog hides what is on the roads but not their names — and a name is only the lie of the land, a wood or a waterside that more than one thing can be waiting in. An animal you know plus a wind you can read is a day you can see coming.
+   Every day has a sky and a wind, and tomorrow's is shown over the map. The wind carries your scent ahead or behind; rain keeps it from carrying and puts out fires; a gale closes the ridges; fog hides what is on the roads but not their names — and a name is only the lie of the land, a wood or a waterside that more than one thing can be waiting in. An animal you know plus a wind you can read is a day you can see coming.
 4. The journey ends when you reach one of the far places, or when the road ends you.
 
 ## What carries over
@@ -66,7 +66,15 @@ Past the lake where the white stag drinks, a ferry landing opens onto the marsh.
 
 A grey heron stands where the water is knee-deep. Otters keep fish under the banks and raid a pack left down at night. The marsh lantern is a light that looks carried and is not: followed at night it leads into deep water, and at dawn it settles only on firm ground.
 
-What lies beyond is only glimpsed — low hills past the lantern shoal, at dawn. No way leads there yet.
+Past the lantern shoal, at dawn, low hills. Seeing the dawn lights join into a dry way across the open water is what opens them.
+
+## The hills
+
+The Windy Hills begin where the shoal ends, at Sand's End. The gale is their weather: it closes the ridges, so a day can take the way round from you.
+
+A wild goat steps only on scree that holds, and lies down in the lee before a gale. Ravens that land are eating; ravens that only circle have something living beneath them; ravens flying in one line at dusk are going where people live. The hill horse waits on the ridge path for a rider: its mane is wet on a dry hill, and its hooves are set on backwards, so its tracks point the way it came.
+
+One far place here is somewhere with people: Inner Fold, a village no road reaches, that the dusk ravens find.
 
 ---
 
@@ -92,7 +100,7 @@ A two-colour field guide: black ink on uncoated paper, and one spot colour per a
 
 ## Open questions
 
-- **Should the far places hold people?** Partly settled by regions: each region now begins at a village, and a region's gate is a sight, not a town. What stays open is whether a far place should ever be somewhere with people in it — a village to arrive at, not only a thing to see.
+- **Should the far places hold people?** Settled in the hills: Inner Fold is a far place with people in it, and seeing it is being taken in. Whether a village should ever be a gate is still open.
 
 ---
 
