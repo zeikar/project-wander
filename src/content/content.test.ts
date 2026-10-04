@@ -27,6 +27,7 @@ describe("scenes", () => {
       expect(scene.reads, scene.id).toBeDefined();
       const facts = [
         scene.reads!,
+        ...Object.values(scene.alsoReads ?? {}),
         ...scene.options.flatMap((o) => [
           ...(o.needs ? [o.needs] : []),
           ...Object.values(o.outcomes).flatMap((out) => (out.learn ? [out.learn] : [])),

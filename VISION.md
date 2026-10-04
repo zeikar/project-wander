@@ -54,7 +54,7 @@ A monster is where ordinary sense is wrong. The creature tells you which guess i
 
 ## People
 
-A few people live along the roads: a shepherd, a charcoal burner, a reed cutter, an eel fisher. Each says their trouble plainly — wolves at the flock, boars at the spring — and wants what the traveler knows. Knowing the animal behind the trouble is a way to help, and help is paid in a bed and a meal. Anyone can rest by their fire or work a day for food; only knowing does both at once.
+A few people live along the roads: a shepherd, a charcoal burner, a reed cutter, an eel fisher. Each says their trouble plainly — wolves at the flock, boars at the spring — and wants what the traveler knows. Knowing the animal behind the trouble is a way to help, and help is paid in a bed and a meal. Anyone can rest by their fire or work a day for food; only knowing does both at once. Spend an evening or a day with someone and they tell you where to go to learn what they need — where, never what.
 
 Tell someone what you saw at a far place and they tell you something they know in return. It is never the key to a far place: the road keeps that for anyone. The two marsh people each know what the other needs.
 

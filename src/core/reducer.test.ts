@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scenes } from "../content/scenes";
+import { findScene, scenes } from "../content/scenes";
 import type { FactId, Sky } from "../content/types";
 import { FIRST_REGION, MAX_HP, START_FOOD, START_HP } from "../content/world";
 import type { MapNode, WorldMap } from "./map";
@@ -212,6 +212,25 @@ describe("what a far place remembers", () => {
   });
 });
 
+describe("a scene read two ways", () => {
+  // The dawn lesson is exactly what the dawn lights show; the night still
+  // takes knowing that the light is not carried.
+  it("reads the lantern's dawn by either lesson, its night only by the drift", () => {
+    const dawnOnly: FactId[] = ["lantern.dawn"];
+    expect(canRead(atScene("lantern-light", "dawn", { known: dawnOnly }), findScene("lantern-light")!)).toBe(true);
+    expect(canRead(atScene("lantern-light", "night", { known: dawnOnly }), findScene("lantern-light")!)).toBe(false);
+    const driftOnly: FactId[] = ["lantern.drift"];
+    expect(canRead(atScene("lantern-light", "dawn", { known: driftOnly }), findScene("lantern-light")!)).toBe(true);
+    expect(canRead(atScene("lantern-light", "night", { known: driftOnly }), findScene("lantern-light")!)).toBe(true);
+  });
+
+  it("prices the dawn guide for one who knows the dawn", () => {
+    const state = atScene("lantern-light", "dawn", { known: ["lantern.dawn"] });
+    const guide = offeredOptions(state).find((o) => o.id === "dawn-ground")!;
+    expect(preview(state, guide)).toMatchObject({ hp: 0, food: 1 });
+  });
+});
+
 describe("people", () => {
   const meet = (over: Partial<GameState> = {}) =>
     reduce(
@@ -335,12 +354,12 @@ describe("what knowing changes", () => {
 
   // The lantern's watch teaches a different fact at night and at dawn, and the
   // fact that unlocks its guide is not the one that reads it.
+  // The menu may differ only where the traveler can read the difference.
   it("does not let the lantern's menu give away night from dawn", () => {
+    expect(ids(atScene("lantern-light", "night"))).toEqual(ids(atScene("lantern-light", "dawn")));
     const knowsDawn = { known: ["lantern.dawn"] as FactId[] };
-    expect(ids(atScene("lantern-light", "night", knowsDawn))).toEqual(
-      ids(atScene("lantern-light", "dawn", knowsDawn)),
-    );
     expect(ids(atScene("lantern-light", "night", knowsDawn))).toContain("watch");
+    expect(ids(atScene("lantern-light", "dawn", knowsDawn))).not.toContain("watch");
     const knowsDrift = { known: ["lantern.drift"] as FactId[] };
     expect(ids(atScene("lantern-light", "dawn", knowsDrift))).toContain("watch");
     expect(ids(atScene("lantern-light", "night", knowsDrift))).not.toContain("watch");

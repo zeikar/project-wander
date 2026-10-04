@@ -36,7 +36,12 @@ export function currentScene(state: GameState): Scene | undefined {
 
 // Whether the traveler can tell what is going on in this scene.
 export function canRead(state: GameState, scene: Scene): boolean {
-  return scene.reads === undefined || state.known.includes(scene.reads);
+  const also = scene.alsoReads?.[currentNode(state)?.variant ?? ""];
+  return (
+    scene.reads === undefined ||
+    state.known.includes(scene.reads) ||
+    (also !== undefined && state.known.includes(also))
+  );
 }
 
 // Whether a map sign can name the animal behind it: anything at all known

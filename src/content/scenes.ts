@@ -368,6 +368,7 @@ export const scenes: readonly Scene[] = [
     species: "lantern",
     variants: LIGHT,
     reads: "lantern.drift",
+    alsoReads: { dawn: "lantern.dawn" },
     options: [
       {
         id: "follow",
