@@ -192,7 +192,7 @@ export const en: Strings = {
     "raven.dusk":
       "At evening, ravens fly in a single line into the wind, towards where people live. Ravens that scatter and cry are going nowhere.",
     "hillhorse.ride":
-      "A hill horse that takes a rider runs into the wind and over the cliff. On a dry hill, a horse with a wet mane is not one to mount.",
+      "A hill horse that takes a rider runs into the wind and over the cliff. A horse whose dripping mane is tangled with waterweed is not one to mount.",
     "hillhorse.track":
       "A hill horse's hooves are set on backwards, so its hoofprints point back the way it came. Go where the prints point and you come to the hollow where the horse stood out of the wind.",
   },
@@ -1009,10 +1009,10 @@ export const en: Strings = {
       variants: {
         grazing: {
           tell: "The goats graze, scattered close below the ridge. A few kids leap about on the rocks.",
-          reading: "The goats stay by the ridge, grazing. No gale tonight. It is safe to spend the night here.",
+          reading: "The goats stay by the ridge, grazing. The wind will not rise in the night. It is safe to spend the night here.",
         },
         huddled: {
-          tell: "The goats have left the ridge and gone down the slope on the side away from the wind. They lie pressed against the rocks. The sky is still clear.",
+          tell: "The goats have left the ridge and gone down the slope on the side away from the wind. They lie pressed against the rocks.",
           reading:
             "The goats have gone down into the lee and lain down. A gale is coming tonight. Where they lie, the wind does not reach.",
         },
@@ -1020,8 +1020,9 @@ export const en: Strings = {
       options: {
         "camp-ridge": {
           label: "Spend the night on the flat of the ridge",
+          closed: "No one can spend the night on the ridge in a gale",
           result: {
-            grazing: "You sleep on the ridge under a sky thick with stars. All night the wind is gentle. In the morning a kid comes right up to your face, sniffs at you, and goes.",
+            grazing: "You sleep up on the ridge. All night the wind passes low. In the morning a kid comes right up to your face, sniffs at you, and goes.",
             huddled:
               "Around midnight the wind comes roaring in. Your blanket is torn away, and you spend the night clinging to a rock. At dawn you see that down the slope, where the goats are lying, not a blade of grass stirs. Where the goats lie, the wind does not reach.",
           },
@@ -1029,7 +1030,7 @@ export const en: Strings = {
         "push-on": {
           label: "Do not stop; keep walking through the dark",
           result: {
-            "*": "On an empty stomach you walk the ridge by starlight. By the time you reach the top of the pass at dawn, you are chilled and shaking.",
+            "*": "On an empty stomach you walk the ridge in the dark. By the time you reach the top of the pass at dawn, you are chilled and shaking.",
           },
         },
         "go-down": {
@@ -1042,7 +1043,7 @@ export const en: Strings = {
           label: "Sit behind a rock and watch the goats",
           result: {
             grazing:
-              "Chewing dry bread, you watch until sundown. While the wind stays gentle, they do not leave the ridge. Only before a gale do the goats give up the ridge.",
+              "Chewing dry bread, you watch until sundown. Unless the wind is to rise in the night, they do not leave the ridge. Only before a gale do the goats give up the ridge.",
             huddled:
               "Chewing dry bread, you watch. As the sun goes down, they burrow deeper under the rocks on the side away from the wind. In the night the gale comes. You crawl down to where they lie, and only the sound of the wind passes overhead. Where the goats lie, the wind does not reach.",
           },
@@ -1050,7 +1051,7 @@ export const en: Strings = {
         "lie-with-goats": {
           label: "Bed down in the lee, where the goats lie",
           result: {
-            grazing: "You bed down under the rocks down the slope, where they sleep. The night is calm, and you sleep as well as you would have on the ridge.",
+            grazing: "You bed down under the rocks down the slope, where they sleep. It is the lee, and you sleep deeply.",
             huddled:
               "You press yourself in under the rocks beside them. All night the gale passes overhead, but it does not reach you here. Only the rock is cold, and keeping warm costs you an extra meal.",
           },
@@ -1171,12 +1172,12 @@ export const en: Strings = {
       signKnown: "A hill horse stands on the ridge.",
       title: "The grey horse on the ridge",
       description:
-        "The road runs along the ridge. The wind is strong, and every step is heavy. Ahead on the road is a grey horse with neither saddle nor bridle. On a day like this, if you could ride it, the pass would not be far.",
+        "The road runs along the ridge, and the wind sweeps over it. Ahead on the road is a grey horse with neither saddle nor bridle. If you could only ride it, the pass would not be far.",
       variants: {
         waiting: {
-          tell: "The horse stands across the road, looking your way. The wind is as dry as can be, yet water drips from its mane, and from nowhere else.",
+          tell: "The horse stands across the road, looking your way. Water drips from its mane, and a strand of waterweed is tangled in it. Nowhere on these hills is there water for waterweed to grow.",
           reading:
-            "A hill horse. Its mane is wet on a dry hill. Whoever climbs on its back, it carries into the wind and over the cliff. Do not mount it.",
+            "A hill horse. There is waterweed in its mane. Whoever climbs on its back, it carries into the wind and over the cliff. Do not mount it.",
         },
         running: {
           tell: "The horse runs off along the ridge with the wind. In the grass where it passed, its hoofprints are pressed, every one of them pointing towards you.",
@@ -1188,7 +1189,7 @@ export const en: Strings = {
           label: "Go up to the horse and climb on its back",
           result: {
             waiting:
-              "The horse stands quietly and waits. The moment you are on its back, the mane winds round your fingers and will not let go. The horse bolts into the wind, and the cliff at the end of the ridge comes closer. At the last moment the mane snaps and you are flung onto the grass. You look round. The horse has gone over the cliff into empty air, and only the sound of the wind is left. On a dry hill, a horse with a wet mane is not one to mount.",
+              "The horse stands quietly and waits. The moment you are on its back, the mane winds round your fingers and will not let go. The horse bolts into the wind, and the cliff at the end of the ridge comes closer. At the last moment the mane snaps and you are flung onto the grass. You look round. The horse has gone over the cliff into empty air, and only the sound of the wind is left. A horse with waterweed in its mane is not one to mount.",
             running:
               "You race along the ridge after the running horse. The wind knocks you down and your knee is split open. When you get up, the horse is gone, and every hoofprint left in the grass points backwards, the way it came.",
           },
@@ -1210,7 +1211,7 @@ export const en: Strings = {
           label: "Lie flat at a distance and watch the horse",
           result: {
             waiting:
-              "Chewing dry bread, you watch until sundown. The horse goes up to a sheep wandering along the road and lowers its back. When the sheep leans against it, the horse bolts, and the two of them vanish over the cliff. For all the dryness of the wind, the horse's mane was wet the whole time. On a dry hill, a horse with a wet mane is not one to mount.",
+              "Chewing dry bread, you watch until sundown. The horse goes up to a sheep wandering along the road and lowers its back. When the sheep leans against it, the horse bolts, and the two of them vanish over the cliff. All that while, waterweed hung tangled in the horse's dripping mane. A horse with waterweed in its mane is not one to mount.",
             running:
               "When the horse has gone, you look closely at its hoofprints. The toe of every print points back the way the horse came. You go down the slope the way the prints point, and in a hollow out of the wind there is trampled grass and a clear spring. A hill horse's hoofprints point back the way it came.",
           },
@@ -1241,7 +1242,7 @@ export const en: Strings = {
         },
         pass: {
           label: "Cross the pass without stopping",
-          result: { "*": "You leave the bothy behind and cross the pass. The wind pushes at your back." },
+          result: { "*": "You leave the bothy behind and cross the pass into the wind." },
         },
       },
     },
@@ -1462,7 +1463,7 @@ export const en: Strings = {
         "tell-of-pass": {
           label: "Tell her what you saw at Goat Pass",
           result: {
-            "*": "She has never been up to the pass, she says, and listens with shining eyes. When you have finished, she tells you something in turn. If you meet a grey horse on the ridge, never ride it. A horse with a wet mane carries its rider off the cliff, her grandmother says.",
+            "*": "She has never been up to the pass, she says, and listens with shining eyes. When you have finished, she tells you something in turn. If you meet a grey horse on the ridge, never ride it. A horse with waterweed in its mane carries its rider off the cliff, her grandmother says.",
           },
         },
         pass: {
@@ -1497,7 +1498,7 @@ export const en: Strings = {
         "talk-him-out": {
           label: "Tell him why that horse must never be mounted",
           result: {
-            "*": "When you tell him of the wet mane, he is silent a long while. The day he nearly got on its back, when he was young, its mane was wet, he says. That night he takes down his rope, and brings out the drink and the meat he had been saving. You have saved his life, he says.",
+            "*": "When you tell him of the waterweed in its mane, he is silent a long while. The day he nearly got on its back, when he was young, there was waterweed in its mane, he says. That night he takes down his rope, and brings out the drink and the meat he had been saving. You have saved his life, he says.",
           },
         },
         "tell-of-hollow": {
@@ -1624,11 +1625,11 @@ export const en: Strings = {
       name: "Grey Horse Hollow",
       rumor: "On days of gale, they say, grey horses gather somewhere in the hills.",
       sight:
-        "On a day of gale, you look for the backward hoofprints in the grass, and go down the slope the way they point. All at once the sound of the wind stops. At the bottom of a deep hollow there is a spring, and a dozen or more grey horses stand with their backs to the wind. Water drips from every mane. One lifts its head and looks your way, but does not come near. You lie at the edge of the hollow until sundown, and draw back before they notice you.",
+        "In the hill grass you look for the backward hoofprints, and go down the slope the way they point. All at once the sound of the wind stops. At the bottom of a deep hollow there is a spring, and a dozen or more grey horses stand with their backs to the wind. Water drips from every mane. One lifts its head and looks your way, but does not come near. You lie at the edge of the hollow until sundown, and draw back before they notice you.",
       sightAgain:
         "Again you trace the prints back to the hollow. Today there is a foal in the herd. Its small hooves are set on backwards too. Lapping at the spring, the foal sees you and snorts. Its mother steps in front of it.",
       missed:
-        "On a day of gale, you find hoofprints in the grass. You follow the ridge the way the horse must have gone, opposite to where the prints point. The wind grows stronger and stronger until you can go no further. There is no hollow anywhere. The wind drives you back.",
+        "You find hoofprints in the hill grass. You follow the ridge the way the horse must have gone, opposite to where the prints point. You walk until the sun is low, and there is no hollow anywhere. You turn back into the wind.",
       missedAgain:
         "Again you find the prints and follow them the way the horse must have gone. This time you go as far as they go. They stop at the edge of a cliff. Below the cliff there is only wind. Turning back, you see that the toe of every hoofprint points the way you are now walking.",
       hint: "If only you had known what a hill horse's hoofprints point to.",

@@ -451,6 +451,7 @@ describe("weather", () => {
     for (const [sceneId, variant, optionId] of [
       ["goat-scree", "online", "detour"],
       ["hill-horse", "waiting", "go-around"],
+      ["goat-lee", "grazing", "camp-ridge"],
     ] as const) {
       const option = findScene(sceneId)!.options.find((o) => o.id === optionId)!;
       expect(isClosed(atScene(sceneId, variant, {}, "gale"), option), sceneId).toBe(true);

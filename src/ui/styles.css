@@ -12,6 +12,9 @@
   --teal: #367069;
   --umber: #7b5230;
   --glow: #736417;
+  --heather: #8a4a6b;
+  --indigo: #4f4a8c;
+  --tarn: #2f6d8a;
   --spot: var(--ink);
   /* Hangul arrives from the web font a slice at a time; until it does, a
      system myeongjo keeps the page in serif rather than flashing to sans. */
@@ -33,6 +36,9 @@
     --teal: #7fbdb6;
     --umber: #c8a47a;
     --glow: #dfc64a;
+    --heather: #d79bbb;
+    --indigo: #aaa6e6;
+    --tarn: #8cc4dd;
     color-scheme: dark;
   }
 }
@@ -54,6 +60,15 @@
 }
 .spot-lantern {
   --spot: var(--glow);
+}
+.spot-goat {
+  --spot: var(--heather);
+}
+.spot-raven {
+  --spot: var(--indigo);
+}
+.spot-hillhorse {
+  --spot: var(--tarn);
 }
 
 * {

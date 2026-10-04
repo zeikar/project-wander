@@ -450,6 +450,7 @@ export const scenes: readonly Scene[] = [
     options: [
       {
         id: "camp-ridge",
+        closedIn: ["gale"],
         outcomes: {
           grazing: { hp: 1, food: 0 },
           huddled: { hp: -2, food: 0, learn: "goat.lee" },
