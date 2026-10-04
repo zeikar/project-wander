@@ -1175,7 +1175,7 @@ export const en: Strings = {
         "The road runs along the ridge, and the wind sweeps over it. Ahead on the road is a grey horse with neither saddle nor bridle. If you could only ride it, the pass would not be far.",
       variants: {
         waiting: {
-          tell: "The horse stands across the road, looking your way. Water drips from its mane, and a strand of waterweed is tangled in it. Nowhere on these hills is there water for waterweed to grow.",
+          tell: "The horse stands across the road, looking your way. Water drips from its mane, and a strand of waterweed is tangled in it. Nowhere on this bare ridge is there water for waterweed to grow.",
           reading:
             "A hill horse. There is waterweed in its mane. Whoever climbs on its back, it carries into the wind and over the cliff. Do not mount it.",
         },
