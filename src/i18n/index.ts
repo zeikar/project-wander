@@ -1,10 +1,11 @@
 // The languages the game ships in. To add one: write `xx.ts` exporting a
 // `Strings` object (copy `ko.ts` and translate it), then add it here.
 // `i18n.test.ts` checks every registered locale covers all game text.
+import { en } from "./en";
 import { ko } from "./ko";
 import type { Strings } from "./types";
 
-export const locales = { ko } satisfies Record<string, Strings>;
+export const locales = { ko, en } satisfies Record<string, Strings>;
 
 export type LocaleId = keyof typeof locales;
 
