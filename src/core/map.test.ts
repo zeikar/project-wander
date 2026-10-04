@@ -55,11 +55,16 @@ describe.each(regions)("generateMap in $id", (region) => {
     }
   });
 
-  it.each(SEEDS)("seed %i: no day offers the same thing twice", (seed) => {
-    for (const row of generateMap(seed, region).layers.slice(1, -1)) {
+  it.each(SEEDS)("seed %i: no day offers the same thing twice, nor brings the last day's back", (seed) => {
+    const road = generateMap(seed, region).layers.slice(1, -1);
+    road.forEach((row, i) => {
       const kinds = row.map((n) => n.sceneId ?? "quiet");
       expect(new Set(kinds).size, kinds.join()).toBe(kinds.length);
-    }
+      const before = new Set((road[i - 1] ?? []).flatMap((n) => (n.sceneId ? [n.sceneId] : [])));
+      for (const n of row) {
+        expect(n.sceneId !== undefined && before.has(n.sceneId), `${seed}: ${n.id} ${n.sceneId}`).toBe(false);
+      }
+    });
   });
 
   // Any journey can then come to see any far place, if it finds the road.

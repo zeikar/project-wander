@@ -1,11 +1,11 @@
 /* A two-colour field guide: black ink on uncoated paper, and one spot colour
    per animal that only knowledge is allowed to use. */
 :root {
-  --paper: #fbfaf7;
-  --ink: #151515;
+  --paper: #f6f3eb;
+  --ink: #1a1917;
   --ink-soft: #4f4c46;
   --faint: #938f86;
-  --hair: #dedbd3;
+  --hair: #dcd8cd;
   --moss: #5a6b2f;
   --slate: #4d5b6a;
   --rust: #a3472a;
@@ -13,7 +13,10 @@
   --umber: #7b5230;
   --glow: #736417;
   --spot: var(--ink);
-  --face: "Hahmlet", "Nanum Myeongjo", "Noto Serif KR", Georgia, serif;
+  /* Hangul arrives from the web font a slice at a time; until it does, a
+     system myeongjo keeps the page in serif rather than flashing to sans. */
+  --face: "Hahmlet", "AppleMyungjo", "Nanum Myeongjo", "Noto Serif KR", "Noto Serif CJK KR",
+    "Batang", Georgia, serif;
   color-scheme: light;
 }
 
@@ -104,7 +107,7 @@ h2 {
 
 .label {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--ink-soft);
   margin: 1.4rem 0 0.4rem;
 }
@@ -139,12 +142,9 @@ h2 {
   column-gap: 3rem;
 }
 
-.layout--scene {
-  grid-template-areas: "status" "story" "choices" "map" "notes";
-}
-
+.layout--scene,
 .layout--end {
-  grid-template-areas: "story" "choices" "map" "notes";
+  grid-template-areas: "status" "story" "choices" "map" "notes";
 }
 
 .area-status {
@@ -178,20 +178,14 @@ h2 {
     align-items: start;
   }
   .layout--map,
-  .layout--scene {
+  .layout--scene,
+  .layout--end {
     grid-template-areas:
       "status status"
       "map story"
       "map choices"
       "notes choices";
     grid-template-rows: auto auto auto 1fr;
-  }
-  .layout--end {
-    grid-template-areas:
-      "map story"
-      "map choices"
-      "notes choices";
-    grid-template-rows: auto auto 1fr;
   }
   .area-map .map-figure {
     margin-top: 1.25rem;
@@ -204,18 +198,13 @@ h2 {
     grid-template-columns: minmax(18rem, 22rem) minmax(0, 36rem) minmax(15rem, 19rem);
   }
   .layout--map,
-  .layout--scene {
+  .layout--scene,
+  .layout--end {
     grid-template-areas:
       "status status status"
       "map story notes"
       "map choices notes";
     grid-template-rows: auto auto 1fr;
-  }
-  .layout--end {
-    grid-template-areas:
-      "map story notes"
-      "map choices notes";
-    grid-template-rows: auto 1fr;
   }
   .area-notes .notebook {
     margin-top: 1.25rem;
@@ -299,16 +288,19 @@ h2 {
   margin: 0.2rem 0 0;
 }
 
-/* Out of register: the animal's colour printed a hair off the black. */
-.tell.off-register {
-  text-shadow: 1.5px 1px 0 color-mix(in srgb, var(--spot) 55%, transparent);
+.kicker.plain {
+  color: var(--ink-soft);
 }
 
-/* In register, and underlined in the animal's colour. */
+/* Out of register: the animal's plate printed a hair off the black. */
+.tell.off-register {
+  text-shadow: 1.5px 1px 0 var(--spot);
+}
+
+/* In register, and ruled under in the animal's colour. */
 .tell.in-register span {
-  background: linear-gradient(transparent 64%, color-mix(in srgb, var(--spot) 24%, transparent) 64%);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+  text-decoration: underline 1.5px var(--spot);
+  text-underline-offset: 0.28em;
 }
 
 .unreadable {
@@ -322,8 +314,7 @@ h2 {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0 0.9rem;
   border-top: 1px solid var(--ink);
-  border-bottom: 1px solid var(--ink);
-  padding: 0.6rem 0;
+  padding: 0.6rem 0 0;
   margin: 0.4rem 0 1rem;
 }
 
@@ -467,13 +458,23 @@ button {
 }
 
 .rumors {
-  padding-left: 1.1rem;
+  list-style: none;
+  padding-left: 0;
   margin: 0;
   color: var(--ink-soft);
 }
 
 .rumors li {
+  position: relative;
+  padding-left: 1.7rem;
   margin-bottom: 0.35rem;
+}
+
+.rumors li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--faint);
 }
 
 .ending {
@@ -499,6 +500,10 @@ button {
   margin-right: 0.4rem;
 }
 
+.learned-list .faint {
+  font-size: 0.95rem;
+}
+
 .learned-list .note {
   border-top: 1px solid var(--hair);
   padding-top: 0.5rem;
@@ -521,6 +526,23 @@ button {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
+  list-style: none;
+}
+
+.notebook summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A typeset mark for open and shut, not the browser's triangle. */
+.notebook summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1em;
+  color: var(--ink-soft);
+}
+
+.notebook[open] summary::before {
+  content: "−";
 }
 
 .notebook section {
@@ -701,19 +723,74 @@ button {
   }
 }
 
-/* ---- footer ---------------------------------------------------------------- */
+/* ---- masthead ------------------------------------------------------------
+   The guide's running head: its name, the language, where it is kept. Small
+   and faint, so the page below stays the page. */
 
-.footer {
-  margin-top: 3rem;
+.masthead {
+  position: relative;
+  z-index: 11; /* above the weather */
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
   font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.15rem;
+}
+
+.masthead--cover {
+  max-width: 30rem;
+  margin-inline: auto;
+}
+
+.masthead .name {
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.masthead nav {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+/* Tall enough to tap; the negative margin keeps the line itself tight. */
+.masthead .langs button,
+.masthead a {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0.6rem 0.3rem;
+  margin: -0.6rem -0.3rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.masthead .langs {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.masthead .langs span {
   color: var(--faint);
 }
 
-.footer select {
-  font: inherit;
-  background: transparent;
-  color: inherit;
-  border: 1px solid var(--hair);
+.masthead .langs button[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.masthead button:hover,
+.masthead a:hover {
+  color: var(--ink);
+}
+
+.masthead button:focus-visible,
+.masthead a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

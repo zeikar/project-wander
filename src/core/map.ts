@@ -49,12 +49,14 @@ export function generateMap(seed: number, region: Region): WorldMap {
     const row: MapNode[] = [];
     for (let index = 0; index < width; index++) {
       // No day offers the same thing twice: no scene beside itself, and one
-      // quiet road at most. Nor does a map hold the same person twice.
+      // quiet road at most. No scene comes two days running, whichever road is
+      // taken, and a map never holds the same person twice.
       let node: MapNode;
       do {
         node = roadNode(layer, index, weather[layer]!, region, roll, pick);
       } while (
         row.some((n) => (n.sceneId ?? "quiet") === (node.sceneId ?? "quiet")) ||
+        (node.sceneId !== undefined && layers[layer - 1]!.some((n) => n.sceneId === node.sceneId)) ||
         (region.people.includes(node.sceneId!) && layers.flat().some((n) => n.sceneId === node.sceneId))
       );
       row.push(node);
@@ -64,8 +66,9 @@ export function generateMap(seed: number, region: Region): WorldMap {
 
   // Every far place's key can be learned somewhere on the map by anyone who
   // stops there, so any journey can come to see any far place if it finds the
-  // road. Where the roll left none, one road becomes one that does — never the only road
-  // holding another far place's key, and never a scene its day already has.
+  // road. Where the roll left none, one road becomes one that does — never the
+  // only road holding another far place's key, and never a scene that its day
+  // or the days either side already have.
   const road = () => layers.slice(1).flat();
   const ownScenes = scenes.filter(
     (s) => region.places.includes(s.id) || (s.species !== undefined && region.species.includes(s.species)),
@@ -85,7 +88,9 @@ export function generateMap(seed: number, region: Region): WorldMap {
               (node) =>
                 teaches(node, needs) &&
                 node.variant === variantFor(scene, weather[spot.layer]!, node.variant) &&
-                !layers[spot.layer]!.some((n) => n !== spot && n.sceneId === scene.id),
+                ![spot.layer - 1, spot.layer, spot.layer + 1].some((l) =>
+                  (layers[l] ?? []).some((n) => n !== spot && n.sceneId === scene.id),
+                ),
             ),
         ),
       );

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { Fragment, useEffect, useReducer, useState } from "react";
 import { currentNode, reduce, weatherAt } from "../core/reducer";
 import { createInitialState } from "../core/state";
 import { detectLocale, locales } from "../i18n";
@@ -18,6 +18,8 @@ import {
 } from "./storage";
 import { StringsContext } from "./strings";
 import { WeatherSky } from "./WeatherSky";
+
+const SOURCE = "https://github.com/zeikar/project-wander";
 
 // The UI is the one place randomness may come from: the core takes the seed
 // as data, so every journey stays reproducible.
@@ -82,26 +84,39 @@ export default function App() {
         }
       />
       <main className="page">
+        {/* The guide's running head. The cover carries its own title, so the
+            name is left off there. */}
+        <header className={`masthead ${state.phase === "title" ? "masthead--cover" : ""}`}>
+          <span className="name">{state.phase === "title" ? "" : strings.ui.title}</span>
+          <nav>
+            {localeIds.length > 1 && (
+              <span className="langs" role="group" aria-label={strings.ui.language}>
+                {localeIds.map((id, i) => (
+                  <Fragment key={id}>
+                    {i > 0 && <span aria-hidden="true">·</span>}
+                    <button
+                      type="button"
+                      lang={locales[id].meta.htmlLang}
+                      aria-pressed={id === locale}
+                      onClick={() => chooseLocale(id)}
+                    >
+                      {locales[id].meta.name}
+                    </button>
+                  </Fragment>
+                ))}
+              </span>
+            )}
+            <a href={SOURCE} target="_blank" rel="noopener noreferrer">
+              {strings.ui.source}
+            </a>
+          </nav>
+        </header>
         <div className="screen" key={screenKey}>
           {state.phase === "title" && <TitleScreen {...props} />}
           {state.phase === "map" && <MapScreen {...props} />}
           {state.phase === "scene" && <SceneScreen {...props} />}
           {state.phase === "end" && <EndScreen {...props} />}
         </div>
-        {localeIds.length > 1 && (
-          <footer className="footer">
-            <label>
-              {strings.ui.language}{" "}
-              <select value={locale} onChange={(e) => chooseLocale(e.target.value as LocaleId)}>
-                {localeIds.map((id) => (
-                  <option key={id} value={id}>
-                    {locales[id].meta.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </footer>
-        )}
       </main>
     </StringsContext.Provider>
   );

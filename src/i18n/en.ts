@@ -66,6 +66,7 @@ export const en: Strings = {
     aPerson: "Someone met on the road",
     reading: "Reading",
     language: "Language",
+    source: "GitHub",
     tomorrow: (sky, wind) => `Tomorrow's sky · ${sky}, ${wind}`,
     today: (sky, wind) => `Today's sky · ${sky}, ${wind}`,
   },

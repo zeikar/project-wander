@@ -57,6 +57,7 @@ export const ko: Strings = {
     aPerson: "길에서 만난 사람",
     reading: "해설",
     language: "언어",
+    source: "GitHub",
     tomorrow: (sky, wind) => `내일 하늘 · ${sky}, ${wind}`,
     today: (sky, wind) => `오늘 하늘 · ${sky}, ${wind}`,
   },
